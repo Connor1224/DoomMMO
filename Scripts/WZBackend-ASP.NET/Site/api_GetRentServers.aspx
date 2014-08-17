@@ -1,0 +1,1 @@
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="api_GetRentServers.aspx.cs" Inherits="api_GetRentServers" %>
