@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="WarZ Game Server"
 	ProjectGUID="{32AD275B-9E09-431E-94D7-41780F91B239}"
 	RootNamespace="WarOnline"
@@ -53,7 +53,7 @@
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories=".\..\..\..\src\External\;.\..\..\..\src\External\PhysX\include;.\..\..\..\src\External\PhysX\PxTask\include;.\..\..\..\src\External\PhysX\PxFoundation;.\..\..\..\src\External\PhysX\PxFoundation\internal\include;.\..\..\..\src\External\PhysX\PhysXProfileSDK\sdk\include;.\..\..\..\src\External\PhysX\PhysXVisualDebuggerSDK\PVDCommLayer\Public;.\..\..\..\src\External\PhysX\PhysXAPI;.\..\..\..\src\External\PhysX\PhysXAPI\cloth;.\..\..\..\src\External\PhysX\PhysXAPI\geometry;.\..\..\..\src\External\PhysX\PhysXAPI\common;.\..\..\..\src\External\PhysX\GeomUtils\headers;.\..\..\..\src\External\PhysX\RepX/include;.\..\..\..\src\External\PhysX\RepXUpgrader/include;.\..\..\..\src\External\PhysX\PhysXAPI\characterkinematic;.\..\..\..\src\External\dxsdk\Include;.\Sources;.\..\..\..\src\EclipseStudio\Sources;.\..\..\..\src\eternity\include;.\..\..\..\src\GameEngine;.\..\..\..\src\External\ChilKat\Include;.\..\..\..\src\External\AutodeskNav\sdk\include"
+				AdditionalIncludeDirectories=".\..\..\External\;.\..\..\External\PhysX\include;.\..\..\External\PhysX\PxTask\include;.\..\..\External\PhysX\PxFoundation;.\..\..\External\PhysX\PxFoundation\internal\include;.\..\..\External\PhysX\PhysXProfileSDK\sdk\include;.\..\..\External\PhysX\PhysXVisualDebuggerSDK\PVDCommLayer\Public;.\..\..\External\PhysX\PhysXAPI;.\..\..\External\PhysX\PhysXAPI\cloth;.\..\..\External\PhysX\PhysXAPI\geometry;.\..\..\External\PhysX\PhysXAPI\common;.\..\..\External\PhysX\GeomUtils\headers;.\..\..\External\PhysX\RepX/include;.\..\..\External\PhysX\RepXUpgrader/include;.\..\..\External\PhysX\PhysXAPI\characterkinematic;.\..\..\External\dxsdk\Include;.\Sources;.\..\..\EclipseStudio\Sources;.\..\..\eternity\include;.\..\..\GameEngine;.\..\..\External\ChilKat\Include;.\..\..\External\AutodeskNav\sdk\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;WO_SERVER"
 				ExceptionHandling="1"
 				RuntimeLibrary="0"
@@ -82,7 +82,7 @@
 				AdditionalDependencies="winmm.lib ws2_32.lib d3dx9.lib d3d9.lib dinput8.lib dxguid.lib xinput.lib iphlpapi.lib fmodex_vc.lib rpcrt4.lib dnsapi.lib crypt32.lib ChilkatRel.lib Shlwapi.lib odbc32.lib odbccp32.lib wbemuuid.lib"
 				OutputFile="$(OutDir)\WZ_GameServer.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories=".\..\..\..\src\External/dxsdk/lib;.\..\..\..\src\External/fmod;.\..\..\..\src\External/PhysX/lib/Win32;.\..\..\..\src\External/Scaleform3/Win32/Msvc90/Release;&quot;.\..\..\..\src\External/jpeg-6b/lib/Win32/Msvc80/Release_Static&quot;;.\..\..\..\src\External/Chilkat/Libs"
+				AdditionalLibraryDirectories=".\..\..\External/dxsdk/lib;.\..\..\External/fmod;.\..\..\External/PhysX/lib/Win32;.\..\..\External/Scaleform3/Win32/Msvc90/Release;&quot;.\..\..\External/jpeg-6b/lib/Win32/Msvc80/Release_Static&quot;;.\..\..\External/Chilkat/Libs"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="1"
@@ -149,7 +149,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\..\..\..\src\External\;.\..\..\..\src\External\PhysX\include;.\..\..\..\src\External\PhysX\PxTask\include;.\..\..\..\src\External\PhysX\PxFoundation;.\..\..\..\src\External\PhysX\PxFoundation\internal\include;.\..\..\..\src\External\PhysX\PhysXProfileSDK\sdk\include;.\..\..\..\src\External\PhysX\PhysXVisualDebuggerSDK\PVDCommLayer\Public;.\..\..\..\src\External\PhysX\PhysXAPI;.\..\..\..\src\External\PhysX\PhysXAPI\cloth;.\..\..\..\src\External\PhysX\PhysXAPI\geometry;.\..\..\..\src\External\PhysX\PhysXAPI\common;.\..\..\..\src\External\PhysX\GeomUtils\headers;.\..\..\..\src\External\PhysX\RepX/include;.\..\..\..\src\External\PhysX\RepXUpgrader/include;.\..\..\..\src\External\PhysX\PhysXAPI\characterkinematic;.\..\..\..\src\External\dxsdk\Include;.\Sources;.\..\..\..\src\EclipseStudio\Sources;.\..\..\..\src\eternity\include;.\..\..\..\src\GameEngine;.\..\..\..\src\External\ChilKat\Include;.\..\..\..\src\External\AutodeskNav\sdk\include"
+				AdditionalIncludeDirectories=".\..\..\External\;.\..\..\External\PhysX\include;.\..\..\External\PhysX\PxTask\include;.\..\..\External\PhysX\PxFoundation;.\..\..\External\PhysX\PxFoundation\internal\include;.\..\..\External\PhysX\PhysXProfileSDK\sdk\include;.\..\..\External\PhysX\PhysXVisualDebuggerSDK\PVDCommLayer\Public;.\..\..\External\PhysX\PhysXAPI;.\..\..\External\PhysX\PhysXAPI\cloth;.\..\..\External\PhysX\PhysXAPI\geometry;.\..\..\External\PhysX\PhysXAPI\common;.\..\..\External\PhysX\GeomUtils\headers;.\..\..\External\PhysX\RepX/include;.\..\..\External\PhysX\RepXUpgrader/include;.\..\..\External\PhysX\PhysXAPI\characterkinematic;.\..\..\External\dxsdk\Include;.\Sources;.\..\..\EclipseStudio\Sources;.\..\..\eternity\include;.\..\..\GameEngine;.\..\..\External\ChilKat\Include;.\..\..\External\AutodeskNav\sdk\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;WO_SERVER"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -176,7 +176,7 @@
 				AdditionalDependencies="winmm.lib ws2_32.lib d3dx9d.lib d3d9.lib dinput8.lib dxguid.lib xinput.lib iphlpapi.lib fmodex_vc.lib rpcrt4.lib dnsapi.lib crypt32.lib ChilkatDbg.lib Shlwapi.lib odbc32.lib odbccp32.lib wbemuuid.lib"
 				OutputFile="$(OutDir)\WZ_GameServer.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories=".\..\..\..\src\External/dxsdk/lib;.\..\..\..\src\External/fmod;.\..\..\..\src\External/PhysX/lib/Win32;.\..\..\..\src\External/Scaleform3/Win32/Msvc90/Debug;&quot;.\..\..\..\src\External/jpeg-6b/lib/Win32/Msvc80/Debug_Static&quot;;.\..\..\..\src\External/Chilkat/Libs"
+				AdditionalLibraryDirectories=".\..\..\External/dxsdk/lib;.\..\..\External/fmod;.\..\..\External/PhysX/lib/Win32;.\..\..\External/Scaleform3/Win32/Msvc90/Debug;&quot;.\..\..\External/jpeg-6b/lib/Win32/Msvc80/Debug_Static&quot;;.\..\..\External/Chilkat/Libs"
 				IgnoreDefaultLibraryNames="libcmt"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -245,7 +245,7 @@
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories=".\..\..\..\src\External\;.\..\..\..\src\External\PhysX\include;.\..\..\..\src\External\PhysX\PxTask\include;.\..\..\..\src\External\PhysX\PxFoundation;.\..\..\..\src\External\PhysX\PxFoundation\internal\include;.\..\..\..\src\External\PhysX\PhysXProfileSDK\sdk\include;.\..\..\..\src\External\PhysX\PhysXVisualDebuggerSDK\PVDCommLayer\Public;.\..\..\..\src\External\PhysX\PhysXAPI;.\..\..\..\src\External\PhysX\PhysXAPI\cloth;.\..\..\..\src\External\PhysX\PhysXAPI\geometry;.\..\..\..\src\External\PhysX\PhysXAPI\common;.\..\..\..\src\External\PhysX\GeomUtils\headers;.\..\..\..\src\External\PhysX\RepX/include;.\..\..\..\src\External\PhysX\RepXUpgrader/include;.\..\..\..\src\External\PhysX\PhysXAPI\characterkinematic;.\..\..\..\src\External\dxsdk\Include;.\Sources;.\..\..\..\src\EclipseStudio\Sources;.\..\..\..\src\eternity\include;.\..\..\..\src\GameEngine;.\..\..\..\src\External\ChilKat\Include;.\..\..\..\src\External\AutodeskNav\sdk\include"
+				AdditionalIncludeDirectories=".\..\..\External\;.\..\..\External\PhysX\include;.\..\..\External\PhysX\PxTask\include;.\..\..\External\PhysX\PxFoundation;.\..\..\External\PhysX\PxFoundation\internal\include;.\..\..\External\PhysX\PhysXProfileSDK\sdk\include;.\..\..\External\PhysX\PhysXVisualDebuggerSDK\PVDCommLayer\Public;.\..\..\External\PhysX\PhysXAPI;.\..\..\External\PhysX\PhysXAPI\cloth;.\..\..\External\PhysX\PhysXAPI\geometry;.\..\..\External\PhysX\PhysXAPI\common;.\..\..\External\PhysX\GeomUtils\headers;.\..\..\External\PhysX\RepX/include;.\..\..\External\PhysX\RepXUpgrader/include;.\..\..\External\PhysX\PhysXAPI\characterkinematic;.\..\..\External\dxsdk\Include;.\Sources;.\..\..\EclipseStudio\Sources;.\..\..\eternity\include;.\..\..\GameEngine;.\..\..\External\ChilKat\Include;.\..\..\External\AutodeskNav\sdk\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;WO_SERVER"
 				ExceptionHandling="1"
 				RuntimeLibrary="0"
@@ -274,7 +274,7 @@
 				AdditionalDependencies="winmm.lib ws2_32.lib d3dx9.lib d3d9.lib dinput8.lib dxguid.lib xinput.lib iphlpapi.lib fmodex_vc.lib rpcrt4.lib dnsapi.lib crypt32.lib ChilkatRel.lib Shlwapi.lib odbc32.lib odbccp32.lib wbemuuid.lib"
 				OutputFile="$(OutDir)\WZ_GameServer.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories=".\..\..\..\src\External/dxsdk/lib;.\..\..\..\src\External/fmod;.\..\..\..\src\External/PhysX/lib/Win32;.\..\..\..\src\External/Scaleform3/Win32/Msvc90/Release;&quot;.\..\..\..\src\External/jpeg-6b/lib/Win32/Msvc80/Release_Static&quot;;.\..\..\..\src\External/Chilkat/Libs"
+				AdditionalLibraryDirectories=".\..\..\External/dxsdk/lib;.\..\..\External/fmod;.\..\..\External/PhysX/lib/Win32;.\..\..\External/Scaleform3/Win32/Msvc90/Release;&quot;.\..\..\External/jpeg-6b/lib/Win32/Msvc80/Release_Static&quot;;.\..\..\External/Chilkat/Libs"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="1"
@@ -351,11 +351,11 @@
 			Name="1: Engine"
 			>
 			<File
-				RelativePath="..\..\..\src\EclipseStudio\Sources\LangMngr.cpp"
+				RelativePath="..\..\EclipseStudio\Sources\LangMngr.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\EclipseStudio\Sources\LangMngr.h"
+				RelativePath="..\..\EclipseStudio\Sources\LangMngr.h"
 				>
 			</File>
 			<File
@@ -370,66 +370,66 @@
 				Name="GameObjects"
 				>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\AObject.cpp"
+					RelativePath="..\..\GameEngine\gameobjects\AObject.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\AObject.h"
+					RelativePath="..\..\GameEngine\gameobjects\AObject.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\CollFunc.hpp"
+					RelativePath="..\..\GameEngine\gameobjects\CollFunc.hpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\CollMain.h"
+					RelativePath="..\..\GameEngine\gameobjects\CollMain.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\CollMain.hpp"
+					RelativePath="..\..\GameEngine\gameobjects\CollMain.hpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\GameLevel.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\GameLevel.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\GameLevel.h"
+					RelativePath="..\..\EclipseStudio\Sources\GameLevel.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\GameLevel_IO.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\GameLevel_IO.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\GameObj.cpp"
+					RelativePath="..\..\GameEngine\gameobjects\GameObj.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\GameObj.h"
+					RelativePath="..\..\GameEngine\gameobjects\GameObj.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\obj_Mesh.cpp"
+					RelativePath="..\..\GameEngine\gameobjects\obj_Mesh.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\ObjManag.cpp"
+					RelativePath="..\..\GameEngine\gameobjects\ObjManag.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\ObjManag.h"
+					RelativePath="..\..\GameEngine\gameobjects\ObjManag.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\PhysObj.cpp"
+					RelativePath="..\..\GameEngine\gameobjects\PhysObj.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=".\..\..\..\src\External\PhysX\PhysXAPI\extensions;.\..\..\..\src\External\PhysX\PhysXAPI\geometry;.\..\..\..\src\External\PhysX\PhysXAPI\common;.\..\..\..\src\External\PhysX\PhysXCommon\src;.\..\..\..\src\External\PhysX\GeomUtils\src;.\..\..\..\src\External\"
+							AdditionalIncludeDirectories=".\..\..\External\PhysX\PhysXAPI\extensions;.\..\..\External\PhysX\PhysXAPI\geometry;.\..\..\External\PhysX\PhysXAPI\common;.\..\..\External\PhysX\PhysXCommon\src;.\..\..\External\PhysX\GeomUtils\src;.\..\..\External\"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -437,7 +437,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=".\..\..\..\src\External\PhysX\PhysXAPI\extensions;.\..\..\..\src\External\PhysX\PhysXAPI\geometry;.\..\..\..\src\External\PhysX\PhysXAPI\common;.\..\..\..\src\External\PhysX\PhysXCommon\src;.\..\..\..\src\External\PhysX\GeomUtils\src;.\..\..\..\src\External\"
+							AdditionalIncludeDirectories=".\..\..\External\PhysX\PhysXAPI\extensions;.\..\..\External\PhysX\PhysXAPI\geometry;.\..\..\External\PhysX\PhysXAPI\common;.\..\..\External\PhysX\PhysXCommon\src;.\..\..\External\PhysX\GeomUtils\src;.\..\..\External\"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -445,39 +445,39 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=".\..\..\..\src\External\PhysX\PhysXAPI\extensions;.\..\..\..\src\External\PhysX\PhysXAPI\geometry;.\..\..\..\src\External\PhysX\PhysXAPI\common;.\..\..\..\src\External\PhysX\PhysXCommon\src;.\..\..\..\src\External\PhysX\GeomUtils\src;.\..\..\..\src\External\"
+							AdditionalIncludeDirectories=".\..\..\External\PhysX\PhysXAPI\extensions;.\..\..\External\PhysX\PhysXAPI\geometry;.\..\..\External\PhysX\PhysXAPI\common;.\..\..\External\PhysX\PhysXCommon\src;.\..\..\External\PhysX\GeomUtils\src;.\..\..\External\"
 						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\PhysObj.h"
+					RelativePath="..\..\GameEngine\gameobjects\PhysObj.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\PhysXWorld.cpp"
+					RelativePath="..\..\GameEngine\gameobjects\PhysXWorld.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\PhysXWorld.h"
+					RelativePath="..\..\GameEngine\gameobjects\PhysXWorld.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\sceneBox.cpp"
+					RelativePath="..\..\GameEngine\gameobjects\sceneBox.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\gameobjects\sceneBox.h"
+					RelativePath="..\..\GameEngine\gameobjects\sceneBox.h"
 					>
 				</File>
 				<Filter
 					Name="PhysX"
 					>
 					<File
-						RelativePath="..\..\..\src\GameEngine\gameobjects\PhysXRepXHelpers.cpp"
+						RelativePath="..\..\GameEngine\gameobjects\PhysXRepXHelpers.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\gameobjects\PhysXRepXHelpers.h"
+						RelativePath="..\..\GameEngine\gameobjects\PhysXRepXHelpers.h"
 						>
 					</File>
 				</Filter>
@@ -486,27 +486,27 @@
 				Name="TrueNature"
 				>
 				<File
-					RelativePath="..\..\..\src\GameEngine\TrueNature\ITerrain.cpp"
+					RelativePath="..\..\GameEngine\TrueNature\ITerrain.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\TrueNature\ITerrain.h"
+					RelativePath="..\..\GameEngine\TrueNature\ITerrain.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\TrueNature\Terrain.cpp"
+					RelativePath="..\..\GameEngine\TrueNature\Terrain.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\TrueNature\Terrain.h"
+					RelativePath="..\..\GameEngine\TrueNature\Terrain.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\TrueNature2\Terrain2.cpp"
+					RelativePath="..\..\GameEngine\TrueNature2\Terrain2.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\TrueNature2\Terrain2.h"
+					RelativePath="..\..\GameEngine\TrueNature2\Terrain2.h"
 					>
 				</File>
 			</Filter>
@@ -514,38 +514,38 @@
 				Name="GameEngine_AI"
 				>
 				<File
-					RelativePath="..\..\..\src\GameEngine\ai\NavRegionManager.cpp"
+					RelativePath="..\..\GameEngine\ai\NavRegionManager.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\GameEngine\ai\NavRegionManager.h"
+					RelativePath="..\..\GameEngine\ai\NavRegionManager.h"
 					>
 				</File>
 				<Filter
 					Name="AutodeskNav"
 					>
 					<File
-						RelativePath="..\..\..\src\GameEngine\ai\AutodeskNav\AutodeskCustomBridges.cpp"
+						RelativePath="..\..\GameEngine\ai\AutodeskNav\AutodeskCustomBridges.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\ai\AutodeskNav\AutodeskCustomBridges.h"
+						RelativePath="..\..\GameEngine\ai\AutodeskNav\AutodeskCustomBridges.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\ai\AutodeskNav\AutodeskNavAgent.cpp"
+						RelativePath="..\..\GameEngine\ai\AutodeskNav\AutodeskNavAgent.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\ai\AutodeskNav\AutodeskNavAgent.h"
+						RelativePath="..\..\GameEngine\ai\AutodeskNav\AutodeskNavAgent.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\ai\AutodeskNav\AutodeskNavMesh.cpp"
+						RelativePath="..\..\GameEngine\ai\AutodeskNav\AutodeskNavMesh.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\ai\AutodeskNav\AutodeskNavMesh.h"
+						RelativePath="..\..\GameEngine\ai\AutodeskNav\AutodeskNavMesh.h"
 						>
 					</File>
 				</Filter>
@@ -757,51 +757,51 @@
 					Name="from Client"
 					>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\Gameplay\BaseItemSpawnPoint.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\Gameplay\BaseItemSpawnPoint.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\Gameplay\BaseItemSpawnPoint.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\Gameplay\BaseItemSpawnPoint.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\Gameplay\BasePlayerSpawnPoint.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\Gameplay\BasePlayerSpawnPoint.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\Gameplay\BasePlayerSpawnPoint.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\Gameplay\BasePlayerSpawnPoint.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\DebugHelpers.cpp"
+						RelativePath="..\..\GameEngine\DebugHelpers.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\GameEngine\DebugHelpers.h"
+						RelativePath="..\..\GameEngine\DebugHelpers.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WORLD\DecalChief.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WORLD\DecalChief.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WORLD\DecalChief.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WORLD\DecalChief.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WORLD\MaterialTypes.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WORLD\MaterialTypes.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WORLD\MaterialTypes.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WORLD\MaterialTypes.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\Nature\obj_Terrain.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\Nature\obj_Terrain.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\Nature\obj_Terrain.H"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\Nature\obj_Terrain.H"
 						>
 					</File>
 				</Filter>
@@ -858,47 +858,47 @@
 				Name="from Client"
 				>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\multiplayer\NetCellMover.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\multiplayer\NetCellMover.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\multiplayer\NetCellMover.h"
+					RelativePath="..\..\EclipseStudio\Sources\multiplayer\NetCellMover.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\multiplayer\P2PMessages.h"
+					RelativePath="..\..\EclipseStudio\Sources\multiplayer\P2PMessages.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\GameCode\UserProfile.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\GameCode\UserProfile.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\GameCode\UserProfile.h"
+					RelativePath="..\..\EclipseStudio\Sources\GameCode\UserProfile.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\GameCode\UserRewards.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\GameCode\UserRewards.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\GameCode\UserRewards.h"
+					RelativePath="..\..\EclipseStudio\Sources\GameCode\UserRewards.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Backend\WOBackendAPI.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\Backend\WOBackendAPI.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Backend\WOBackendAPI.h"
+					RelativePath="..\..\EclipseStudio\Sources\Backend\WOBackendAPI.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\XMLHelpers.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\XMLHelpers.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\XMLHelpers.h"
+					RelativePath="..\..\EclipseStudio\Sources\XMLHelpers.h"
 					>
 				</File>
 			</Filter>
@@ -933,43 +933,43 @@
 					Name="Client"
 					>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\GearConfig.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\GearConfig.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\GearConfig.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\GearConfig.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\HeroConfig.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\HeroConfig.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\HeroConfig.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\HeroConfig.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponArmory.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponArmory.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponArmory.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponArmory.h"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.cpp"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.h"
+						RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.h"
 						>
 					</File>
 				</Filter>
@@ -990,27 +990,27 @@
 				Name="collections"
 				>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Editors\CollectionElement.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\Editors\CollectionElement.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Editors\CollectionElement.h"
+					RelativePath="..\..\EclipseStudio\Sources\Editors\CollectionElement.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Editors\CollectionsManager.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\Editors\CollectionsManager.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Editors\CollectionsManager.h"
+					RelativePath="..\..\EclipseStudio\Sources\Editors\CollectionsManager.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Editors\CollectionType.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\Editors\CollectionType.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\Editors\CollectionType.h"
+					RelativePath="..\..\EclipseStudio\Sources\Editors\CollectionType.h"
 					>
 				</File>
 			</Filter>
@@ -1019,11 +1019,11 @@
 			Name="some_tempcrap"
 			>
 			<File
-				RelativePath="..\..\..\src\Eternity\SF\Console\Config.cpp"
+				RelativePath="..\..\Eternity\SF\Console\Config.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\Eternity\SF\Console\Config.h"
+				RelativePath="..\..\Eternity\SF\Console\Config.h"
 				>
 			</File>
 			<File
@@ -1031,15 +1031,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\EclipseStudio\Sources\DamageLib.cpp"
+				RelativePath="..\..\EclipseStudio\Sources\DamageLib.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\EclipseStudio\Sources\DamageLib.h"
+				RelativePath="..\..\EclipseStudio\Sources\DamageLib.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\Eternity\SF\Console\Vars.h"
+				RelativePath="..\..\Eternity\SF\Console\Vars.h"
 				>
 			</File>
 		</Filter>

@@ -36,14 +36,14 @@
 #else
 
   #ifdef _DEBUG
-	#pragma comment(lib, "../../../src/external/AutodeskNav/lib/win32_vc_9.debug-mt/gwnavgeneration.lib")
-	#pragma comment(lib, "../../../src/external/AutodeskNav/lib/win32_vc_9.debug-mt/gwnavruntime.lib")
+	#pragma comment(lib, "../../external/AutodeskNav/lib/win32_vc_9.debug-mt/gwnavgeneration.lib")
+	#pragma comment(lib, "../../external/AutodeskNav/lib/win32_vc_9.debug-mt/gwnavruntime.lib")
   #elif !defined FINAL_BUILD
-	#pragma comment(lib, "../../../src/external/AutodeskNav/lib/win32_vc_9.release-mt/gwnavgeneration.lib")
-	#pragma comment(lib, "../../../src/external/AutodeskNav/lib/win32_vc_9.release-mt/gwnavruntime.lib")
+	#pragma comment(lib, "../../external/AutodeskNav/lib/win32_vc_9.release-mt/gwnavgeneration.lib")
+	#pragma comment(lib, "../../external/AutodeskNav/lib/win32_vc_9.release-mt/gwnavruntime.lib")
   #else // FINAL
-	#pragma comment(lib, "../../../src/external/AutodeskNav/lib/win32_vc_9.shipping-mt/gwnavgeneration.lib")
-	#pragma comment(lib, "../../../src/external/AutodeskNav/lib/win32_vc_9.shipping-mt/gwnavruntime.lib")
+	#pragma comment(lib, "../../external/AutodeskNav/lib/win32_vc_9.shipping-mt/gwnavgeneration.lib")
+	#pragma comment(lib, "../../external/AutodeskNav/lib/win32_vc_9.shipping-mt/gwnavruntime.lib")
 
 	// Kaim::LogMessage for shipping
 	namespace Kaim

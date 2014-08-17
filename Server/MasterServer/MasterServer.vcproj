@@ -52,7 +52,7 @@
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories=".\..\..\..\src\External\dxsdk\Include;.\..\..\..\src\External\PhysX\Foundation\include;.\..\..\..\src\External\PhysX\Physics\include;.\..\..\..\src\External\PhysX\PhysXLoader\include;.\..\..\..\src\External\PhysX\nxCharacter\include;.\..\..\..\src\External\PhysX\Cooking\include;.\..\..\..\src\External\ChilKat\Include;.\Sources;.\..\..\..\src\EclipseStudio\Sources;.\..\..\..\src\eternity\include;.\..\..\..\src\GameEngine"
+				AdditionalIncludeDirectories=".\..\..\External\dxsdk\Include;.\..\..\External\PhysX\Foundation\include;.\..\..\External\PhysX\Physics\include;.\..\..\External\PhysX\PhysXLoader\include;.\..\..\External\PhysX\nxCharacter\include;.\..\..\External\PhysX\Cooking\include;.\..\..\External\ChilKat\Include;.\Sources;.\..\..\EclipseStudio\Sources;.\..\..\eternity\include;.\..\..\GameEngine"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;WO_SERVER; DISABLE_PHYSX"
 				ExceptionHandling="1"
 				RuntimeLibrary="0"
@@ -80,7 +80,7 @@
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="winmm.lib ws2_32.lib d3dx9.lib d3d9.lib dinput8.lib dxguid.lib xinput.lib Shlwapi.lib ChilkatRel.lib crypt32.lib odbc32.lib odbccp32.lib wbemuuid.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories=".\..\..\..\src\External/dxsdk/lib;.\..\..\..\src\External/fmod;.\..\..\..\src\External/PhysX/lib/Win32;.\..\..\..\src\External/Scaleform3/Win32/Msvc90/Release;.\..\..\..\src\External/Chilkat/Libs;&quot;.\..\..\..\src\External/jpeg-6b/lib/Win32/Msvc80/Release_Static&quot;"
+				AdditionalLibraryDirectories=".\..\..\External/dxsdk/lib;.\..\..\External/fmod;.\..\..\External/PhysX/lib/Win32;.\..\..\External/Scaleform3/Win32/Msvc90/Release;.\..\..\External/Chilkat/Libs;&quot;.\..\..\External/jpeg-6b/lib/Win32/Msvc80/Release_Static&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				LinkTimeCodeGeneration="1"
@@ -144,7 +144,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\..\..\..\src\External\dxsdk\Include;.\..\..\..\src\External\PhysX\Foundation\include;.\..\..\..\src\External\PhysX\Physics\include;.\..\..\..\src\External\PhysX\PhysXLoader\include;.\..\..\..\src\External\PhysX\nxCharacter\include;.\..\..\..\src\External\PhysX\Cooking\include;.\..\..\..\src\External\ChilKat\Include;.\Sources;.\..\..\..\src\EclipseStudio\Sources;.\..\..\..\src\eternity\include;.\..\..\..\src\GameEngine"
+				AdditionalIncludeDirectories=".\..\..\External\dxsdk\Include;.\..\..\External\PhysX\Foundation\include;.\..\..\External\PhysX\Physics\include;.\..\..\External\PhysX\PhysXLoader\include;.\..\..\External\PhysX\nxCharacter\include;.\..\..\External\PhysX\Cooking\include;.\..\..\External\ChilKat\Include;.\Sources;.\..\..\EclipseStudio\Sources;.\..\..\eternity\include;.\..\..\GameEngine"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;WO_SERVER; DISABLE_PHYSX"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -171,7 +171,7 @@
 				AdditionalDependencies="winmm.lib ws2_32.lib d3dx9.lib d3d9.lib dinput8.lib dxguid.lib xinput.lib Shlwapi.lib ChilkatDbg.lib crypt32.lib odbc32.lib odbccp32.lib wbemuuid.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories=".\..\..\..\src\External/dxsdk/lib;.\..\..\..\src\External/fmod;.\..\..\..\src\External/PhysX/lib/Win32;.\..\..\..\src\External/Scaleform3/Win32/Msvc90/Debug;&quot;.\..\..\..\src\External/jpeg-6b/lib/Win32/Msvc80/Debug_Static&quot;;.\..\..\..\src\External/Chilkat/Libs"
+				AdditionalLibraryDirectories=".\..\..\External/dxsdk/lib;.\..\..\External/fmod;.\..\..\External/PhysX/lib/Win32;.\..\..\External/Scaleform3/Win32/Msvc90/Debug;&quot;.\..\..\External/jpeg-6b/lib/Win32/Msvc80/Debug_Static&quot;;.\..\..\External/Chilkat/Libs"
 				IgnoreDefaultLibraryNames="libcmt"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -221,19 +221,19 @@
 				Name="Client"
 				>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.h"
+					RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\BaseItemConfig.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.cpp"
+					RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.h"
+					RelativePath="..\..\EclipseStudio\Sources\ObjectsCode\WEAPONS\WeaponConfig.h"
 					>
 				</File>
 			</Filter>
@@ -242,11 +242,11 @@
 			Name="from Client"
 			>
 			<File
-				RelativePath="..\..\..\src\EclipseStudio\Sources\Backend\WOBackendAPI.cpp"
+				RelativePath="..\..\EclipseStudio\Sources\Backend\WOBackendAPI.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\EclipseStudio\Sources\Backend\WOBackendAPI.h"
+				RelativePath="..\..\EclipseStudio\Sources\Backend\WOBackendAPI.h"
 				>
 			</File>
 		</Filter>
@@ -254,15 +254,15 @@
 			Name="from NetPackets"
 			>
 			<File
-				RelativePath="..\..\..\src\ServerNetPackets\NetPacketsGameBrowser.h"
+				RelativePath="..\..\ServerNetPackets\NetPacketsGameBrowser.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\ServerNetPackets\NetPacketsGameInfo.h"
+				RelativePath="..\..\ServerNetPackets\NetPacketsGameInfo.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\ServerNetPackets\NetPacketsWeaponInfo.h"
+				RelativePath="..\..\ServerNetPackets\NetPacketsWeaponInfo.h"
 				>
 			</File>
 		</Filter>

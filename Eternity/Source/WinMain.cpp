@@ -13,7 +13,7 @@ static unsigned antihackNotFound = 1;
 #include <Sddl.h> 
 
 #ifdef FINAL_BUILD
-#include "C:\WarZ\Src\EclipseStudio\Sources\resource.h"
+#include "C:\DoomMMO\trunk\EclipseStudio\Sources\resource.h"
 #include "HShield.h"
 #include "HSUpChk.h"
 #pragma comment(lib,"HShield.lib")

@@ -6,7 +6,7 @@
 #include "multiplayer/P2PMessages.h"
 #include "multiplayer/NetCellMover.h"
 #include "ObjectsCode/AI/AI_PlayerAnim.H"
-#include "../../../../src/GameEngine/CamouflageDataManager.h"
+#include "../../../../../GameEngine/CamouflageDataManager.h"
 #include "APIScaleformGfx.h"
 #include "AI_PlayerSenses.h"
 
