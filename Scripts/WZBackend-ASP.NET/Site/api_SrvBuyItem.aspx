@@ -1,1 +1,0 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="api_SrvBuyItem.aspx.cs" Inherits="api_SrvBuyItem" %>
