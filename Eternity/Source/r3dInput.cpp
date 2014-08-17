@@ -979,6 +979,8 @@ r3dInputMappingMngr::r3dInputMappingMngr()
 
 	m_Mapping[KS_HOLD_BREATH] =				KeyboardMapping(INPUTMAP_KEYBOARD, kbsLeftShift, "$HUD_Cntrl_SteadyAim");
 
+	m_Mapping[KS_CHANGE_CAMERA] =				KeyboardMapping(INPUTMAP_KEYBOARD, kbsLeftAlt, "$HUD_Cntrl_ChangeCamera");
+
 	m_Mapping[KS_CHAT] =					KeyboardMapping(INPUTMAP_KEYBOARD, kbsEnter, "$HUD_Cntrl_Chat");
 	m_Mapping[KS_SWITCH_MINIMAP] =			KeyboardMapping(INPUTMAP_KEYBOARD, kbsM, "$HUD_Cntrl_SwitchMinimap");
 

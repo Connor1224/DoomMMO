@@ -1619,11 +1619,12 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 
 //	if(pl->m_isFinishedAiming && !pl->m_isInScope)
 //	{
-		if(Keyboard->WasPressed(kbsRightAlt))
-		{
-			R3D_SWAP(g_CameraLeftSideSource, g_CameraLeftSideTarget);
-			g_CameraLeftSideLerp = 0.0f;
-		}
+	if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_CHANGE_CAMERA))
+	{
+		R3D_SWAP(g_CameraLeftSideSource, g_CameraLeftSideTarget);
+		g_CameraLeftSideLerp = 0.0f;
+		//return;
+	}
 //	}
 
 	bool  aiming      = pl->m_isAiming;

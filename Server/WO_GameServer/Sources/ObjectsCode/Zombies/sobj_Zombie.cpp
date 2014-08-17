@@ -1326,18 +1326,28 @@ bool obj_Zombie::ApplyDamage(GameObject* fromObj, float damage, int bodyPart, ST
 		  ZombieHealth-=damage;
 		  r3dOutToLog("DESPUES %f\n",ZombieHealth);
 	}*/
-
-	if(bodyPart!=1 && HeroItemID != 20204) // only hitting head will lower zombie's health
-		dmg = 0;
-
-	if(damageSource != storecat_MELEE && bodyPart == 1 && HeroItemID != 20204 && damageSource != storecat_punch) // everything except for melee: one shot in head = kill
-		dmg = 1000;
-
-	if (HeroItemID == 20204)
-	    ZombieHealth -= dmg*15/100;
-	else
-	    ZombieHealth -= dmg;
-
+	
+	if(HeroItemID != 20204) // it's normal zombie
+	{ 
+		if(bodyPart == 1) // only hitting head will lower zombie's health
+		{
+			if(damageSource != 29 && damageSource != 35) // everything except for melee: one shot in head = kill
+			{
+				dmg = 1000; // you can kill zombies with just 1 hit if it's weapon (not melee and not punch)
+			}
+		}
+		else
+		{
+			dmg = 0;
+		}
+		r3dOutToLog("fuck you zombie %f %f %d %d %d\n", ZombieHealth, dmg, (int)storecat_MELEE, (int)storecat_punch, (int)damageSource);
+		ZombieHealth -= dmg; //add damage
+	}
+	else // it's superzombie (head or not, doesn't matter)
+	{
+		ZombieHealth -= dmg*15/100; // add damage (I would add more damage if it's on head, like *15 on body and *18 on head. JOROPITO)
+	}
+	
 	if(ZombieHealth <= 0.0f)
 	{
 		DoDeath();

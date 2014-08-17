@@ -1393,28 +1393,37 @@ void FrontendWarZ::addClientSurvivor(const wiCharDataFull& slot, int slotIndex)
 	var[16].SetNumber(slot.Stats.KilledZombies);		// zombies Killed
 	var[17].SetNumber(slot.Stats.KilledBandits);		// bandits killed
 	var[18].SetNumber(slot.Stats.KilledSurvivors);		// civilians killed
-	var[19].SetStringW(getReputationString(slot.Stats.Reputation));	// alignment
-		switch(slot.GameMapId)
-		{
-			case GBGameInfo::MAPID_WZ_Colorado:
+
+	char repu[128];
+	sprintf(repu,"[%s] : %d",getReputationString(slot.Stats.Reputation),slot.Stats.Reputation);
+	var[19].SetString(repu);	// alignment
+
+	switch(slot.GameMapId)
+	{
+		case GBGameInfo::MAPID_WZ_Colorado:
 			var[20].SetString("COLORADO PVP");	// last Map
 			break;
-			case GBGameInfo::MAPID_WZ_PVE_Colorado:
+
+		case GBGameInfo::MAPID_WZ_PVE_Colorado:
 			var[20].SetString("COLORADO PVE");	// last Map
 			break;
-			case GBGameInfo::MAPID_WZ_Cliffside:
+
+		case GBGameInfo::MAPID_WZ_Cliffside:
 			var[20].SetString("CLIFFSIDE PVP");	// last Map
 			break;
-			case GBGameInfo::MAPID_CaliWood:
+
+		case GBGameInfo::MAPID_CaliWood:
 			var[20].SetString("CALIWOOD");	// last Map
 			break;
-			case GBGameInfo::MAPID_Devmap:
+
+		case GBGameInfo::MAPID_Devmap:
 			var[20].SetString("DEVMAP");	// last Map
 			break;
-			default:
+
+		default:
 			var[20].SetString("UNKNOWN");	// last Map
 			break;
-		}
+	}
 
 	var[21].SetBoolean(slot.GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox);
 

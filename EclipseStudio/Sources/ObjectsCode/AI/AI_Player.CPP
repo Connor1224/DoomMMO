@@ -2071,7 +2071,7 @@ if (isInVehicle() || isPassenger())
 		{
 			if (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_PRIMARY_FIRE) || InputMappingMngr->isPressed(r3dInputMappingMngr::KS_PRIMARY_FIRE) && bAllowToUseWeapons && !bProne)  // Unarmed Combat
 			{
-					if ((r3dGetTime() - punchtime) > 0.6 && NetworkLocal)
+					if ((r3dGetTime() - punchtime) > 0.4 && NetworkLocal)
 					{
 						if (hudMain)
 						{
