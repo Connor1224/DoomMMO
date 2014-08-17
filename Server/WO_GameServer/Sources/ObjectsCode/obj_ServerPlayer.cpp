@@ -2476,6 +2476,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerHitDynamic_s& n)
 	}
 
 	//r3dOutToLog("hit from %s to %s\n", fromObj->Name.c_str(), targetObj->Name.c_str()); CLOG_INDENT;
+	//r3dOutToLog("hit from player!!!!\n");
 
 	if(!gServerLogic.CanDamageThisObject(targetObj))
 	{
@@ -2498,6 +2499,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerHitDynamic_s& n)
 			return;
 		}
 	}
+
 
 	// validate that we currently have valid weapon
 	if(m_WeaponArray[m_SelectedWeapon] == NULL)
