@@ -1,0 +1,171 @@
+#include "r3dPCH.h"
+#include "r3d.h"
+
+#include "Barricade.h"
+#include "WeaponConfig.h"
+#include "WeaponArmory.h"
+#include "..\ai\AI_Player.H"
+#include "..\..\multiplayer\ClientGameLogic.h"
+
+
+IMPLEMENT_CLASS(obj_Barricade, "obj_Barricade", "Object");
+AUTOREGISTER_CLASS(obj_Barricade);
+
+obj_Barricade::obj_Barricade()
+{
+	m_PrivateModel = NULL;
+	m_ItemID = -1;
+	m_RotX = 0;
+	ObjTypeFlags = OBJTYPE_GameplayItem;
+}
+
+obj_Barricade::~obj_Barricade()
+{
+
+}
+
+BOOL obj_Barricade::OnCreate()
+{
+	r3d_assert(m_ItemID > 0);
+	if(m_ItemID == WeaponConfig::ITEMID_BarbWireBarricade)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Item_Barricade_BarbWire_Built.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_WoodShieldBarricade)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Item_Barricade_WoodShield_Built.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_RiotShieldBarricade)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Item_Riot_Shield_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_SandbagBarricade)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\item_barricade_Sandbag_built.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockDoorWood)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_door_wood_2m_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockLight)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_light_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockSolarWater)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_solarwater_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallBrickShort)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_wall_brick_short_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallBrick)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_wall_brick_tall_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallMetal)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_wall_metal_2m_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallWood)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_wall_wood_2m_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockDoorWood2M01)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Door_Wood_2M_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallMetal2M01)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Wall_Metal_2M_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallBrickTall)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Wall_Brick_Tall_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallWood2M01)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Wall_Wood_2M_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockWallBrickShort2)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Wall_Brick_Short_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockFarm)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Farm_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockSolarWater2)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_SolarWater_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockLight2)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Light_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockFarmCrate)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Block_Farm_01_Crate.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_PersonalLocker)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\Item_Lockbox_01.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_IndustGenerator)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_powergen_01_industrial.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_ClayMore)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\exp_claymore.sco", true, false, true, true );
+	else if(m_ItemID == WeaponConfig::ITEMID_BlockEnergy)
+		m_PrivateModel = r3dGOBAddMesh("Data\\ObjectsDepot\\Weapons\\block_powergen_01_small.sco", true, false, true, true );
+	if(m_PrivateModel==NULL)
+		return FALSE;
+
+	ReadPhysicsConfig();
+
+	//PhysicsConfig.group = PHYSCOLL_NETWORKPLAYER;
+	//PhysicsConfig.isDynamic = 0;
+
+	SetBBoxLocal( GetObjectMesh()->localBBox ) ;
+
+	// raycast and see where the ground is and place dropped box there
+	PxRaycastHit hit;
+	PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
+	if(g_pPhysicsWorld->raycastSingle(PxVec3(GetPosition().x, GetPosition().y+1, GetPosition().z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eIMPACT, hit, filter))
+	{
+		SetPosition(r3dPoint3D(hit.impact.x, hit.impact.y, hit.impact.z));
+		SetRotationVector(r3dPoint3D(m_RotX, 0, 0));
+	}
+
+	UpdateTransform();
+
+	return parent::OnCreate();
+}
+
+BOOL obj_Barricade::OnDestroy()
+{
+	m_PrivateModel = NULL;
+	return parent::OnDestroy();
+}
+
+BOOL obj_Barricade::Update()
+{
+	return parent::Update();
+}
+
+
+struct BarricadeDeferredRenderable : MeshDeferredRenderable
+{
+	void Init()
+	{
+		DrawFunc = Draw;
+	}
+
+	static void Draw( Renderable* RThis, const r3dCamera& Cam )
+	{
+		BarricadeDeferredRenderable* This = static_cast< BarricadeDeferredRenderable* >( RThis );
+		r3dApplyPreparedMeshVSConsts(This->Parent->preparedVSConsts);
+		if(This->DrawState != rsCreateSM)
+			This->Parent->m_PrivateModel->DrawMeshDeferred(r3dColor::white, 0);
+		else
+			This->Parent->m_PrivateModel->DrawMeshShadows();
+	}
+
+	obj_Barricade* Parent;
+	eRenderStageID DrawState;
+};
+
+void obj_Barricade::AppendShadowRenderables( RenderArray & rarr, const r3dCamera& Cam )
+{
+	uint32_t prevCount = rarr.Count();
+	m_PrivateModel->AppendShadowRenderables( rarr );
+	for( uint32_t i = prevCount, e = rarr.Count(); i < e; i ++ )
+	{
+		BarricadeDeferredRenderable& rend = static_cast<BarricadeDeferredRenderable&>( rarr[ i ] );
+		rend.Init();
+		rend.Parent = this;
+		rend.DrawState = rsCreateSM;
+	}
+}
+
+void obj_Barricade::AppendRenderables( RenderArray ( & render_arrays  )[ rsCount ], const r3dCamera& Cam )
+{
+	uint32_t prevCount = render_arrays[ rsFillGBuffer ].Count();
+	m_PrivateModel->AppendRenderablesDeferred( render_arrays[ rsFillGBuffer ], r3dColor::white );
+	for( uint32_t i = prevCount, e = render_arrays[ rsFillGBuffer ].Count(); i < e; i ++ )
+	{
+		BarricadeDeferredRenderable& rend = static_cast<BarricadeDeferredRenderable&>( render_arrays[ rsFillGBuffer ][ i ] );
+		rend.Init();
+		rend.Parent = this;
+		rend.DrawState = rsFillGBuffer;
+	}
+}
+
+/*virtual*/
+r3dMesh* obj_Barricade::GetObjectMesh()
+{
+	return m_PrivateModel;
+}
+
+/*virtual*/
+r3dMesh* obj_Barricade::GetObjectLodMesh()
+{
+	return m_PrivateModel;
+}
