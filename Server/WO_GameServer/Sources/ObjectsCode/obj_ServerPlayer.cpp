@@ -1940,7 +1940,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_PlayerRemoveAttachment_s& n)
 	// report to other players
 	OnAttachmentChanged(n.wid, n.WpnAttmType);
 }
-void obj_ServerPlayer::OnNetPacket(const PKT_S2C_RepairALLWeapon_s& n)
+/*void obj_ServerPlayer::OnNetPacket(const PKT_S2C_RepairALLWeapon_s& n)
 {
 		for (int a = 0; a < loadout_->BackpackSize; a++)
 		{
@@ -2010,8 +2010,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_S2C_RepairWeapon_s& n)
 		profile_.ProfileData.GameDollars=n.price;
 		gServerLogic.ApiPlayerUpdateChar(this);
 		//r3dOutToLog("### ACTUALIZANDO DB %i Durability %i\n",loadout_->Items[n.slot].itemID,loadout_->Items[n.slot].Durability);
-}
-
+}*/
 void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerSwitchWeapon_s& n)
 {
 	if(n.wid == 255) // signal that player has empty hands, just relay it
@@ -3977,8 +3976,8 @@ BOOL obj_ServerPlayer::OnNetReceive(DWORD EventID, const void* packetData, int p
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_FallingDamage);
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_PlayerEquipAttachment);
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_PlayerRemoveAttachment);
-		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_S2C_RepairALLWeapon);
-		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_S2C_RepairWeapon);
+		//DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_S2C_RepairALLWeapon);
+		//DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_S2C_RepairWeapon);
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2C_PlayerSwitchWeapon);
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2C_PlayerUseItem);
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_HackShieldLog);

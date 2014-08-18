@@ -1,7 +1,7 @@
 #include "r3dPCH.h"
 #include "r3d.h"
 
-#include "GameCommon.h"
+/*#include "GameCommon.h"
 #include "obj_Repair.h"
 #include "UI\HUDRepair.h"
 
@@ -40,3 +40,4 @@ void obj_Repair::OnAction()
 {
 	hudRepair->Activate();
 }
+*/

@@ -1,5 +1,6 @@
 #include "r3dPCH.h"
 #include "r3d.h"
+/*
 
 #include "GameCommon.h"
 
@@ -52,4 +53,4 @@ DefaultPacket* obj_ServerRepair::NetGetCreatePacket(int* out_size)
 	
 	*out_size = sizeof(n);
 	return &n;
-}
+}*/

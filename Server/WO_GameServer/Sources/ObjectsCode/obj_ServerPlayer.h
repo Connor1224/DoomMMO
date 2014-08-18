@@ -178,8 +178,8 @@ public:
 	void		OnNetPacket(const PKT_C2C_PlayerJump_s& n);
 	void		OnNetPacket(const PKT_C2S_PlayerEquipAttachment_s& n);
 	void		OnNetPacket(const PKT_C2S_PlayerRemoveAttachment_s& n);
-	void		OnNetPacket(const PKT_S2C_RepairALLWeapon_s& n);
-	void		OnNetPacket(const PKT_S2C_RepairWeapon_s& n);
+	//void		OnNetPacket(const PKT_S2C_RepairALLWeapon_s& n);
+	//void		OnNetPacket(const PKT_S2C_RepairWeapon_s& n);
 	void		OnNetPacket(const PKT_C2C_PlayerSwitchWeapon_s& n);
 	void		OnNetPacket(const PKT_C2C_PlayerUseItem_s& n);
 	void		OnNetPacket(const PKT_C2C_PlayerReload_s& n);

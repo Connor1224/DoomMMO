@@ -14,7 +14,7 @@
 #include "ObjectsCode/Gameplay/obj_DroppedItem.h"
 #include "ObjectsCode/Gameplay/obj_Note.h"
 #include "ObjectsCode/Gameplay/obj_Grave.h"
-#include "ObjectsCode/Gameplay/obj_Repair.h"
+//#include "ObjectsCode/Gameplay/obj_Repair.h"
 #include "ObjectsCode/Gameplay/obj_SafeLock.h"
 #include "ObjectsCode/Gameplay/obj_IndustGen.h"
 #include "ObjectsCode/Gameplay/obj_BlockLight.h"
@@ -911,7 +911,7 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateDroppedItem)
 	obj->OnCreate();
 }
 
-IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateRepairBench)
+/*IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateRepairBench)
 {
 	r3d_assert(GameWorld().GetNetworkObject(n.spawnID) == NULL);
 
@@ -922,7 +922,7 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateRepairBench)
 	obj->OnCreate();
 	r3dOutToLog("CreateBench\n");
 }
-
+*/
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateGrave)
 {
 	r3d_assert(GameWorld().GetNetworkObject(n.spawnID) == NULL);
@@ -1329,7 +1329,7 @@ int ClientGameLogic::ProcessWorldEvent(GameObject* fromObj, DWORD eventId, DWORD
 		DEFINE_PACKET_HANDLER(PKT_C2S_SafelockData);
 		DEFINE_PACKET_HANDLER(PKT_C2S_BuyItemReq);
 		DEFINE_PACKET_HANDLER(PKT_S2C_GroupData);
-		DEFINE_PACKET_HANDLER(PKT_S2C_CreateRepairBench);
+	//	DEFINE_PACKET_HANDLER(PKT_S2C_CreateRepairBench);
 	}
 
 	return FALSE;

@@ -5,7 +5,7 @@
 #include "HUDPause.h"
 #include "HUDDisplay.h"
 #include "HUDCraft.h"
-#include "HUDRepair.h"
+//#include "HUDRepair.h"
 #include "HUDAttachments.h"
 #include "LangMngr.h"
 
@@ -23,7 +23,7 @@ void writeGameOptionsFile();
 extern HUDAttachments*	hudAttm;
 extern HUDDisplay* hudMain;
 extern HUDCraft* hudCraft;
-extern HUDRepair* hudRepair;
+//extern HUDRepair* hudRepair;
 
 HUDPause::HUDPause()
 {

@@ -61,7 +61,7 @@
 #include "..\..\ui\HUDGeneralStore.h"
 #include "..\..\ui\HUDVault.h"
 #include "..\..\ui\HUDSafeLock.h"
-#include "..\..\ui\HUDRepair.h"
+//#include "..\..\ui\HUDRepair.h"
 
 extern HUDDisplay*	hudMain;
 extern HUDPause*	hudPause;
@@ -72,7 +72,7 @@ extern HUDGeneralStore*	hudGeneralStore;
 extern HUDVault* hudVault;
 extern HUDTrade* hudTrade;
 extern HUDSafeLock* hudSafeLock;
-extern HUDRepair* hudRepair;
+//extern HUDRepair* hudRepair;
 
 extern 	PlayerStateVars_s CurrentRig;
 
@@ -1070,7 +1070,7 @@ BOOL obj_Player::OnCreate()
 		strcpy(StatePlayerVehicle,"");
 		punchtime=0;
 		ShowCrosshair=true;
-		RepairTime=0.0f;
+		//RepairTime=0.0f;
 		enableCrosshairServer=true;
 		enableSNP=true;
 		StartToLeaveGroup = false;
@@ -2055,7 +2055,7 @@ if (isInVehicle() || isPassenger())
 	if(hudGeneralStore && hudGeneralStore->isActive()) needExit = true;
 	if(hudVault && hudVault->isActive()) needExit = true;
 	if(hudSafeLock && hudSafeLock->isActive()) needExit = true;
-	if(hudRepair && hudRepair->isActive()) needExit = true;
+//	if(hudRepair && hudRepair->isActive()) needExit = true;
 	if(Mouse->GetMouseVisibility()) needExit = true;
 	if(hudMain && hudMain->isChatInputActive()) needExit = true;
 	if(hudMain && hudMain->isPlayersListVisible()) needExit = true;
@@ -2234,13 +2234,13 @@ if (isInVehicle() || isPassenger())
 								return;
 						}
 					}
-					if (wpn->getItemID() == WeaponConfig::ITEMID_Repairkit)
+				/*	if (wpn->getItemID() == WeaponConfig::ITEMID_Repairkit)
 					{
 						if ((r3dGetTime() - RepairTime) > 1)
 							hudRepair->Activate();
 						else
 							return;
-					}
+					}*/
 					if(wpn->getItemID() == 101398) // Repair system car
 					{
 						obj_Vehicle* target_Vehicle = canEnterVehicle();
@@ -3110,8 +3110,8 @@ void obj_Player::DoDeath(int networdIDKiller, bool forced_by_server, STORE_CATEG
 			hudVault->Deactivate();
 		if(hudSafeLock && hudSafeLock->isActive())
 			hudSafeLock->Deactivate();
-		if (hudRepair && hudRepair->isActive())
-			hudRepair->Deactivate(); 
+	/*	if (hudRepair && hudRepair->isActive())
+			hudRepair->Deactivate(); */
 		if(hudTrade && hudTrade->isActive())
 			hudTrade->Deactivate();	
 
@@ -3858,7 +3858,7 @@ BOOL obj_Player::Update()
    }
    if (Keyboard->WasPressed(kbsF12))
    {
-	  if (!hudPause->isActive() && !hudAttm->isActive() && !hudCraft->isActive() && !hudGeneralStore->isActive() && !hudVault->isActive() && !hudSafeLock->isActive() && !hudRepair->isActive())
+	  if (!hudPause->isActive() && !hudAttm->isActive() && !hudCraft->isActive() && !hudGeneralStore->isActive() && !hudVault->isActive() && !hudSafeLock->isActive() /*&& !hudRepair->isActive()*/)
 	  		d_disable_game_hud->SetBool(!d_disable_game_hud->GetBool());
    }
 
@@ -4625,7 +4625,7 @@ void obj_Player::UpdateActionUI()
 #endif
 
 	r3d_assert(NetworkLocal);
-	if(hudMain==NULL || hudActionUI == NULL || hudPause == NULL || hudAttm == NULL || hudGeneralStore == NULL || hudVault == NULL || hudSafeLock == NULL || hudRepair == NULL || hudTrade == NULL)
+	if(hudMain==NULL || hudActionUI == NULL || hudPause == NULL || hudAttm == NULL || hudGeneralStore == NULL || hudVault == NULL || hudSafeLock == NULL ||/* hudRepair == NULL ||*/ hudTrade == NULL)
 		return;
 
 	if(hudMain->isChatInputActive())
@@ -4642,8 +4642,8 @@ void obj_Player::UpdateActionUI()
 		return;
 	if(hudSafeLock->isActive())
 		return;
-	if(hudRepair->isActive())
-		return;
+	/*if(hudRepair->isActive())
+		return;*/
 
 	if(bDead && hudActionUI->isActive())
 		hudActionUI->Deactivate();
@@ -4931,10 +4931,10 @@ void obj_Player::UpdateActionUI()
 					p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
 				}
 
-				if (dropObj->Class->Name == "obj_Repair")
+				/*if (dropObj->Class->Name == "obj_Repair")
 				{
 					hudRepair->Activate();
-				}
+				}*/
 
 				if(dropObj->isObjType(OBJTYPE_NPC))
 				{

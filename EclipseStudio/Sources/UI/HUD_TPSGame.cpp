@@ -30,7 +30,7 @@
 #include "UI\HUDVault.h"
 #include "UI\HUDCraft.h"
 #include "UI\HUDSafeLock.h"
-#include "UI\HUDRepair.h"
+//#include "UI\HUDRepair.h"
 
 #include "..\GameEngine\gameobjects\obj_Vehicle.h"
 
@@ -48,7 +48,7 @@ HUDVault* hudVault = NULL;
 HUDCraft* hudCraft = NULL;
 HUDTrade* hudTrade = NULL;
 HUDSafeLock* hudSafeLock = NULL;
-HUDRepair* hudRepair = NULL;
+//HUDRepair* hudRepair = NULL;
 static float LastHSLog;
 #define VEHICLE_CINEMATIC_MODE 0
 
@@ -99,7 +99,7 @@ void TPSGameHUD_OnStartGame()
 	hudCraft = new HUDCraft();
 	hudTrade = new HUDTrade();
 	hudSafeLock = new HUDSafeLock();
-	hudRepair = new HUDRepair();
+	//hudRepair = new HUDRepair();
 
 	hudMain->Init();
 	hudPause->Init();
@@ -110,7 +110,7 @@ void TPSGameHUD_OnStartGame()
 	hudTrade->Init();
 	hudCraft->Init();
 	hudSafeLock->Init();
-	hudRepair->Init();
+	//hudRepair->Init();
 
 	Mouse->Hide(true);
 	// lock mouse to a window when playing a game
@@ -141,7 +141,7 @@ void TPSGameHUD :: DestroyPure()
 		hudCraft->Unload();
 		hudSafeLock->Unload();
 		hudTrade->Unload();
-		hudRepair->Unload();
+		//hudRepair->Unload();
 
 		SAFE_DELETE(hudMain);
 		SAFE_DELETE(hudPause);
@@ -152,7 +152,7 @@ void TPSGameHUD :: DestroyPure()
 		SAFE_DELETE(hudCraft);
 		SAFE_DELETE(hudTrade);
 		SAFE_DELETE(hudSafeLock);
-		SAFE_DELETE(hudRepair);
+		//SAFE_DELETE(hudRepair);
 	}
 }
 
@@ -583,7 +583,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 
 
 	// dead camera
-	if(pl->bDead && !hudPause->isActive() && !hudMain->isPlayersListVisible() && !hudPause->isActive() && !hudTrade->isActive() && !hudRepair->isActive())
+	if(pl->bDead && !hudPause->isActive() && !hudMain->isPlayersListVisible() && !hudPause->isActive() && !hudTrade->isActive() /*&& !hudRepair->isActive()*/)
 	{
 		r3dPoint3D camPos, camPointTo;
 		bool do_camera = false;
@@ -700,8 +700,8 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 		return;
 	if(hudSafeLock->isActive())
 		return;
-	if(hudRepair->isActive())
-		return;
+	/*if(hudRepair->isActive())
+		return;*/
 
 	int mMX=Mouse->m_MouseMoveX, mMY=Mouse->m_MouseMoveY;
 	if(g_vertical_look->GetBool()) // invert mouse
@@ -827,7 +827,7 @@ static void DrawMenus()
 	if(!win::bSuspended && !hudMain->isChatInputActive() && !hudMain->isPlayersListVisible())
 	{
 		bool showHudPause = Keyboard->WasPressed(kbsEsc) || InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_SWITCH_MINIMAP) || InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_INVENTORY) || Keyboard->WasPressed(kbsH);
-		if(showHudPause && !hudAttm->isActive() && !hudGeneralStore->isActive() && !hudVault->isActive() && !hudSafeLock->isActive() && !hudRepair->isActive())
+		if(showHudPause && !hudAttm->isActive() && !hudGeneralStore->isActive() && !hudVault->isActive() && !hudSafeLock->isActive() /*&& !hudRepair->isActive()*/)
 		{
 			if(!hudPause->isActive())
 			{
@@ -909,11 +909,11 @@ static void DrawMenus()
 			hudCraft->Deactivate();
 			gClientLogic().localPlayer_->ShowCrosshair=true;
 		}
-		if (hudRepair->isActive() && Keyboard->WasPressed(kbsEsc))
+		/*if (hudRepair->isActive() && Keyboard->WasPressed(kbsEsc))
 		{
 			hudRepair->Deactivate();
 			gClientLogic().localPlayer_->ShowCrosshair=true;
-		}
+		}*/
 	}
 
 	if(hudPause->isActive())
@@ -1019,7 +1019,7 @@ static void DrawMenus()
 
 		return;
 	}
-	if(hudRepair->isActive())
+	/*if(hudRepair->isActive())
 	{
 		r3dMouse::Show(); // make sure that mouse is visible
 
@@ -1031,7 +1031,7 @@ static void DrawMenus()
 		R3DPROFILE_END( "hudRepair->" );
 
 		return;
-	}
+	}*/
 
 	bool ChatWindowSwitch = InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_CHAT);
 

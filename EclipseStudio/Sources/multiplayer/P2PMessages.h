@@ -105,8 +105,8 @@ enum pkttype_e
   PKT_S2C_DestroyNetObject,
   PKT_C2S_UseNetObject,
 
-  PKT_S2C_RepairWeapon,
-  PKT_S2C_RepairALLWeapon,
+ // PKT_S2C_RepairWeapon,
+ // PKT_S2C_RepairALLWeapon,
 
   PKT_S2C_SendDataRent,
   PKT_S2C_RentAdminCommands,
@@ -202,7 +202,7 @@ enum pkttype_e
   PKT_C2S_ClayMoreDestroy,
   PKT_C2S_FireToClaymore,
 
-  PKT_S2C_CreateRepairBench,
+ // PKT_S2C_CreateRepairBench,
 
   //in combat
   PKT_S2C_inCombat,
@@ -820,7 +820,7 @@ struct PKT_S2C_DestroyNetObject_s : public DefaultPacketMixin<PKT_S2C_DestroyNet
 	gp2pnetid_t	spawnID;
 };
 
-struct PKT_S2C_RepairWeapon_s : public DefaultPacketMixin<PKT_S2C_RepairWeapon>
+/*struct PKT_S2C_RepairWeapon_s : public DefaultPacketMixin<PKT_S2C_RepairWeapon>
 {
 	int slot;
 	int price;
@@ -830,7 +830,7 @@ struct PKT_S2C_RepairALLWeapon_s : public DefaultPacketMixin<PKT_S2C_RepairALLWe
 {
 	int price;
 };
-
+*/
 struct PKT_S2C_SendDataRent_s : public DefaultPacketMixin<PKT_S2C_SendDataRent>
 {
 	bool Crosshair;
@@ -875,12 +875,12 @@ struct PKT_S2C_CreateGrave_s : public DefaultPacketMixin<PKT_S2C_CreateGrave>
 	r3dPoint3D	pos;
 };
 
-struct PKT_S2C_CreateRepairBench_s : public DefaultPacketMixin<PKT_S2C_CreateRepairBench>
+/*struct PKT_S2C_CreateRepairBench_s : public DefaultPacketMixin<PKT_S2C_CreateRepairBench>
 {
 	gp2pnetid_t	spawnID;
 	r3dPoint3D	pos;
 	r3dVector	rot;
-};
+};*/
 
 struct PKT_S2C_CreateNote_s : public DefaultPacketMixin<PKT_S2C_CreateNote>
 {

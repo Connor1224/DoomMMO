@@ -143,7 +143,7 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 	 DEFINE_PACKET_FUNC(PKT_C2S_SafelockData);
 	 DEFINE_PACKET_FUNC(PKT_C2S_BuyItemReq);
 	 DEFINE_PACKET_FUNC(PKT_S2C_GroupData);
-	 DEFINE_PACKET_FUNC(PKT_S2C_CreateRepairBench);
+	// DEFINE_PACKET_FUNC(PKT_S2C_CreateRepairBench);
 
 	r3dPoint3D	AdjustSpawnPositionToGround(const r3dPoint3D& pos);
 
