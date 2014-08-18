@@ -81,35 +81,35 @@ const char* getTimePlayedString(int timePlayed)
 	return tmpStr;
 }
 
-const wchar_t* getReputationString(int Reputation)
+const char* getReputationString(int Reputation)
 {
-	const wchar_t* algnmt = gLangMngr.getString("$rep_civilian");
+	const char* algnmt = "civilian";
 	if(Reputation >= ReputationPoints::Paragon)
-		algnmt = gLangMngr.getString("$rep_paragon");
+		algnmt = "paragon";
 	else if(Reputation >= ReputationPoints::Vigilante)
-		algnmt = gLangMngr.getString("$rep_vigilante");
+		algnmt = "vigilante";
 	else if(Reputation >= ReputationPoints::Guardian)
-		algnmt = gLangMngr.getString("$rep_guardian");
+		algnmt = "guardian";
 	else if(Reputation >= ReputationPoints::Lawman)
-		algnmt = gLangMngr.getString("$rep_lawmen");
+		algnmt = "lawmen";
 	else if(Reputation >= ReputationPoints::Deputy)
-		algnmt = gLangMngr.getString("$rep_deputy");
+		algnmt = "deputy";	
 	else if(Reputation >= ReputationPoints::Constable)
-		algnmt = gLangMngr.getString("$rep_constable");
+		algnmt = "constable";
 	else if(Reputation >= ReputationPoints::Civilian)
-		algnmt = gLangMngr.getString("$rep_civilian");
+		algnmt = "civilian";
 	else if(Reputation <= ReputationPoints::Villain)
-		algnmt = gLangMngr.getString("$rep_villain");
+		algnmt = "villain";
 	else if(Reputation <= ReputationPoints::Assassin)
-		algnmt = gLangMngr.getString("$rep_assassin");
+		algnmt = "assassin";
 	else if(Reputation <= ReputationPoints::Hitman)
-		algnmt = gLangMngr.getString("$rep_hitman");
+		algnmt = "hitman";
 	else if(Reputation <= ReputationPoints::Bandit)
-		algnmt = gLangMngr.getString("$rep_bandit");
+		algnmt = "bandit";
 	else if(Reputation <= ReputationPoints::Outlaw)
-		algnmt = gLangMngr.getString("$rep_outlaw");
+		algnmt = "$outlaw";
 	else if(Reputation <= ReputationPoints::Thug)
-		algnmt = gLangMngr.getString("$rep_thug");
+		algnmt = "thug";
 
 	return algnmt;
 }
@@ -346,7 +346,7 @@ void FrontendWarZ::addPlayerInfo(const char* name , int alive , int rep , int xp
 		var[1].SetStringW(gLangMngr.getString("PlayerStatus_Alive"));
 	else
 		var[1].SetStringW(gLangMngr.getString("$FR_Dead"));
-	var[2].SetStringW(getReputationString(rep));
+	var[2].SetString(getReputationString(rep));
 	var[3].SetInt(xp);
 	gfxMovie.Invoke("_root.api.Main.PlayGameMyServers.addPlayerInfo", var, 4);
 }
@@ -1393,9 +1393,8 @@ void FrontendWarZ::addClientSurvivor(const wiCharDataFull& slot, int slotIndex)
 	var[16].SetNumber(slot.Stats.KilledZombies);		// zombies Killed
 	var[17].SetNumber(slot.Stats.KilledBandits);		// bandits killed
 	var[18].SetNumber(slot.Stats.KilledSurvivors);		// civilians killed
-
 	char repu[128];
-	sprintf(repu,"[%s] : %d",getReputationString(slot.Stats.Reputation),slot.Stats.Reputation);
+	sprintf(repu,"[%s] [%d]",getReputationString(slot.Stats.Reputation),slot.Stats.Reputation);
 	var[19].SetString(repu);	// alignment
 
 	switch(slot.GameMapId)
@@ -1421,12 +1420,11 @@ void FrontendWarZ::addClientSurvivor(const wiCharDataFull& slot, int slotIndex)
 			break;
 
 		default:
-			var[20].SetString("UNKNOWN");	// last Map
+			var[20].SetString("NO MAP");	// last Map
 			break;
 	}
 
 	var[21].SetBoolean(slot.GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox);
-
 	var[22].SetNumber(slot.Stats.SkillXPPool);
 
 	gfxMovie.Invoke("_root.api.addClientSurvivor", var, 23);
@@ -5475,7 +5473,7 @@ void FrontendWarZ::setClanInfo()
 			var[1].SetString(memberInfo.gamertag);
 			var[2].SetUInt(memberInfo.stats.XP);
 			var[3].SetString(getTimePlayedString(memberInfo.stats.TimePlayed));
-			var[4].SetStringW(getReputationString(memberInfo.stats.Reputation));
+			var[4].SetString(getReputationString(memberInfo.stats.Reputation));
 			var[5].SetUInt(memberInfo.stats.KilledZombies);
 			var[6].SetUInt(memberInfo.stats.KilledSurvivors);
 			var[7].SetUInt(memberInfo.stats.KilledBandits);
@@ -5874,7 +5872,7 @@ void FrontendWarZ::eventRequestClanApplications(r3dScaleformMovie* pMovie, const
 		var[2].SetString(appl.Gamertag.c_str());
 		var[3].SetUInt(appl.stats.XP);
 		var[4].SetString(getTimePlayedString(appl.stats.TimePlayed));
-		var[5].SetStringW(getReputationString(appl.stats.Reputation));
+		var[5].SetString(getReputationString(appl.stats.Reputation));
 		var[6].SetUInt(appl.stats.KilledZombies);
 		var[7].SetUInt(appl.stats.KilledSurvivors);
 		var[8].SetUInt(appl.stats.KilledBandits);

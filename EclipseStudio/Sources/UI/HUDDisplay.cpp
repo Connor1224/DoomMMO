@@ -1857,7 +1857,7 @@ void HUDDisplay::clearPlayersList()
 	gfxHUD.Invoke("_root.api.clearPlayersList", "");
 }
 
-extern const wchar_t* getReputationString(int Reputation);
+extern const char* getReputationString(int Reputation);
 //void HUDDisplay::addPlayerToList(int num, const char* name, int Reputation, bool isLegend, bool isDev, bool isPunisher, bool isInvitePending, bool IsPremium)
 void HUDDisplay::addPlayerToList(int num, const char* name, int Reputation, bool isLegend, bool isDev, bool isPunisher, bool isInvitePending, bool IsPremium, bool local)
 {
@@ -1876,10 +1876,10 @@ void HUDDisplay::addPlayerToList(int num, const char* name, int Reputation, bool
 
  var[2].SetString(sUser.c_str());
 
- const wchar_t* algnmt = getReputationString(Reputation);
+ const char* algnmt = getReputationString(Reputation);
  if(isDev)
-  algnmt = L"";
- var[3].SetStringW(algnmt);
+	algnmt = "";
+ var[3].SetString(algnmt);
  var[4].SetBoolean(isLegend);
  var[5].SetBoolean(isDev);
  var[6].SetBoolean(isPunisher);

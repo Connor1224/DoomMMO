@@ -1216,46 +1216,48 @@ BOOL obj_ServerPlayer::Update()
 
 void obj_ServerPlayer::CheckData()
 {
-if ((r3dGetTime() - CheckDatas) > 5)
-{
-	CheckDatas=r3dGetTime();
-	CWOBackendReq req("api_GetRentServers.aspx");
-	req.AddParam("411", "1");
-
-	if(!req.Issue())
+	if ((r3dGetTime() - CheckDatas) > 5)
 	{
-		r3dOutToLog("Read RentServers FAILED, code: %d\n", req.resultCode_);
-		return;
-	}
+		CheckDatas=r3dGetTime();
+		CWOBackendReq req("api_GetRentServers.aspx");
+		req.AddParam("411", "1");
 
-	pugi::xml_document xmlFile;
-	req.ParseXML(xmlFile);
-	pugi::xml_node xmlSafelock = xmlFile.child("Rent_Servers");
-	
-	while(!xmlSafelock.empty())
-	{		
-        uint32_t gameServerId = xmlSafelock.attribute("gameServerId").as_uint();
-	    uint32_t ExpireTime = xmlSafelock.attribute("ExpireTime").as_uint();
-		uint32_t Crosshair = xmlSafelock.attribute("Crosshair").as_uint();
-		uint32_t SNP = xmlSafelock.attribute("SNP").as_uint();
-
-		if (gServerLogic.ginfo_.gameServerId == gameServerId && ExpireTime>0)
+		if(!req.Issue())
 		{
-			if ((int)enableCrosshairServer != (int)Crosshair || (int)enableSNP != (int)SNP)
-			{
-				enableCrosshairServer = (Crosshair ==1)?true:false;
-				enableSNP = (SNP == 1)?true:false;
-
-				PKT_S2C_SendDataRent_s n;
-				n.Crosshair = enableCrosshairServer;
-				n.SNP   = enableSNP;
-				gServerLogic.p2pSendToPeer(this->peerId_, this, &n, sizeof(n));
-			}
+			r3dOutToLog("Read RentServers FAILED, code: %d\n", req.resultCode_);
+			return;
 		}
-		xmlSafelock = xmlSafelock.next_sibling();
+
+		pugi::xml_document xmlFile;
+		req.ParseXML(xmlFile);
+		pugi::xml_node xmlSafelock = xmlFile.child("Rent_Servers");
+		
+		while(!xmlSafelock.empty())
+		{		
+			uint32_t gameServerId = xmlSafelock.attribute("gameServerId").as_uint();
+			uint32_t ExpireTime = xmlSafelock.attribute("ExpireTime").as_uint();
+			uint32_t Crosshair = xmlSafelock.attribute("Crosshair").as_uint();
+			uint32_t SNP = xmlSafelock.attribute("SNP").as_uint();
+
+			if (gServerLogic.ginfo_.gameServerId == gameServerId && ExpireTime>0)
+			{
+				if ((int)enableCrosshairServer != (int)Crosshair || (int)enableSNP != (int)SNP)
+				{
+					enableCrosshairServer = (Crosshair ==1)?true:false;
+					enableSNP = (SNP == 1)?true:false;
+
+					PKT_S2C_SendDataRent_s n;
+					n.Crosshair = enableCrosshairServer;
+					n.SNP   = enableSNP;
+					gServerLogic.p2pSendToPeer(this->peerId_, this, &n, sizeof(n));
+				}
+			}
+
+			xmlSafelock = xmlSafelock.next_sibling();
+		}
 	}
 }
-}
+
 void obj_ServerPlayer::RecalcBoundBox()
 {
   float	x_size = 0.8f;

@@ -14,7 +14,7 @@
 #include "ObjectsCode/Gameplay/obj_SafeLock.h"
 
 
-extern const wchar_t* getReputationString(int Reputation);
+extern const char* getReputationString(int Reputation);
 
 
 HUDSafeLock::HUDSafeLock() :
@@ -187,7 +187,9 @@ void HUDSafeLock::addClientSurvivor(const wiCharDataFull& slot)
     var[16].SetNumber(slot.Stats.KilledZombies);        // zombies Killed
     var[17].SetNumber(slot.Stats.KilledBandits);        // bandits killed
     var[18].SetNumber(slot.Stats.KilledSurvivors);        // civilians killed
-	var[19].SetStringW(getReputationString(slot.Stats.Reputation));    // alignment
+	char repu[128];
+	sprintf(repu,"[%s] [%d]",getReputationString(slot.Stats.Reputation),slot.Stats.Reputation);
+	var[19].SetString(repu);	// alignment
 	switch(slot.GameMapId)
 		{
 			case GBGameInfo::MAPID_WZ_Colorado:
