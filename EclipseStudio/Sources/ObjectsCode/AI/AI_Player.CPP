@@ -8317,11 +8317,22 @@ bool ProcessBulletHit( int &damageFromPiercable, GameObject* owner, const r3dPoi
 			char bloodpunch[512];
 			if (shootTarget->isObjType(OBJTYPE_Human) || shootTarget->isObjType(OBJTYPE_Zombie))
 			{
-				PKT_C2S_CarKill_s n;
-				n.weaponID = 101399;
-				n.DieForExplosion = false;
+//				PKT_C2S_CarKill_s n;
+//				n.weaponID = 101399;
+//				n.DieForExplosion = false;
+//				n.targetId = shootTarget->GetNetworkID();
+//				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+
+				PKT_C2C_PlayerHitDynamic_s n;
+				n.muzzler_pos = muzzlerPosAtFireStart;
+				n.hit_pos = hitPoint;
 				n.targetId = shootTarget->GetNetworkID();
-				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+				n.hit_body_part = trgt->getBodyNameFromBoneName(hitActorName);
+				n.hit_body_bone = trgt->uberAnim_->GetBoneID(hitActorName);
+				n.damageFromPiercing = damageFromPiercable;
+				n.state = 0;
+				p2pSendToHost( gClientLogic().localPlayer_, &n, sizeof(n), true);
+
 				strcpy(bloodpunch,"player");
 				ownerPlayer->AddBloodOnGround(hitPoint);
 			}
