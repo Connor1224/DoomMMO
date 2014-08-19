@@ -37,7 +37,7 @@ void UIItemInventory::addTabTypes()
 	var[0].SetNumber(0);
 	var[1].SetString("weapon");
 	var[2].SetBoolean(true);
-	var[3].SetBoolean(true);
+	var[3].SetBoolean(false);
 	gfxMovie_->Invoke("_root.api.addTabType", var, 4);
 
 	var[0].SetNumber(1);
