@@ -8323,12 +8323,14 @@ bool ProcessBulletHit( int &damageFromPiercable, GameObject* owner, const r3dPoi
 //				n.targetId = shootTarget->GetNetworkID();
 //				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
 
+				obj_Zombie* z = (obj_Zombie*)shootTarget;
+
 				PKT_C2C_PlayerHitDynamic_s n;
 				n.muzzler_pos = muzzlerPosAtFireStart;
 				n.hit_pos = hitPoint;
 				n.targetId = shootTarget->GetNetworkID();
-				n.hit_body_part = trgt->getBodyNameFromBoneName(hitActorName);
-				n.hit_body_bone = trgt->uberAnim_->GetBoneID(hitActorName);
+				n.hit_body_part = z->lastTimeHitBoneID;
+				n.hit_body_bone = z->lastTimeHitBoneID;
 				n.damageFromPiercing = damageFromPiercable;
 				n.state = 0;
 				p2pSendToHost( gClientLogic().localPlayer_, &n, sizeof(n), true);
