@@ -4102,8 +4102,9 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_CarKill_s& n) // Server Vehicle
 
 	if (n.weaponID==101399)
 	{
+		int isHead = (n.extra_info == 1);
 		if (target->isObjType(OBJTYPE_Zombie))
-			gServerLogic.ApplyDamageToZombie(this,target,GetPosition()+r3dPoint3D(0,1,0),16, 1, 1, false, storecat_punch);
+			gServerLogic.ApplyDamageToZombie(this,target,GetPosition()+r3dPoint3D(0,1,0),16, isHead, isHead, false, storecat_punch);
 		else if (target->isObjType(OBJTYPE_Human))
 		{
 			obj_ServerPlayer* targetPlr = IsServerPlayer(target);

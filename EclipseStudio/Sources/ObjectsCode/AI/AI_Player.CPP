@@ -8317,30 +8317,19 @@ bool ProcessBulletHit( int &damageFromPiercable, GameObject* owner, const r3dPoi
 			char bloodpunch[512];
 			if (shootTarget->isObjType(OBJTYPE_Human) || shootTarget->isObjType(OBJTYPE_Zombie))
 			{
-//				PKT_C2S_CarKill_s n;
-//				n.weaponID = 101399;
-//				n.DieForExplosion = false;
-//				n.targetId = shootTarget->GetNetworkID();
-//				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
-
-				obj_Zombie* z = (obj_Zombie*)shootTarget;
-
-				PKT_C2C_PlayerHitDynamic_s n;
-				n.muzzler_pos = muzzlerPosAtFireStart;
-				n.hit_pos = hitPoint;
-				n.targetId = toP2pNetId(shootTarget->GetNetworkID());
-				n.hit_body_part = z->lastTimeHitBoneID;
-				n.hit_body_bone = z->lastTimeHitBoneID;
-				n.damageFromPiercing = damageFromPiercable;
-				n.state = 0;
-				p2pSendToHost( gClientLogic().localPlayer_, &n, sizeof(n), true);
+				PKT_C2S_CarKill_s n;
+				n.weaponID = 101399;
+				n.DieForExplosion = false;
+				n.targetId = shootTarget->GetNetworkID();
+				n.extra_info = strcmp("Bip01_Head", hitActorName) == 0 ? 1 : 0;
+				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
 
 				strcpy(bloodpunch,"player");
 				ownerPlayer->AddBloodOnGround(hitPoint);
 			}
 			else
 				strcpy(bloodpunch,"Thirst");
-				SpawnImpactParticle(r3dHash::MakeHash(bloodpunch),r3dHash::MakeHash(weaponInfo->m_PrimaryAmmo->getDecalSource()), hitPoint, hitNormal);
+			SpawnImpactParticle(r3dHash::MakeHash(bloodpunch),r3dHash::MakeHash(weaponInfo->m_PrimaryAmmo->getDecalSource()), hitPoint, hitNormal);
 		}
 	}
 	else if(shootTarget && shootTarget->isObjType(OBJTYPE_Human)) // hit other player
@@ -8397,6 +8386,7 @@ bool ProcessBulletHit( int &damageFromPiercable, GameObject* owner, const r3dPoi
 		n.weaponID = weaponID;
 		n.DieForExplosion = false;
 		n.targetId = shootTarget->GetNetworkID();
+		n.extra_info = 0;
 		p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
 	}
 	else if(shootTarget && shootTarget->isObjType(OBJTYPE_Zombie)) // hit zombie

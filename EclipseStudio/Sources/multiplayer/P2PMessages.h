@@ -1126,6 +1126,7 @@ struct PKT_C2S_CarKill_s : public DefaultPacketMixin<PKT_C2S_CarKill> // Server 
 	DWORD targetId;
 	bool DieForExplosion;
 	int weaponID;
+	BYTE extra_info;
 };
 
 struct PKT_C2S_DamageCar_s : public DefaultPacketMixin<PKT_C2S_DamageCar> // Server vehicles
