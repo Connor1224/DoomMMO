@@ -8328,7 +8328,7 @@ bool ProcessBulletHit( int &damageFromPiercable, GameObject* owner, const r3dPoi
 				PKT_C2C_PlayerHitDynamic_s n;
 				n.muzzler_pos = muzzlerPosAtFireStart;
 				n.hit_pos = hitPoint;
-				n.targetId = shootTarget->GetNetworkID();
+				n.targetId = toP2pNetId(shootTarget->GetNetworkID());
 				n.hit_body_part = z->lastTimeHitBoneID;
 				n.hit_body_bone = z->lastTimeHitBoneID;
 				n.damageFromPiercing = damageFromPiercable;
