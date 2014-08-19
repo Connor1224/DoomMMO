@@ -1322,9 +1322,9 @@ bool obj_Zombie::ApplyDamage(GameObject* fromObj, float damage, int bodyPart, ST
 
 	/*if (damageSource == storecat_punch)
 	{
-		  r3dOutToLog("ANTES %f\n",ZombieHealth);
+		  //r3dOutToLog("ANTES %f\n",ZombieHealth);
 		  ZombieHealth-=damage;
-		  r3dOutToLog("DESPUES %f\n",ZombieHealth);
+		  //r3dOutToLog("DESPUES %f\n",ZombieHealth);
 	}*/
 	
 	if(HeroItemID != 20204) // it's normal zombie
@@ -1335,24 +1335,16 @@ bool obj_Zombie::ApplyDamage(GameObject* fromObj, float damage, int bodyPart, ST
 			{
 				dmg = 1000; // you can kill zombies with just 1 hit if it's weapon (not melee and not punch)
 			}
-		}
-		else
-		{
-			dmg = 0;
+			ZombieHealth -= dmg; //add damage
 		}
 		//r3dOutToLog("fuck you zombie %f %f %d %f %u\n", ZombieHealth, dmg, bodyPart, bodyPart, bodyPart);
-		ZombieHealth -= dmg; //add damage
 	}
 	else // it's superzombie (head or not, doesn't matter)
 	{
-		if(HeroItemID = 20204)
+		if(bodyPart == 1)
 		{
-			if(bodyPart != 1)
-			{
-				dmg = 0;
-			}
+			ZombieHealth -= dmg*15/100; // add damage (I would add more damage if it's on head, like *15 on body and *18 on head. JOROPITO)
 		}
-		ZombieHealth -= dmg*15/100; // add damage (I would add more damage if it's on head, like *15 on body and *18 on head. JOROPITO)
 	}
 	
 	if(ZombieHealth <= 0.0f)
