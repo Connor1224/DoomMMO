@@ -19,7 +19,6 @@ public partial class api_AccRegister : WOApiWebPage
         sqcmd.Parameters.AddWithValue("@in_IP", LastIP);
         sqcmd.Parameters.AddWithValue("@in_EMail", web.Param("username")); // login name from updater
         sqcmd.Parameters.AddWithValue("@in_Password", web.Param("password"));
-        sqcmd.Parameters.AddWithValue("@in_ReferralID", 0);
         sqcmd.Parameters.AddWithValue("@in_SerialKey", web.Param("serial"));
         sqcmd.Parameters.AddWithValue("@in_SerialEmail", web.Param("email"));   // email used in serial key purchase
 
