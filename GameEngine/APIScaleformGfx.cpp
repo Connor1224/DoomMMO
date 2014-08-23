@@ -451,6 +451,7 @@ public:
 	LPDIRECT3DSTATEBLOCK9   pStateBlock;
 	r3dScaleformMovie*		pCurMovie;		// movie currently being processed
 	r3dScaleformMovie*		pKbdCaptureMovie;	// movie to receive keyboard input
+	float					lastGabage;
 
 protected:
 	virtual	void		D3DCreateResource();
@@ -710,6 +711,7 @@ APIScaleformGfx::APIScaleformGfx( const r3dIntegrityGuardian& ig ) :
 r3dIResource( ig ),
 pStateBlock(NULL),
 pCurMovie(NULL),
+lastGabage(0),
 pKbdCaptureMovie(NULL)
 {
 }
@@ -1240,7 +1242,13 @@ void r3dScaleformMovie::UpdateAndDraw(bool skipDraw)
 
 	gAPIScaleformGfx->pCurMovie = NULL;
 
-	pMovie->ForceCollectGarbage();
+	//pMovie->ForceCollectGarbage();
+
+	if (gAPIScaleformGfx->lastGabage + 60 < r3dGetTime())
+	{
+		gAPIScaleformGfx->lastGabage = r3dGetTime();
+        pMovie->ForceCollectGarbage();
+	}
 
 #ifndef FINAL_BUILD
 #ifdef SF_AMP_SERVER
