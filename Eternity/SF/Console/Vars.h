@@ -207,8 +207,8 @@ REG_VAR( r_half_depth_particles		, 1			, 0 ); // turned off by default
 REG_VAR( r_half_depth_par_strerect	, 0			, 0 );
 REG_VAR( r_half_res_particles		, 1			, 0 );
 REG_VAR( r_avarage_fps				, 1			, 0 );
-REG_VAR( r_limit_fps				, 0			, 0 );
-REG_VAR( r_sleep_on_limit_fps		, 0			, 0 );
+//REG_VAR( r_limit_fps				, 0			, 0 );
+//REG_VAR( r_sleep_on_limit_fps		, 0			, 0 );
 REG_VAR( r_show_terra_order			, 0			, 0 );
 REG_VAR( r_show_draw_order			, 0			, 0 ); // 1 - meshes, 2 - particles
 
