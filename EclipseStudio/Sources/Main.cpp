@@ -988,10 +988,10 @@ void readGameOptionsFile()
 {
 	r_ini_read->SetBool( true );
 
-#ifdef FINAL_BUILD
+/*#ifdef FINAL_BUILD
 	// before reading ini to allow geeks to override it
 	r_limit_fps->SetInt( 60 );
-#endif
+#endif*/
 
 	// try local first
 	if( !r3d_access( "./" INI_FILE, 4 ) )

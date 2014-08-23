@@ -976,7 +976,7 @@ void GameStateGameLoop()
 	R3DPROFILE_START("endFunc");
 	float newTime = r3dGetTime();
 
-	if( r_limit_fps->GetFloat() >= 0.25f )
+	/*if( r_limit_fps->GetFloat() >= 0.25f )
 	{
 		float frameTime = 1.f / r_limit_fps->GetFloat() ;
 
@@ -995,7 +995,7 @@ void GameStateGameLoop()
 				SwitchToThread();
 			}
 		}
-	}
+	}*/
 
 	gLastFrameTime = newTime ;
 
