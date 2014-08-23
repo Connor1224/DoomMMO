@@ -6153,13 +6153,15 @@ void obj_Player::DrawLabel()
 
 	if(NetworkLocal && gClientLogic().localPlayer_)
 	{
-		// show a warning if FPS or PING is low
-		/*if(fps < 20.0f)*/
+		// Show FPS and PING
 		Font_Label->PrintF((r3dRenderer->ScreenW) / 2, 0, r3dColor(243,43,37), "FPS: %.1f", r3dGetAvgFPS());
-		Font_Label->PrintF((r3dRenderer->ScreenW) / 2, 15, r3dColor(245,10,0), "PING: %i", gClientLogic().net_->lastPing_);
+		if(gClientLogic().net_->lastPing_ < 30.0f)
+			Font_Label->PrintF((r3dRenderer->ScreenW) / 2, 15, r3dColor(0,255,0), "PING: %i", gClientLogic().net_->lastPing_);
+		else
+			Font_Label->PrintF((r3dRenderer->ScreenW) / 2, 15, r3dColor(243,43,37), "PING: %i", gClientLogic().net_->lastPing_);
 	}
 //////////////////////////
-	if(gUserProfile.ProfileData.isDevAccount && Keyboard->WasPressed(kbsX))
+	if(gUserProfile.ProfileData.isDevAccount && Keyboard->IsPressed(kbsX))
 	{
 
 		float dist = (gCam - GetPosition()).Length();
