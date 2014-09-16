@@ -1,1 +1,0 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeFile="api_GetTransactions.aspx.cs" Inherits="api_GetTransactions" %>

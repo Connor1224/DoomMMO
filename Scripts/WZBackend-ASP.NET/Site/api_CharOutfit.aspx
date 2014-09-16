@@ -1,1 +1,0 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeFile="api_CharOutfit.aspx.cs" Inherits="api_CharOutfit" %>
