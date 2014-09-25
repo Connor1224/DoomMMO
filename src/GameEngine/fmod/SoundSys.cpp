@@ -896,6 +896,10 @@ int snd_UpdateSoundListener(const r3dPoint3D &Pos, const r3dPoint3D &dir, const 
 	return 1;
 }
 
+void * snd_PlaySound(int SampleID, const r3dPoint3D& pos)
+{
+	return SoundSys.Play(SampleID, pos);
+}
 void snd_SetGroupVolume(int groupId, int Volume)
 {
 	assert(groupId >= SOUND_GROUP_START && groupId < SOUND_GROUP_START + MAX_SOUND_GROUPS);
@@ -903,3 +907,7 @@ void snd_SetGroupVolume(int groupId, int Volume)
 	sndGroupVolumes[groupId - SOUND_GROUP_START] = Volume;
 }
 
+bool snd_SetSoundPos(void *e, const r3dPoint3D& pos)
+{
+	return SoundSys.SetSoundPos(e, pos);
+}

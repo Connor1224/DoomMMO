@@ -85,7 +85,7 @@
 
 
 PhysXWorld* g_pPhysicsWorld = 0;
-// because we might re-cook meshes in physics editor, let's be able to disable cache
+// because we might re-cook meshes in physics editor, let's be able to disable cache // true is fixing the mech over flow, false is not.
 bool gPhysics_DisableCacheForEditor = false;
 
 // regular mesh, can be only static
@@ -95,7 +95,7 @@ struct PhysicsMesh
 	PxTriangleMesh* mesh;
 };
 int			gob_NumMeshesInPhysicsFactoryCache=0;
-PhysicsMesh	*gob_PhysicsFactoryCache[1024];
+PhysicsMesh	*gob_PhysicsFactoryCache[4096];
 
 PxTriangleMesh *r3dGOBAddPhysicsMesh(const char* fname)
 {
@@ -108,7 +108,7 @@ PxTriangleMesh *r3dGOBAddPhysicsMesh(const char* fname)
 		if (strcmp(gob_PhysicsFactoryCache[i]->filename, fname)==0) 
 			return gob_PhysicsFactoryCache[i]->mesh;
 
-	if (gob_NumMeshesInPhysicsFactoryCache > 1023)
+	if (gob_NumMeshesInPhysicsFactoryCache > 4096)
 	{
 		r3dArtBug("r3dGOBAddPhysicsMesh:  Mesh Cache overflow !\n" );
 		return NULL;
@@ -142,7 +142,7 @@ struct PhysicsConvexMesh
 	PxConvexMesh* mesh;
 };
 int			gob_NumConvexMeshesInPhysicsFactoryCache=0;
-PhysicsConvexMesh	*gob_PhysicsConvexFactoryCache[1024];
+PhysicsConvexMesh	*gob_PhysicsConvexFactoryCache[4096];
 
 PxConvexMesh *r3dGOBAddPhysicsConvexMesh(const char* fname)
 {
@@ -154,7 +154,7 @@ PxConvexMesh *r3dGOBAddPhysicsConvexMesh(const char* fname)
 		if (strcmp(gob_PhysicsConvexFactoryCache[i]->filename, fname)==0) 
 			return gob_PhysicsConvexFactoryCache[i]->mesh;
 
-	if (gob_NumConvexMeshesInPhysicsFactoryCache > 1023)
+	if (gob_NumConvexMeshesInPhysicsFactoryCache > 4096)
 	{
 		r3dArtBug("r3dGOBAddPhysicsConvexMesh:  Mesh Cache overflow !\n" );
 		return NULL;

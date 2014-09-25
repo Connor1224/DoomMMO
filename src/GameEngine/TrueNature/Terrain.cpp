@@ -27,7 +27,7 @@
 
 #include "sun.h"
 
-#include "..\..\bin\Data\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
+#include "..\..\EclipseStudio\Sources\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
 
 #include "JobChief.h"
 #include "HeightNormalVert.h"
@@ -1396,7 +1396,7 @@ struct TerraAppendShadowOpt
 	volatile LONG InMinMaxAccess ;
 };
 
-#define MULTITHREADED_TERRAIN_SHADOW_OPT 0
+#define MULTITHREADED_TERRAIN_SHADOW_OPT 1
 
 void TerraAppendShadowOptFunc( void* Data, size_t ItemStart, size_t ItemCount )
 {

@@ -75,6 +75,7 @@ StaticSkySettings::StaticSkySettings()
 , SunIntensity( 1.f )
 
 , DomeRotationY( 0.f )
+, DomeRotationX( 0.f )
 
 {
 
@@ -344,7 +345,9 @@ r3dSkyDome::DrawDome( const r3dCamera& Cam, const D3DXMATRIX& viewProj, float mi
 	}
 
 	D3DXMATRIX rot;
+	D3DXMATRIX rot2;
 	D3DXMatrixRotationY( &rot, SSTSettings.DomeRotationY / 180.0f * float( M_PI ) );
+	D3DXMatrixRotationX( &rot2, SSTSettings.DomeRotationX / 180.0f * float( M_PI ) );
 
 	if( customMesh )
 	{
@@ -354,6 +357,7 @@ r3dSkyDome::DrawDome( const r3dCamera& Cam, const D3DXMATRIX& viewProj, float mi
 		D3DXMatrixScaling( &world, SKY_DOME_RADIUS, SKY_DOME_RADIUS, SKY_DOME_RADIUS );
 
 		world *= rot;
+		world *= rot2;
 
 		r3dRenderer->SetCullMode( D3DCULL_CCW ) ;
 		SetTransformMatrix( world, world * viewProj ) ;
@@ -365,6 +369,7 @@ r3dSkyDome::DrawDome( const r3dCamera& Cam, const D3DXMATRIX& viewProj, float mi
 			D3DXMatrixScaling( &world, SKY_DOME_RADIUS, -SKY_DOME_RADIUS, SKY_DOME_RADIUS ) ;
 
 			world *= rot;
+			world *= rot2;
 
 			r3dRenderer->SetCullMode( D3DCULL_CW ) ;
 

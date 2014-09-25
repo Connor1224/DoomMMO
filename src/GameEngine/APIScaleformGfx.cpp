@@ -823,7 +823,7 @@ bool APIScaleformGfx::Create()
 #ifndef FINAL_BUILD
 #ifdef SF_AMP_SERVER
 	Scaleform::AmpServer::GetInstance().SetListeningPort(7534);
-	Scaleform::AmpServer::GetInstance().SetConnectedApp("WarZ");
+	Scaleform::AmpServer::GetInstance().SetConnectedApp("Doom-MMO");
 	Scaleform::AmpServer::GetInstance().OpenConnection();
 #endif //SF_AMP_SERVER
 #endif // FINAL_BUILD
@@ -949,6 +949,7 @@ bool r3dScaleformMovie::Load(const char* fname, bool set_keyboard_focus)
 #ifndef FINAL_BUILD
 	r3dOutToLog("Loading SWF %s\n", fname);
 #endif
+	r3dOutToLog("Loading SWF %s\n", fname);
 
 #ifndef FINAL_BUILD
 	struct ReVisit : Scaleform::GFx::MovieDef::ResourceVisitor
@@ -1011,6 +1012,7 @@ bool r3dScaleformMovie::Load(const char* fname, bool set_keyboard_focus)
 #ifndef FINAL_BUILD
 	r3dOutToLog("r3dScaleformMovie::Load() '%s' ok\n", fname);
 #endif
+	r3dOutToLog("r3dScaleformMovie::Load() '%s' ok\n", fname);
 
 	timeForNextUpdate = r3dGetTime();
 	timePrevUpdate = r3dGetTime();

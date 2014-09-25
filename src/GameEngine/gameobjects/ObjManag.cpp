@@ -2101,6 +2101,7 @@ ObjectManager::WarmUp()
 			if(!obj->isActive() || obj->ObjFlags & OBJFLAG_SkipDraw || obj->ObjFlags & OBJFLAG_JustCreated || obj->ObjFlags & OBJFLAG_Removed || !obj->isDetailedVisible())
 				continue;
 
+			if (obj->Class->Name != "obj_Building")
 			obj->AppendRenderables( g_render_arrays, fakeCam );
 		}
 	}

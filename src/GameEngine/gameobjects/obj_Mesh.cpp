@@ -395,7 +395,7 @@ MeshGameObject::ReloadDestructionMesh( const char* nameOfChangedMesh )
 	char szFileName [ MAX_PATH ] ;
 	if( FillDestructionMeshName ( szFileName, m_pDamageLibEntry ) )
 	{
-		if( !DestructionMeshLOD[ 0 ] || stricmp( DestructionMeshLOD[ 0 ]->FileName.c_str(), nameOfChangedMesh ) )
+		if( !DestructionMeshLOD[ 0 ] || _stricmp( DestructionMeshLOD[ 0 ]->FileName.c_str(), nameOfChangedMesh ) )
 		{
 			DoLoad( DestructionMeshLOD, szFileName, false );
 		}
@@ -446,7 +446,7 @@ MeshGameObject::GetMeshLibKey() const
 	r3d_assert( tempFName );
 
 	strcpy( tempFName, srcMesh->FileName.c_str() );
-	strlwr( tempFName );
+	_strlwr( tempFName );
 
 	if( const char* start = strstr( tempFName, COMMON_DEPOT_PREFIX ) )
 	{
@@ -530,7 +530,7 @@ BOOL MeshGameObject::Load(const char* fname)
 	r3d_assert( tempFName );
 
 	strcpy( tempFName, fname );
-	strlwr( tempFName );
+	_strlwr( tempFName );
 
 	char szFixedName[MAX_PATH];	
 	FixFileName(fname, szFixedName);

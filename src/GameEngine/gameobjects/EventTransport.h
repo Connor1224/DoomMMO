@@ -7,11 +7,11 @@
 #pragma pack(1)
 
 // p2p network IDs will be 2bytes long. so, we have to take extreme care that engine network IDs will be in 0-0xffff range
-typedef WORD	gp2pnetid_t;
-static const gp2pnetid_t invalidP2pNetID = 0xFFFF;
+typedef DWORD	gp2pnetid_t;
+static const gp2pnetid_t invalidP2pNetID = 0xFFFFFF;
 
 __forceinline gp2pnetid_t toP2pNetId(DWORD id) {
-  r3d_assert(id < 0xFFFF);
+  r3d_assert(id < 0xFFFFFF);
   return gp2pnetid_t(id);
 }
 

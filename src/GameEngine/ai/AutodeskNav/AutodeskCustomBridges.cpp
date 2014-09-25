@@ -6,6 +6,8 @@
 #include "r3dPCH.h"
 #include "r3d.h"
 
+#include <utility>
+
 #if ENABLE_AUTODESK_NAVIGATION
 
 //////////////////////////////////////////////////////////////////////////
@@ -279,7 +281,7 @@ void AutodeskPerfCounter2::Dump()
 
 void AutodeskPerfCounter2::Begin(const char* name)
 {
-	std::pair<EventType::iterator, bool> result = events.insert(std::pair<const char*, float>(name, 0));
+	std::pair<EventType::iterator, bool> result = events.insert(std::pair<const char*, float>(name, 0.0f));
 	lastEvent = result.first;
 	lastTime  = r3dGetTime();
 }

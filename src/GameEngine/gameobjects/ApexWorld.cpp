@@ -183,7 +183,7 @@ void ApexWorld::Init()
 
 	apexDesc.resourceCallback = &userResourceCallback;
 	apexDesc.renderResourceManager = &userRenderMgr;
-	apexSDK = NxCreateApexSDK(apexDesc);
+	apexSDK = NxCreateApexSDK(apexDesc, 0);
 
 	r3d_assert(apexSDK);
 

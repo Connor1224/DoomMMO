@@ -109,4 +109,9 @@ extern  int 		snd_LoadSoundEffects(char *basedir, char *fname);
 enum { SOUND_GROUP_START = 1000};
 extern	void		snd_SetGroupVolume(int groupId, int Volume);
 
+// all PlaySound* functions will accept sound group ID as volume.
+extern	void *	snd_PlaySound(int SampleID, const r3dPoint3D& pos);
+extern	bool	snd_SetSoundPos(void *e, const r3dPoint3D& pos);
+
+
 #endif	// __PWAR_SOUNDSYS_H
