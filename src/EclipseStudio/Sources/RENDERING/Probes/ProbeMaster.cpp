@@ -4205,7 +4205,7 @@ static void ReadPVLTextureSH( D3DXVECTOR4* targ, IDirect3DSurface9* srcSurf )
 
 	memcpy( targ, (float*)lrect.pBits, 16 );
 
-	const float weight = 4.0 * float( M_PI );
+	const float weight = 4.0f * float( M_PI );
 	float factor = weight / N_SAMPLES;
 
 	targ->x *= factor;
@@ -6202,7 +6202,7 @@ void ProjectOnSH( float (&oSH)[N_COEFS], float (&fn)( float, float ) )
 		oSH[ i ] = 0;
 	}
 
-	const float weight = 4.0 * float( M_PI );
+	const float weight = 4.0f * float( M_PI );
 	// for each sample 
 	for(int i=0; i < N_SAMPLES; ++i) 
 	{ 

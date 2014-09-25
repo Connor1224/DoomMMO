@@ -80,6 +80,9 @@ BOOL obj_ParticleSystem::Load(const char* fname)
 
 	if(!Torch) return FALSE;
 
+	LT.Assign(GetPosition().x,GetPosition().y+10,GetPosition().z);
+	LT.SetType(R3D_OMNI_LIGHT);
+
 	return TRUE;
 }
 
@@ -88,6 +91,17 @@ void obj_ParticleSystem::SetScale(const r3dBoundBox &Box)
 	RenderScale = Box.Size.Y / 80.0f;
 	if(RenderScale < 1.0f ) RenderScale = 1.0f;
 }
+
+void obj_ParticleSystem::SetLightProperties(float r1, float r2, r3dColor color)
+{
+	LT.SetRadius(r1, r2);
+	LT.SetColor(color);
+	LT.bCastShadows = false; // too expensive. on explosion from 40fps to 25fps.
+
+	if(LT.pLightSystem == NULL)
+		WorldLightSystem.Add(&LT); 
+}
+
 
 //-----------------------------------------------------------------------
 void obj_ParticleSystem::Reload()
@@ -147,6 +161,8 @@ BOOL obj_ParticleSystem::OnCreate()
 BOOL obj_ParticleSystem::OnDestroy()
 {
 	SAFE_DELETE(Torch);
+	if(LT.pLightSystem)
+		WorldLightSystem.Remove(&LT); 
 
 	return parent::OnDestroy();
 }
@@ -521,6 +537,12 @@ BOOL obj_ParticleSystem::Update()
 	R3DPROFILE_START("Particles: Update");
 	// update particle emitter position
 	Torch->Position = GetPosition();
+	LT.Assign(GetPosition().x,GetPosition().y,GetPosition().z);
+
+	if(time_LifeTime < LightLifetime)
+		LT.Intensity = 1.0f-(time_LifeTime/LightLifetime);
+	else
+		LT.Intensity = 0.0f;
 
 	do {
 		if(BindID == invalidGameObjectID) 

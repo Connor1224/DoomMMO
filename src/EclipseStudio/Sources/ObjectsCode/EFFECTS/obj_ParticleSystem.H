@@ -11,6 +11,7 @@ class obj_ParticleSystem : public GameObject
 
 public:
 	r3dParticleSystem *Torch;
+	r3dLight	LT;
 
 	enum BindType_e {
 		BINDTYPE_NONE		= 0,
@@ -68,6 +69,7 @@ public:
 	void		SetScale(const r3dBoundBox &Box);
 
 	virtual void		OnPickerRotated();
+	void			SetLightProperties(float r1, float r2, r3dColor color);
 
 protected:
 	virtual void UpdateTransform()

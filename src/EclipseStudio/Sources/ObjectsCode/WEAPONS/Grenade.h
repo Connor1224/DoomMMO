@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __GRENADE_H__
+#define __GRENADE_H__
 
 #include "GameCommon.h"
 #include "Ammo.h"
@@ -24,3 +25,5 @@ public:
 	virtual r3dMesh*	GetObjectMesh();
 	virtual r3dMesh*	GetObjectLodMesh() OVERRIDE;
 };
+
+#endif	// __GRENADE_H__

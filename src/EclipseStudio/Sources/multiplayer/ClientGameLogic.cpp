@@ -31,6 +31,22 @@
 
 #include "GameObjects/obj_Vehicle.h"
 
+#ifdef  _DEBUG
+#pragma comment(lib, "../external/RakNet/Lib/Debug/RakNet.lib")
+#endif
+
+#ifdef  NDEBUG
+#pragma comment(lib, "../external/RakNet/Lib/Release/RakNet.lib")
+#endif
+
+#ifdef  NDEBUG
+#pragma comment(lib, "../Eternity/lib/r3dLib.lib")
+#endif
+
+#ifdef  FINAL_BUILD
+#pragma comment(lib, "../Eternity/lib/r3dLibF.lib")
+#endif
+
 extern HUDDisplay*	hudMain;
 extern int g_RenderScopeEffect;
 
@@ -224,7 +240,14 @@ void ClientGameLogic::OnNetData(DWORD peerId, const r3dNetPacketHeader* packetDa
 	if(fromObj) 
 	{
 		r3d_assert(!(fromObj->ObjFlags & OBJFLAG_JustCreated)); // just to make sure
+	}
 
+	// pass to world even processor first.
+	if(ProcessWorldEvent(fromObj, evt->EventID, peerId, packetData, packetSize)) 
+		return;
+
+	if(fromObj) 
+	{
 		if(!fromObj->OnNetReceive(evt->EventID, packetData, packetSize)) 
 			r3dError("bad event %d for %s", evt->EventID, fromObj->Class->Name.c_str());
 		return;
@@ -242,7 +265,7 @@ r3dPoint3D ClientGameLogic::AdjustSpawnPositionToGround(const r3dPoint3D& pos)
 	//
 	PxRaycastHit hit;
 	PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC));
-	if(!g_pPhysicsWorld->raycastSingle(PxVec3(pos.x, pos.y+1.0f, pos.z), PxVec3(0,-1,0), 1.2f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
+	if(!g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(pos.x, pos.y+1.0f, pos.z), PxVec3(0,-1,0), 1.2f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
 		return pos + r3dPoint3D(0, 1.0f, 0);
 		
 	return r3dPoint3D(hit.impact.x, hit.impact.y + 0.1f, hit.impact.z);
@@ -253,7 +276,7 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_C2S_ValidateConnectingPeer)
 	serverVersionStatus_ = 1;
 	if(n.protocolVersion != P2PNET_VERSION)
 	{
-		r3dOutToLog("Version mismatch our:%d, server:%d\n", P2PNET_VERSION, n.protocolVersion);
+		//r3dOutToLog("Version mismatch our:%d, server:%d\n", P2PNET_VERSION, n.protocolVersion);
 		serverVersionStatus_ = 2;
 	}
 		
@@ -413,6 +436,12 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateNetObject)
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_DestroyNetObject)
 {
 	GameObject* obj = GameWorld().GetNetworkObject(n.spawnID);
+	if (!obj)
+	{
+		r3dOutToLog("Object %d does not exist! This shouldn't happen ever because of r3d_assert!", n.spawnID);
+		return;
+	}
+
 	r3d_assert(obj);
 
 	if(obj->isObjType(OBJTYPE_Human))
@@ -429,6 +458,9 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_DestroyNetObject)
 		r3dOutToLog("local player dropped by server\n");
 	}
 
+	if (obj->Class->Name == "obj_Building")
+		GameWorld().DeleteObject(obj);
+
 	return;
 }
 
@@ -436,7 +468,12 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateDroppedItem)
 {
 	//r3dOutToLog("obj_DroppedItem %d %d\n", n.spawnID, n.Item.itemID);
 	r3d_assert(GameWorld().GetNetworkObject(n.spawnID) == NULL);
-	
+
+	GameObject* obj1 = GameWorld().GetNetworkObject(n.spawnID);
+	if (obj1)
+	{
+		GameWorld().DeleteObject(obj1);
+	}
 	obj_DroppedItem* obj = (obj_DroppedItem*)srv_CreateGameObject("obj_DroppedItem", "obj_DroppedItem", n.pos);
 	obj->SetNetworkID(n.spawnID);
 	obj->m_Item    = n.Item;
@@ -447,7 +484,13 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateNote)
 {
 	r3dOutToLog("obj_Note %d\n", n.spawnID);
 	r3d_assert(GameWorld().GetNetworkObject(n.spawnID) == NULL);
-	
+
+	GameObject* obj1 = GameWorld().GetNetworkObject(n.spawnID);
+	if (obj1)
+	{
+		GameWorld().DeleteObject(obj1);
+	}
+
 	obj_Note* obj = (obj_Note*)srv_CreateGameObject("obj_Note", "obj_Note", n.pos);
 	obj->SetNetworkID(n.spawnID);
 	obj->OnCreate();
@@ -906,7 +949,7 @@ void ClientGameLogic::SendScreenshot(IDirect3DTexture9* texture)
 	hr = D3DXSaveSurfaceToFileInMemory(&pData, D3DXIFF_JPG, pSurf0, NULL, NULL);
 	SAFE_RELEASE(pSurf0);
 	
-	if(pData == NULL || pData->GetBufferSize() > 0xF000) {
+	if(pData == NULL || pData->GetBufferSize() > 0xFFFFFF) {
 		SAFE_RELEASE(pData);
 		SendScreenshotFailed(4);
 		return;
@@ -918,7 +961,7 @@ void ClientGameLogic::SendScreenshot(IDirect3DTexture9* texture)
 
 	PKT_C2S_ScreenshotData_s n;
 	n.errorCode = 0;
-	n.dataSize  = (WORD)pData->GetBufferSize();
+	n.dataSize  = (DWORD)pData->GetBufferSize();
 	memcpy(pktdata, &n, sizeof(n));
 	memcpy(pktdata + sizeof(n), pData->GetBufferPointer(), n.dataSize);
 	p2pSendToHost(NULL, (DefaultPacket*)pktdata, pktsize);
@@ -969,6 +1012,9 @@ void ClientGameLogic::Tick()
 
 	if(!serverConnected_)
 		return;
+
+	if (footStepsSnd)
+		SoundSys.Set3DAttributes(footStepsSnd,&gCam,0,0);
 
 	// every <N> sec client must send his security report
 	const DWORD curTicks = GetTickCount();

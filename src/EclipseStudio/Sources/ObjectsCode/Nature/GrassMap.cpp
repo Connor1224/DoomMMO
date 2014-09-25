@@ -33,7 +33,12 @@ namespace
 	char GrazCellTexesBlob_SIG[] = "\3\3GRAZTEXZ100";
 	
 
+	int FULL_VERTEX_SHADER_ID			= -1;
+	int MASKED_VERTEX_SHADER_ID			= -1;
+	int PIXEL_SHADER_ID					= -1;
+	int PIXEL_SHADER_NOCLIP_ID			= -1;
 	int P0_PIXEL_SHADER_ID				= -1;
+	int P1_PIXEL_SHADER_ID				= -1;
 
 	const D3DFORMAT MASK_TEX_FMT		= D3DFMT_L8;
 	const UINT		MASK_TEX_FMT_SIZE	= 1;
@@ -3077,6 +3082,12 @@ void DrawGrass( GrassMap::Path path, bool UseDepthEqual, bool drawToAux )
 
 void CloseGrass()
 {
+	//r3d_assert( PIXEL_SHADER_ID >= 0 );
+
+	FULL_VERTEX_SHADER_ID	= -1;
+	MASKED_VERTEX_SHADER_ID	= -1;
+	PIXEL_SHADER_ID			= -1;
+
 	SAFE_DELETE(g_pGrassGen);
 	SAFE_DELETE(g_pGrassLib);
 	SAFE_DELETE(g_pGrassMap);

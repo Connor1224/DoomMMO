@@ -30,6 +30,7 @@ class obj_ZombieSpawn: public GameObject
 	float sleepersRate;
 	int lootBoxID;
 	float fastZombieChance;
+	float crawZombieChance;
 	float speedVariation;
 
 	std::vector<uint32_t> ZombieSpawnSelection; // which zombies should be spawned

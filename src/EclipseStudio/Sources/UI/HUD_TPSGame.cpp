@@ -416,7 +416,7 @@ r3dPoint3D getAdjustedPointTo(obj_Player* pl, const r3dPoint3D& PointTo, const r
 
             PxRaycastHit hit;
             PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK|(1<<PHYSCOLL_NETWORKPLAYER), 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC);
-            if(g_pPhysicsWorld->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dir.x, dir.y, dir.z), 2000.0f, PxSceneQueryFlag::eIMPACT|PxSceneQueryFlag::eDISTANCE, hit, filter))
+            if(g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dir.x, dir.y, dir.z), 2000.0f, PxSceneQueryFlag::eIMPACT|PxSceneQueryFlag::eDISTANCE, hit, filter))
             {
                 currentLookAt.Assign(hit.impact.x, hit.impact.y, hit.impact.z);
                 currentLookAtDist = hit.distance;
@@ -576,7 +576,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 						raydir.Normalize();
 						PxRaycastHit hit;
 						PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
-						if(!g_pPhysicsWorld->raycastSingle(PxVec3(camPointTo.x, camPointTo.y, camPointTo.z), PxVec3(raydir.x, raydir.y, raydir.z), rayLen, PxSceneQueryFlag::eIMPACT, hit, filter))
+						if(!g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(camPointTo.x, camPointTo.y, camPointTo.z), PxVec3(raydir.x, raydir.y, raydir.z), rayLen, PxSceneQueryFlag::eIMPACT, hit, filter))
 						{
 							found = i;
 							break;
@@ -655,7 +655,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 		{
 			CamPos = savedCamPos;
 			playerPosHead = playerPos;
-			playerPosHead.y += CharacterHeight-0.8f;
+			playerPosHead.y += CharacterHeight - 1.8f;
 			CheckCameraCollision(CamPos, playerPosHead, true);
 		}
 	}

@@ -525,7 +525,8 @@ DECLARE_CMD(aremove)
 
 	int wid      = 0; // test - by default modify weapon 0
 	int wpnAttmType = ev.GetInteger(1);
-	if(wpnAttmType >= WPN_ATTM_MAX)  {
+	if(wpnAttmType >= WPN_ATTM_MAX)  
+	{
 		ConPrint("bad wpnAttmType");
 		return;
 	}
@@ -632,7 +633,8 @@ void obj_Player::RemoveWpnAttm(int wid, int attmType)
 	n.wid         = wid;
 	n.WpnAttmType = attmType;
 	p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
-
+	if(attmType == WPN_ATTM_CLIP)
+		return;
 	// set wpn attachment
 	slot.Attachment[wid].attachments[attmType] = 0;
 	wpn->setWeaponAttachmentsByIDs(slot.Attachment[wid].attachments);
@@ -662,8 +664,11 @@ void obj_Player::EquipWpnAttm(int wid, int backpackSlot)
 	p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
 
 	// set wpn attachment
-	slot.Attachment[wid].attachments[cfg->m_type] = cfg->m_itemID;
-	wpn->setWeaponAttachmentsByIDs(slot.Attachment[wid].attachments);
+	if(cfg->m_type != WPN_ATTM_CLIP)
+	{
+		slot.Attachment[wid].attachments[cfg->m_type] = cfg->m_itemID;
+		wpn->setWeaponAttachmentsByIDs(slot.Attachment[wid].attachments);
+	}
 
 	// we're changing clip, reload weapon
 	if(cfg->m_type == WPN_ATTM_CLIP)
@@ -745,7 +750,20 @@ void obj_Player::UpdateLoadoutSlot(const wiCharDataFull& slot)
 
 	CurLoadout = slot; // save loadout
 	m_GearWeight = 0;
-	m_isFemaleHero = CurLoadout.HeroItemID==20184;
+    if(CurLoadout.HeroItemID == 20184) 
+    {
+    m_isFemaleHero = CurLoadout.HeroItemID==20184;
+    }
+ 
+    if(CurLoadout.HeroItemID == 20194)
+    {
+        m_isFemaleHero = CurLoadout.HeroItemID==20194;
+    }
+ 
+    if(CurLoadout.HeroItemID ==20195)
+    {
+        m_isFemaleHero = CurLoadout.HeroItemID==20195;
+    }
 
 	for(int i=0; i<NUM_WEAPONS_ON_PLAYER; ++i)
 		SAFE_DELETE(m_Weapons[i]);
@@ -805,7 +823,9 @@ void obj_Player::UpdateLoadoutSlot(const wiCharDataFull& slot)
 			m_GearWeight += uberEquip_->slots_[SLOT_Armor].gear->GetWeight();
 	}
 	else
+	{
 		uberEquip_->SetSlot(SLOT_Armor, (Gear*)NULL);
+	}
 
 	if(SlotHeadGearID>0)
 	{
@@ -816,6 +836,9 @@ void obj_Player::UpdateLoadoutSlot(const wiCharDataFull& slot)
 	}
 	else
 		uberEquip_->SetSlot(SLOT_Helmet, (Gear*)NULL);
+
+	if(gClientLogic().localPlayer_ == this && !(SlotHeadGearID == 20188 || SlotHeadGearID == 20187 || SlotHeadGearID == 20067 || SlotHeadGearID == 20209))
+				r_hud_filter_mode->SetInt(HUDFilter_Default);
 
 	// start loading meshes
 	for(int i=0; i<NUM_WEAPONS_ON_PLAYER; ++i)
@@ -6738,6 +6761,23 @@ static void AdjustHitPosition( DecalParams& params, GameObject* target )
 		}
 	}
 }
+
+//------------------------------------------------------------------------
+
+TCamoSettings::TCamoSettings()
+: texScale(1.0f)
+, distortScale(1.0f)
+, animSpeed(1.0f)
+, reflectionAmmount(0.33f)
+, color0(0, 0, 255)
+, color1(0, 255, 255, 127)
+{
+
+}
+
+//------------------------------------------------------------------------
+
+TCamoSettings gCamoSettings;
 
 //------------------------------------------------------------------------
 

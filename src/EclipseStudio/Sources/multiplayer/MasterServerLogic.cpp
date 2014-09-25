@@ -77,7 +77,7 @@ void MasterServerLogic::OnNetData(DWORD peerId, const r3dNetPacketHeader* packet
       versionChecked_ = true;
       if(n.version != GBNET_VERSION)
       {
-        r3dOutToLog("Wrong client version. Please get update\n");
+      //  r3dOutToLog("Wrong client version. Please get update\n");
         badClientVersion_ = true;
       }
 

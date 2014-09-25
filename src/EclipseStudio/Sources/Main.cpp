@@ -522,7 +522,7 @@ void CallbackFileChange( const char * szFileName )
 
 	FixedString s( szName );
 	FixedString sExt = s.GetExt();
-	strlwr(sExt.str());
+	_strlwr(sExt.str());
 	if ( sExt == ".dds" || sExt == ".tga" || sExt == ".bmp" )
 	{
 		r3dRenderer->ReloadTextureData( szName );
@@ -988,11 +988,6 @@ void OnFoundIniFile( const char* FullIniPath )
 void readGameOptionsFile()
 {
 	r_ini_read->SetBool( true );
-
-#ifdef FINAL_BUILD
-	// before reading ini to allow geeks to override it
-	r_limit_fps->SetInt( 60 );
-#endif
 
 	// try local first
 	if( !r3d_access( "./" INI_FILE, 4 ) )
@@ -1609,6 +1604,7 @@ void game::MainLoop()
 	r3dMaterialLibrary::Reset();	
 	MeshGlobalBuffer::unloadManaged();
 	
+	if(g_pWeaponArmory)
 	g_pWeaponArmory->Destroy();
 	SAFE_DELETE(g_pWeaponArmory);
 

@@ -18,7 +18,8 @@ void HeroConfig::resetMesh()
 
 r3dMesh* HeroConfig::getHeadMesh(int index) const
 {
-	r3d_assert(index>=0 && index<(int)m_HeadMeshes.size());
+	if(index < 0 || index >= (int)m_BodyMeshes.size())
+			index = 0; //resort to default
 	if(m_HeadMeshes[index] == 0)
 	{
 		char tmpBuf[512];
@@ -36,7 +37,8 @@ r3dMesh* HeroConfig::getHeadMesh(int index) const
 
 r3dMesh* HeroConfig::getLegMesh(int index) const
 {
-	r3d_assert(index>=0 && index < (int)m_LegsMeshes.size());
+	if(index < 0 || index >= (int)m_BodyMeshes.size())
+			index = 0; //resort to default
 	if(m_LegsMeshes[index] == 0)
 	{
 		char tmpBuf[512];
@@ -57,7 +59,9 @@ r3dMesh* HeroConfig::getBodyMesh(int index, bool isFPS) const
 	r3d_assert(m_BodyMeshes.size() == m_BodyMeshesFPS.size());
 	if(!isFPS)
 	{
-		r3d_assert(index>=0 && index < (int)m_BodyMeshes.size());
+		// removed - some configs are oddly enough retarded - r3d_assert(index>=0 && index < (int)m_BodyMeshes.size());
+		if(index < 0 || index >= (int)m_BodyMeshes.size())
+			index = 0; //resort to default
 		if(m_BodyMeshes[index] == 0)
 		{
 			char tmpBuf[512];
@@ -74,7 +78,8 @@ r3dMesh* HeroConfig::getBodyMesh(int index, bool isFPS) const
 	}
 	else
 	{
-		r3d_assert(index>=0 && index < (int)m_BodyMeshesFPS.size());
+		if(index < 0 || index >= (int)m_BodyMeshes.size())
+			index = 0; //resort to default
 		if(m_BodyMeshesFPS[index] == 0)
 		{
 			char tmpBuf[512];

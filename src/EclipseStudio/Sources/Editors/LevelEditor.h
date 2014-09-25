@@ -78,6 +78,7 @@ struct Editor_Level
 	void	ProcessMaterials();
 	void	ProcessGroups();
 	void	ProcessDamageLib();
+	void	ProcessTCamo();
 	void	ProcessUtils();
 	void	ProcessCameraSpots();
 	void	ProcessMeshes();

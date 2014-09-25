@@ -156,6 +156,9 @@ void ExecuteNetworkGame()
 		SoundSys.Update(soundPos, soundDir, soundUp);
 	}
 
+	if (gClientLogic().footStepsSnd)
+          SoundSys.Release(gClientLogic().footStepsSnd);
+
 	int mainmenuTheme = -1;
 	mainmenuTheme = SoundSys.GetEventIDByPath("Sounds/MainMenu GUI/UI_MENU_MUSIC");
 	MainMenuSoundEvent = SoundSys.Play(mainmenuTheme, r3dPoint3D(0,0,0));
@@ -463,6 +466,9 @@ static EGameResult PlayNetworkGame()
 	if(gameResult != GRESULT_Exit)
 	{
 		int mainmenuTheme = -1;
+		if (gClientLogic().footStepsSnd)
+          SoundSys.Release(gClientLogic().footStepsSnd);
+
 		mainmenuTheme = SoundSys.GetEventIDByPath("Sounds/MainMenu GUI/UI_MENU_MUSIC");
 		MainMenuSoundEvent = SoundSys.Play(mainmenuTheme, r3dPoint3D(0,0,0));
 	}

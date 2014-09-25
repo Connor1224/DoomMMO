@@ -59,6 +59,7 @@ obj_ZombieSpawn::obj_ZombieSpawn()
 , sleepersRate(10.0f)
 , lootBoxID(0)
 , fastZombieChance(50.0f)
+, crawZombieChance(50.0f)
 , speedVariation(5.0f)
 {
 	m_bEnablePhysics = false;
@@ -151,6 +152,7 @@ float obj_ZombieSpawn::DrawPropertyEditor(float scrx, float scry, float scrw, fl
 	y += imgui_Value_Slider(scrx, y, "Spawn radius", &spawnRadius, 10.0f, 300.0f, "%-02.3f");
 
 	y += imgui_Value_Slider(scrx, y, "%% FastZombie", &fastZombieChance, 0.0f, 100.0f, "%-02.3f");
+	y += imgui_Value_Slider(scrx, y, "%% CrawlingZombie", &crawZombieChance, 0.0f, 100.0f, "%-02.3f");
 	y += imgui_Value_Slider(scrx, y, "%% Speed Variation", &speedVariation, 0.0f, 50.0f, "%-02.3f");
 
 	y += 5.0f;
@@ -281,6 +283,7 @@ void obj_ZombieSpawn::WriteSerializedData(pugi::xml_node& node)
 	SetXMLVal("max_detection_radius", zombieSpawnNode, &maxDetectionRadius);
 	SetXMLVal("lootBoxID", zombieSpawnNode, &lootBoxID);
 	SetXMLVal("fastZombieChance", zombieSpawnNode, &fastZombieChance);
+	SetXMLVal("crawZombieChance", zombieSpawnNode, &crawZombieChance);
 	SetXMLVal("speedVariation", zombieSpawnNode, &speedVariation);
 	zombieSpawnNode.append_attribute("numZombieSelected") = ZombieSpawnSelection.size();
 	for(size_t i=0; i<ZombieSpawnSelection.size(); ++i)
@@ -308,6 +311,7 @@ void obj_ZombieSpawn::ReadSerializedData(pugi::xml_node& node)
 	GetXMLVal("max_detection_radius", zombieSpawnNode, &maxDetectionRadius);
 	GetXMLVal("lootBoxID", zombieSpawnNode, &lootBoxID);
 	GetXMLVal("fastZombieChance", zombieSpawnNode, &fastZombieChance);
+	GetXMLVal("crawZombieChance", zombieSpawnNode, &crawZombieChance);
 	GetXMLVal("speedVariation", zombieSpawnNode, &speedVariation);
 	uint32_t numZombies = zombieSpawnNode.attribute("numZombieSelected").as_uint();
 	for(uint32_t i=0; i<numZombies; ++i)

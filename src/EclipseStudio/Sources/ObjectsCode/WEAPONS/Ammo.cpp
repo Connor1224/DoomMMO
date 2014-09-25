@@ -83,7 +83,7 @@ void Ammo::Fire(const r3dPoint3D& hitPos, const r3dPoint3D& muzzlerPos, const D3
 		PxRaycastHit hit;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
 		// muzzlePos is the correct position for the hands.
-		if(g_pPhysicsWorld->raycastSingle(PxVec3(muzzlerPos.x, muzzlerPos.y+1, muzzlerPos.z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eIMPACT, hit, filter))
+		if(g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(muzzlerPos.x, muzzlerPos.y+1, muzzlerPos.z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eIMPACT, hit, filter))
 		{
 			spawnPos.x = hit.impact.x;
 			spawnPos.y = hit.impact.y;

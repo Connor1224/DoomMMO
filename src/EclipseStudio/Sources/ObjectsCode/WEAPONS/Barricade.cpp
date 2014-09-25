@@ -49,7 +49,7 @@ BOOL obj_Barricade::OnCreate()
 	// raycast and see where the ground is and place dropped box there
 	PxRaycastHit hit;
 	PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
-	if(g_pPhysicsWorld->raycastSingle(PxVec3(GetPosition().x, GetPosition().y+1, GetPosition().z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eIMPACT, hit, filter))
+	if(g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(GetPosition().x, GetPosition().y+1, GetPosition().z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eIMPACT, hit, filter))
 	{
 		SetPosition(r3dPoint3D(hit.impact.x, hit.impact.y, hit.impact.z));
 		SetRotationVector(r3dPoint3D(m_RotX, 0, 0));

@@ -41,6 +41,7 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 	};
 	PlayerName_s	playerNames[256]; // playername by server peer index
 
+	void *footStepsSnd;
 	DWORD		net_lastFreeId; // !!!ONLY use it for assigning networkID during loading map!!!
 	float		localPlayerConnectedTime; // used for calculating how much time player was playing
 

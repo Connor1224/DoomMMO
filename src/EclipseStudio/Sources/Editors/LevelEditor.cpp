@@ -1,5 +1,5 @@
 #include "r3dPCH.h"
-
+#include <functional>
 #define R3D_PROBEUNDO_ENABLE 0
 
 #ifndef FINAL_BUILD
@@ -230,6 +230,16 @@ void SerializeCommonSettings( pugi::xml_node root )
 		}		
 	}
 #endif
+	if (pugi::xml_node camoNode = SerializeXMLNode<W>(root, "tcamo"))
+	{
+		SerializeXMLVal<W>("tex_scale", camoNode, &gCamoSettings.texScale);
+		SerializeXMLVal<W>("distort_scale", camoNode, &gCamoSettings.distortScale);
+		SerializeXMLVal<W>("reflection_ammount", camoNode, &gCamoSettings.reflectionAmmount);
+		SerializeXMLVal<W>("anim_speed", camoNode, &gCamoSettings.animSpeed);
+
+		SerializeXMLVal<W>("color0", camoNode, &gCamoSettings.color0);
+		SerializeXMLVal<W>("color1", camoNode, &gCamoSettings.color1);
+	}
 }
 
 template < bool Write >
@@ -1109,7 +1119,7 @@ extern	gobjid_t	UI_TargetObjID;
 extern	r3dMaterial	*UI_TargetMaterial;
 extern char	LevelEditName[64];
 
-#include "..\..\bin\Data\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
+#include "..\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
 
 #define LEVELEDITOR_SETTINGS_FILE	"%s/EditorSettings.xml"
 
@@ -3724,6 +3734,11 @@ void Editor_Level :: Process(bool enable)
 	DEBUG_Player();
 	DEBUG_Draw_Instance_Wind() ;
 	DEBUG_DrawZombieModHelpers();
+	if( r_show_collection_grid->GetInt() )
+	{
+		void DEBUG_DrawCollectionCells() ;
+		//DEBUG_DrawCollectionCells() ;
+	}
 
 	void DrawPreGUIHelpers ();
 	DrawPreGUIHelpers();
@@ -3929,7 +3944,7 @@ void Editor_Level :: Process(bool enable)
 
 
 
-	//imgui_Button(r3dRenderer->ScreenW-10-150, r3dRenderer->ScreenH-28, 100, 20, "TRANSFER TO", 0, false);
+	imgui_Button(r3dRenderer->ScreenW-10-150, r3dRenderer->ScreenH-28, 100, 20, "TRANSFER TO", 0, false);
 
 	float oldTime = r3dGameLevel::Environment.__CurTime ;
 
@@ -4107,6 +4122,7 @@ void Editor_Level :: Process(bool enable)
 				ProcessDamageLib();
 				break;
 			case OBEM_TCAMO:
+				ProcessTCamo();
 				break;
 			case OBEM_UTILS:
 				ProcessUtils();
@@ -4813,6 +4829,63 @@ extern int		bDaySim;
 	}
 
 
+
+}
+
+void Editor_Level::ProcessTCamo()
+{
+	float SliderX = r3dRenderer->ScreenW - 365;
+	float SliderY = 45;
+
+	SliderY += imgui_Static(SliderX, SliderY, "Transparent Camo");
+
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Texture Scale", &gCamoSettings.texScale, 0.125f, 4.0f, "%.3f");
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Distort Scale", &gCamoSettings.distortScale, 0.125f, 4.0f, "%.3f");
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Reflection Ammount", &gCamoSettings.reflectionAmmount, 0.0f, 1.0f, "%.2f");
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Anim Speed", &gCamoSettings.animSpeed, 0.125f, 4.0f, "%.3f");
+
+	SliderY += imgui_DrawColorPicker(SliderX, SliderY, "Color0", &gCamoSettings.color0, 360, false);
+
+	SliderY += imgui_DrawColorPicker(SliderX, SliderY, "Color1", &gCamoSettings.color1, 360, true);
+
+	static obj_Player *player = 0;
+
+	if (!player)
+	{
+		for (GameObject *obj = GameWorld().GetFirstObject(); obj; obj = GameWorld().GetNextObject(obj))
+		{
+			if (obj->isObjType(OBJTYPE_Human))
+			{
+				player = static_cast< obj_Player* >(obj);
+				break;
+			}
+		}
+	}
+
+	static float camoTransp = 0.f;
+
+	if (player)
+	{
+		SliderY += imgui_Value_Slider(SliderX, SliderY, "Transparency", &camoTransp, 0.0f, 0.99f, "%.3f");
+
+		if (player->camoTimeLine.GetTarget() < 1.0f)
+		{
+			player->camoTimeLine.SetNewCamoTarget(camoTransp);
+		}
+	}
+
+	if (imgui_Button(SliderX, SliderY, 100, 22, "ToggleCamo", 0, false))
+	{
+		g_pCmdProc->Execute("tcamo");
+	}
+
+	SliderY += 33;
+
+	if (imgui_Button(SliderX, SliderY, 100, 35, "SAVE GLOBAL", 0, false))
+	{
+		SaveCommonSettings();
+		MessageBoxA(0, "Saved!", "Alright", MB_OK);
+	}
 
 }
 
@@ -5981,7 +6054,7 @@ void Editor_Level :: ProcessTerrain()
 							char sStatStr[ MAX_PATH * 2 ];
 
 							strcpy( sStatStr, tex->getFileLoc().FileName );
-							strlwr( sStatStr );
+							_strlwr( sStatStr );
 
 							for( size_t i = 0, e = strlen( sStatStr ) ; i < e; i ++ )
 							{
@@ -6280,6 +6353,7 @@ Editor_Level::ProcessTerrain2_Settings( float SliderX, float SliderY )
 			strList.push_back( "128x128" ) ;
 			strList.push_back( "256x256" ) ;
 			strList.push_back( "512x512" ) ;
+			strList.push_back( "1024x1024" ) ;
 
 			static float offset = 0.f ;
 
@@ -6297,6 +6371,9 @@ Editor_Level::ProcessTerrain2_Settings( float SliderX, float SliderY )
 				break ;
 			case 512:
 				selected = 3 ;
+				break ;
+			case 1024:
+			    selected = 4 ;
 				break ;
 			}
 
@@ -6319,6 +6396,9 @@ Editor_Level::ProcessTerrain2_Settings( float SliderX, float SliderY )
 				break ;
 			case 3:
 				qsts.AtlasTileDim = 512 ;
+				break ;
+			case 4:
+				qsts.AtlasTileDim = 1024 ;
 				break ;
 			}
 
@@ -6882,7 +6962,12 @@ Editor_Level::ProcessTerrain2_Paint( float SliderX, float SliderY, int editMode 
 {
 	SliderY += 10;
 	SliderY += imgui_Static(SliderX, SliderY, "PAINT");
-	
+
+	const static char* listpaint[  ] = { "ERASER",		"BRUSH"		};
+
+	enum								{ TE2_ERASE,	TE2_BRUSH	};
+
+	static int Terrain2PaintMode = TE2_BRUSH ;
 	static int CurrentPaintLayerIdx2 = 0 ;
 
 	if( CurrentPaintLayerIdx2 >= Terrain2->GetDesc().LayerCount )
@@ -6891,7 +6976,7 @@ Editor_Level::ProcessTerrain2_Paint( float SliderX, float SliderY, int editMode 
 		CurrentPaintLayerIdx2 = 0 ;
 	}
 
-	SliderY += imgui_Toolbar(SliderX, SliderY, 360, 45, &Terrain2PaintMode, 0, terrain2PaintList, sizeof terrain2PaintList / sizeof terrain2PaintList[ 0 ] );
+	SliderY += imgui_Toolbar(SliderX, SliderY, 360, 45, &Terrain2PaintMode, 0, listpaint, sizeof listpaint / sizeof listpaint[ 0 ] );
 
 	SliderY += imgui_Checkbox( SliderX, SliderY, "Show Material Heaviness", &DrawTerrainMatHeaviness, 1 );		
 
@@ -7084,7 +7169,7 @@ Editor_Level::ProcessTerrain2_Paint( float SliderX, float SliderY, int editMode 
 				char sStatStr[ MAX_PATH * 2 ];
 
 				strcpy( sStatStr, tex->getFileLoc().FileName );
-				strlwr( sStatStr );
+				_strlwr( sStatStr );
 
 				for( size_t i = 0, e = strlen( sStatStr ) ; i < e; i ++ )
 				{
@@ -10274,6 +10359,24 @@ void ProcessDecalsEditor(bool globalLib, float SliderX, float SliderY)
 					g_pDecalChief->RemoveStaticDecalsOfType( g_iSelectedDecalType );
 				}
 
+				if (SelectedDecal >= 0 && SelectedDecal < (int)count)
+				{
+					if (const DecalParams* parms = g_pDecalChief->GetStaticDecal(g_iSelectedDecalType, SelectedDecal))
+					{
+						r3dBoundBox bbox;
+
+						const DecalType& dt = g_pDecalChief->GetTypeByIdx(parms->TypeID);
+
+						float s = sqrtf(dt.ScaleX * dt.ScaleX + dt.ScaleY * dt.ScaleY) * 0.5f * parms->ScaleCoef;
+
+						bbox.Org = parms->Pos - r3dPoint3D(s, s, s);
+						bbox.Size.x = s * 2;
+						bbox.Size.y = s * 2;
+						bbox.Size.z = s * 2;
+						PushBoundingBox(bbox);
+					}
+				}
+
 				SliderY += 22.f;
 			}
 
@@ -10954,7 +11057,7 @@ float ProcessGrassConfigure( float SliderX, float SliderY )
 
 				r3dString CurrentTexPath = GetGrassPath( sts.ChunkSettings[ g_GrassChunkSelected ].TextureName.c_str() );
 
-				if( stricmp( CurrentTexName, CurrentTexPath.c_str()) )
+				if( _stricmp( CurrentTexName, CurrentTexPath.c_str()) )
 				{
 					DisplayTexture = r3dRenderer->LoadTexture( CurrentTexPath.c_str() );
 					r3dscpy( CurrentTexName, CurrentTexPath.c_str() );
@@ -14781,7 +14884,7 @@ void Editor_Level::ProcessAutodeskNavigation(float SliderX, float SliderY)
 				PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eDYNAMIC|PxSceneQueryFilterFlag::eSTATIC));
 				PxSceneQueryFlags queryFlags(PxSceneQueryFlag::eIMPACT);
 				PxRaycastHit hit;
-				if (g_pPhysicsWorld->raycastSingle(randomVec, PxVec3(0, -1, 0), 20000.0f, queryFlags, hit, filter))
+				if (g_pPhysicsWorld->PhysXScene->raycastSingle(randomVec, PxVec3(0, -1, 0), 20000.0f, queryFlags, hit, filter))
 				{
 					randomVec.y = hit.impact.y;
 				}
@@ -15689,6 +15792,7 @@ float Editor_Level::ProcessStaticSky( float SliderX, float SliderY )
 	if( StaticSkyEnable )
 	{
 		SliderY += imgui_Value_Slider(SliderX, SliderY, "Skydome Rot Y", &r3dGameLevel::Environment.SkyDomeRotationY, 0.f, 360.f, "%.1f" );
+		SliderY += imgui_Value_Slider(SliderX, SliderY, "Skydome Rot X", &r3dGameLevel::Environment.SkyDomeRotationX, 0.f, 360.f, "%.1f" );
 
 		SliderY += imgui_Checkbox( SliderX, SliderY, 360, 22, "Use Custom Skydome Mesh", &StaticCustomMeshEnable, 1 ) ;
 		r3dGameLevel::Environment.bCustomStaticMeshEnable = !!StaticCustomMeshEnable ;
@@ -15988,7 +16092,7 @@ static void FixPresetExt( char* preset )
 
 	_splitpath( preset, drive, folder, name, ext );
 
-	if( stricmp( ext, ".xml" ) )
+	if( _stricmp( ext, ".xml" ) )
 	{
 		strcpy( preset, drive );
 		strcat( preset, folder );
@@ -16789,7 +16893,7 @@ namespace
 			char BrushName[ 256 ] ;
 			sprintf( BrushName, "brush_%s", EditModeToString( EditMode_t( i ) ) );
 
-			strlwr( BrushName ) ;
+			_strlwr( BrushName ) ;
 
 			if( pugi::xml_node bn = SerializeXMLNode<W>( root, BrushName ) )
 			{
@@ -16808,7 +16912,7 @@ namespace
 			char BrushName[ 256 ] ;
 			sprintf( BrushName, "brush_%s", EditModeToString2( EditMode2_t( i ) ) );
 
-			strlwr( BrushName ) ;
+			_strlwr( BrushName ) ;
 
 			if( pugi::xml_node bn = SerializeXMLNode<W>( root, BrushName ) )
 			{

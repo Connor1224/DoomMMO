@@ -365,7 +365,10 @@ void obj_AmbientSound::ReadSerializedData(pugi::xml_node& node)
 		max3DDist = ambientSoundNode.attribute("max3DDist").as_float();
 	}
 	if(!ambientSoundNode.attribute("volume").empty())
+	{
 		masterVolume = ambientSoundNode.attribute("volume").as_float();
+		masterVolume -= 0.2f;
+	}
 
 	if(!ambientSoundNode.attribute("startTime").empty())
 	{

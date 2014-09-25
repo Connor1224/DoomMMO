@@ -604,6 +604,7 @@ struct PKT_S2C_CreateZombie_s : public DefaultPacketMixin<PKT_S2C_CreateZombie>
 	BYTE		LegsIdx;
 	BYTE		State;		// ZombieStates::EZombieStates
 	BYTE		FastZombie;
+	BYTE		CrawlZombie;
 	float		WalkSpeed;
 	float		RunSpeed;
 };
@@ -748,7 +749,7 @@ struct PKT_S2C_CheatWarning_s : public DefaultPacketMixin<PKT_S2C_CheatWarning>
 struct PKT_C2S_ScreenshotData_s : public DefaultPacketMixin<PKT_C2S_ScreenshotData>
 {
 	BYTE		errorCode;	// 0 if success
-	WORD		dataSize;
+	DWORD		dataSize;
 	// this packet will have attached screenshot data after header
 	// char		data[0x7FFF];
 };

@@ -349,10 +349,12 @@ bool hud_ProcessCameraPick(float mx, float my)
 		found = true;
 	}
 
+	extern r3dMaterial* Get_Material_By_Ray(const r3dPoint3D& vStart, const r3dPoint3D& vRay, float& dist);
+
 	float dist = 9999999;
 	r3dMaterial* collectionsMaterial = Get_Material_By_Ray(gCam, dir, dist);
 
-	if (!CL.Material && collectionsMaterial)
+	if((!CL.Material || (CL.Material && dist < CL.Distance) ) && collectionsMaterial)
 	{
 		UI_TargetMaterial  = collectionsMaterial;
 		UI_TargetPos = gCam + dir * dist;

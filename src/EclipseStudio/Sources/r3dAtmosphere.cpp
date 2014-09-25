@@ -148,6 +148,7 @@ void r3dAtmosphere :: Reset()
 	StaticTexGetOffsetY = 0.5f;
 
 	SkyDomeRotationY = 0.f;
+	SkyDomeRotationX = 0.f;
 
 }
 
@@ -225,6 +226,7 @@ int r3dAtmosphere :: SerializeXML( pugi::xml_node root )
 		SerializeXMLVal<W>( "sun_intensity"						, atmoNode, &SunIntensity				);
 		SerializeXMLVal<W>( "moon_intensity"					, atmoNode, &MoonIntensity				);
 		SerializeXMLVal<W>( "skydome_rotation_y"				, atmoNode, &SkyDomeRotationY			);
+		SerializeXMLVal<W>( "skydome_rotation_x"				, atmoNode, &SkyDomeRotationX			);
 
 		if( !W )
 		{
@@ -544,7 +546,7 @@ void r3dAtmosphere::SetRainParticle( const char* Name )
 		strcpy( RainParticleSystemName, Name ) ;
 	}
 
-	if( !stricmp( RainParticleSystemName, PT_EMPTY_STR ) || !strlen( RainParticleSystemName ) )
+	if( !_stricmp( RainParticleSystemName, PT_EMPTY_STR ) || !strlen( RainParticleSystemName ) )
 	{
 		return ;
 	}

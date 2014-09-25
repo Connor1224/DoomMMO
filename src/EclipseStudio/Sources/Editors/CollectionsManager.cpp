@@ -1015,13 +1015,13 @@ void CollectionsManager::Render(CollectionsDrawModeEnum drawMode)
 		{
 
 			// otherwise animated remains 0
-#if R3D_ENABLE_TREE_WIND
+//#if R3D_ENABLE_TREE_WIND
 			animated = pMesh->VertexFlags & r3dMesh::vfBending && ct.hasAnimation 
 				&&
 				// otherwise static shadows will interfere with trees
 				r_shadows_quality->GetInt() > 1
 				;
-#endif
+//#endif
 
 			if( pMesh->NumMatChunks > 0 )
 			{
@@ -1217,7 +1217,7 @@ void CollectionsManager::GetElementsInRadius(const r3dPoint2D &center, float r, 
 #ifndef WO_SERVER
 void CollectionsManager::UpdateWind()
 {
-#if R3D_ENABLE_TREE_WIND
+//#if R3D_ENABLE_TREE_WIND
 
 	R3DPROFILE_FUNCTION( "CM::UpdateWind" ) ;
 
@@ -1308,7 +1308,7 @@ void CollectionsManager::UpdateWind()
 		}
 		ce.wasVisible = false ;
 	}
-#endif
+//#endif
 }
 #endif
 //////////////////////////////////////////////////////////////////////////

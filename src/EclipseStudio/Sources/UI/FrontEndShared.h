@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __FRONTENDSHARED_H__
+#define __FRONTENDSHARED_H__
 
 // temp file to make it easier to port to new frontend UI
 
@@ -90,3 +91,5 @@ struct FrontEndShared
 		RET_LoggedIn,
 	};
 };
+
+#endif //__FRONTENDSHARED_H__

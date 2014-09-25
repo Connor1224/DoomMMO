@@ -60,6 +60,13 @@ BOOL obj_Grenade::OnCreate()
 	r3d_assert(m_Ammo);
 	r3d_assert(m_Weapon);
 
+	PhysicsConfig.type = PHYSICS_TYPE_BOX;
+	r3dVector pos = GetPosition();
+	r3dVector size(0.5f,0.5f,0.5f);
+	r3dMesh* mesh = GetObjectMesh();
+	D3DXMATRIX mat = GetRotationMatrix();
+	PhysicsObject = BasePhysicsObject::CreateDynamicObject(PhysicsConfig, this, &pos, &size, mesh, &mat);
+
 	parent::OnCreate();
 
 	m_CreationTime = r3dGetTime() - m_AddedDelay;
@@ -97,7 +104,7 @@ void obj_Grenade::onExplode()
 
 	PxRaycastHit hit;
 	PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
-	if(g_pPhysicsWorld->raycastSingle(PxVec3(GetPosition().x, GetPosition().y+1, GetPosition().z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eDISTANCE, hit, filter))
+	if(g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(GetPosition().x, GetPosition().y+1, GetPosition().z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eDISTANCE, hit, filter))
 	{
 		if(hit.distance < 5.0f)
 			closeToGround = true;

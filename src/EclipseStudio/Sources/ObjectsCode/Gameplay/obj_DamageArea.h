@@ -40,5 +40,5 @@ public:
 R3D_FORCEINLINE /*static*/
 const obj_DamageArea::Arr& obj_DamageArea::GetDamageAreaArr()
 {
-	return ms_DamageAreaArr ;
+	return ms_DamageAreaArr;
 }

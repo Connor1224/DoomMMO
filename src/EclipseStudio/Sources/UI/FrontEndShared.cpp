@@ -190,6 +190,8 @@ DWORD SetDefaultSettings( r3dDevStrength strength )
 
 	r_overall_quality->SetInt( strength + 1 );
 	r_apex_enabled->SetBool(r_overall_quality->GetInt() == 4);
+	float fltStr = static_cast<float>(strength);
+	r_decals_proximity_multiplier->SetFloat(1 - fltStr / (S_ULTRA + 1));
 
 	return GraphSettingsToVars( settings );
 }

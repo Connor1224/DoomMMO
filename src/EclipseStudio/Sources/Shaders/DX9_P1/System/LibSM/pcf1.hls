@@ -1,0 +1,335 @@
+// because of retarded microsoft include interface we have to include that file before including pcf1.hls, otherwise it cannot find shadow_config.h
+// TODO: write our own ID3DXINCLUDE interface. 
+//#include "shadow_config.h"
+
+// stupid microsoft compiler! it doesn't like when I define const float, so had to define that variable as DEFINE.
+#define MaximumShadowDistance 15000.0f
+
+// SHADOW GENERATION CODE
+float2 GenerateVSA(float Dist)
+{
+	float2 Moments;
+
+	Moments.x = Dist;
+
+	float dx = ddx(Dist);
+	float dy = ddy(Dist);
+
+	// disable DDX/DDY since clamp will take care of that
+	Moments.y = Dist*Dist + 0.25*(dx*dx + dy*dy);
+
+	return Moments;
+}
+
+float4 GenerateShadow(float Dist)
+{
+	float4 res = 0;
+#ifdef USE_PCF
+	res = Dist;
+#else
+	res.rg = GenerateVSA(Dist/MaximumShadowDistance);
+#endif
+	return res;
+}
+
+
+// SHADOW CALCULATION CODE
+float PCF1(sampler Tex, float2 uv, float Dist, float shadowbias, float pixelSize)
+{
+	float2 poisson_random_disk[12] = {	float2(-0.6681085, -1.020815),
+		float2(0.4761752, -0.6751648),
+		float2(-0.1537717, -2.449868),
+		float2(-0.3683611, 1.031067),
+		float2(-1.775927, -0.2886508),
+		float2(1.548626, -1.735509),
+		float2(2.257513, -0.1769659),
+		float2(-0.9303124, 2.204462),
+		float2(0.5686545, 1.779241),
+		float2(0.907094, 0.723609),
+		float2(-1.993436, -1.375108),
+		float2(-1.735697, 1.076745) };
+
+	float totalShad=0;
+
+	float depth = Dist - shadowbias;
+	for (int i = 0; i<8; i ++)
+	{
+		float2 offset = poisson_random_disk[i] * pixelSize*0.275f;
+		float2 nuv = uv.xy+offset;
+		float shadMapDepth = tex2D(Tex,nuv).r;
+		float shad = 1-(shadMapDepth<depth);
+		totalShad += shad;
+	}
+
+	float SM = totalShad/8.0f;
+	return saturate(SM);
+}
+
+
+
+
+float linstep(float min, float max, float v )
+{
+	return clamp((v-min) / (max-min),0,1);
+}
+
+float LimitCheb(float2 M, float T, in float4 VSMParams)
+{
+	float p = (T <= M.x);
+
+	float Variance = M.y - (M.x*M.x);
+	Variance = max ( Variance, VSMParams.x);
+
+	float d = T - M.x;
+	float pmax = Variance / (Variance + d*d);
+
+	return linstep(VSMParams.y, 1.0f, max(p,pmax));
+}
+
+float VSA(sampler Tex, float2 uv, float Dist, in float4 VSMParams)
+{
+	float2 shadMap = tex2D(Tex,uv);
+	return saturate(LimitCheb(shadMap, Dist-VSMParams.z, VSMParams));
+}
+
+
+float CalculateShadow(sampler Tex, float2 uv, float Dist, float4 shadowParams)
+{
+#ifdef USE_PCF
+	return PCF1(Tex, uv, Dist, shadowParams.x, shadowParams.y);
+#else
+	Dist = clamp(Dist/MaximumShadowDistance, 0.0f, 1.0f);
+	return VSA(Tex, uv, Dist, shadowParams);
+#endif
+}
+
+
+float CalculateShadowN(sampler Tex, float2 uv, float Dist, float4 shadowParams)
+{
+	Dist = clamp(Dist/MaximumShadowDistance, 0.0f, 1.0f);
+	return PCF1(Tex, uv, Dist, shadowParams.x, shadowParams.y*0.75f);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+float PCF3(sampler Tex, float2 uv, float Dot, float Dist, float BlurScale)
+{
+	float shadMapDepth1 = tex2D(Tex,uv).r;
+	float depth1 = Dist - shadMapDepth1;
+
+	int PCF_SAMPS  = 3;
+
+	float PCFH  = ((PCF_SAMPS-1)/2);
+	float PCFT  = (PCF_SAMPS*PCF_SAMPS);
+
+	// L01
+	// float ShadowBiasing = 0.0005f;
+	// float PCFSize = 0.0005f;
+
+	// Onslaught
+	float ShadowBiasing = 0.002f;
+	float PCFSize = 0.001f;
+
+
+	float totalShad=0;
+	int i, j;
+	float offSize = PCFSize / PCF_SAMPS;
+
+	for (i = -PCFH; i<= PCFH; i += 1)
+		for (j = -PCFH; j<= PCFH; j += 1)
+		{
+			float2 offset = float2(offSize*i,offSize*j);
+			float2 nuv = uv.xy+offset;
+			float shadMapDepth = tex2D(Tex,nuv).r;
+			float depth = clamp(Dist - ShadowBiasing,0,1);
+
+			float shad = 1-(shadMapDepth<depth);
+			totalShad += shad;
+		}
+
+		float SM = (totalShad/PCFT);
+		return SM;
+}
+
+
+
+float PCF2(sampler Tex, float2 uv, float Dot, float Dist, float BlurScale)
+{
+	float ShadowBiasing = 0.007f;
+
+	float shadMapDepth1 = tex2D(Tex,uv).r;
+
+	float depth = clamp(Dist - ShadowBiasing,0,1);
+
+	return 1-(shadMapDepth1<depth);
+}
+
+
+
+#define PCF_NUM_SAMPLES 4
+#define NEAR_PLANE 9.5
+#define LIGHT_WORLD_SIZE .5
+#define LIGHT_FRUSTUM_WIDTH 3.75
+#define LIGHT_SIZE_UV (LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH) 
+#define POISSON_COUNT 16
+
+float  ShadowBiasing = 0; //0.0005f;
+
+
+float2 poissonDisk[POISSON_COUNT] = {
+	float2( -0.94201624, -0.39906216 ),
+	float2( 0.94558609, -0.76890725 ),
+	float2( -0.094184101, -0.92938870 ),
+	float2( 0.34495938, 0.29387760 ),
+	float2( -0.91588581, 0.45771432 ),
+	float2( -0.81544232, -0.87912464 ),
+	float2( -0.38277543, 0.27676845 ),
+	float2( 0.97484398, 0.75648379 ),
+	float2( 0.44323325, -0.97511554 ),
+	float2( 0.53742981, -0.47373420 ),
+	float2( -0.26496911, -0.41893023 ),
+	float2( 0.79197514, 0.19090188 ),
+	float2( -0.24188840, 0.99706507 ),
+	float2( -0.81409955, 0.91437590 ),
+	float2( 0.19984126, 0.78641367 ),
+	float2( 0.14383161, -0.14100790 )
+};
+
+
+float PenumbraSize(float zReceiver, float zBlocker) //Parallel plane estimation
+{
+	return (zReceiver - zBlocker) / zBlocker;
+}
+
+
+float2 FindBlocker(sampler shadowMapTex, float2 uv, float zReceiver )
+{
+	//This uses similar triangles to compute what 
+	//area of the shadow map we should search
+
+	float searchWidth = LIGHT_SIZE_UV * (zReceiver - NEAR_PLANE) / zReceiver;
+
+	float avgBlockerDepth =0;
+	float blockerSum = 0;
+	float numBlockers = 0;
+
+	for( int i = 0; i < POISSON_COUNT; i++ )
+	{
+		float shadowMapDepth = tex2D(shadowMapTex,uv + poissonDisk[i] * searchWidth).r;
+
+		float depth = zReceiver; //clamp(zReceiver - ShadowBiasing,0,1);
+
+		if ( shadowMapDepth < depth ) 
+		{
+			blockerSum += shadowMapDepth;
+			numBlockers++;
+		}
+
+	}
+
+	avgBlockerDepth = blockerSum / numBlockers;
+
+	return float2(numBlockers, avgBlockerDepth);
+}
+
+
+
+float PCF_Filter( sampler shadowMapTex, float2 uv, float zReceiver, float filterRadiusUV )
+{
+	float stepSize = 2 * filterRadiusUV / PCF_NUM_SAMPLES;
+	uv -= float2(filterRadiusUV, filterRadiusUV);
+	float sum = 0;
+
+	for (int i=0; i<PCF_NUM_SAMPLES; i++) {
+		for (int j=0; j<PCF_NUM_SAMPLES; j++) {
+			float2 offset = float2(i*stepSize,j*stepSize);
+			float2 nuv = uv + offset;
+			float shadMapDepth = tex2D(shadowMapTex,nuv).r;
+			float depth = zReceiver; //clamp(zReceiver - ShadowBiasing,0,1);
+
+			float shad = 1-(shadMapDepth<depth);
+			sum += shad;
+		}
+	}
+
+	return sum / (PCF_NUM_SAMPLES*PCF_NUM_SAMPLES);
+}
+
+
+
+float PCSS ( sampler shadowMapTex, float2 uv, float Dist)
+{
+	float zReceiver = Dist;
+
+	float PCFSize = 0.0010f;
+
+
+	// STEP 1: blocker search
+	float avgBlockerDepth = 0;
+	float numBlockers = 0;
+
+	float2 t2 = FindBlocker( shadowMapTex, uv, zReceiver );
+	avgBlockerDepth = t2.y;
+	numBlockers = t2.x; 
+
+	//There are no occluders so early out (this saves filtering)
+	if( numBlockers < 1 ) return 1.0f;
+
+	// STEP 2: penumbra size
+	float penumbraRatio = PenumbraSize(zReceiver, avgBlockerDepth);
+
+	// Asuming orthogonal projection for shadow map
+	float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV;
+
+	// STEP 3: filtering
+	return PCF_Filter(shadowMapTex, uv, zReceiver, filterRadiusUV );
+}
+
+
+
+
+
+
+
+//pack the depth in a 32-bit rgba color
+float4 EncodeFloatRGBA(const float value)
+{    
+	const float4 bitSh = float4(256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0);    
+	const float4 mask = float4(0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);    
+	float4 res = frac(value * bitSh);    
+	res -= res.xxyz * mask;    
+	return res;
+}
+
+
+//unpack the depth from a 32-bit rgba color
+float DecodeARGB32(const float4 value)
+{    
+	const float4 bitSh = float4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1.0);    
+	return(dot(value, bitSh));
+}

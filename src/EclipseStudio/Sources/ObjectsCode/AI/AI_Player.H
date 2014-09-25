@@ -430,6 +430,21 @@ public:
 	CamoTimeLine camoTimeLine;
 };
 
+struct TCamoSettings
+{
+	TCamoSettings();
+
+	float texScale;
+	float distortScale;
+	float animSpeed;
+
+	float reflectionAmmount;
+
+	r3dColor color0;
+	r3dColor color1;
+
+} extern gCamoSettings;
+
 extern void InitializePhysSkeletonCache( int count, float progressStart, float progressEnd ) ;
 extern void DestroyPhysSkeletonCache() ;
 extern r3dPhysSkeleton* AquireCacheSkeleton();

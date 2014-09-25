@@ -173,6 +173,7 @@ void ParticleHUD :: Process()
 	{
 		DummyTargetObj = (DummyObject*)srv_CreateGameObject ( "DummyObject", "dummy", g_bStartedAsParticleEditor ? r3dVector ( 0,0,0 ) : UI_ParticlePos );
 		DummyTargetObj->SetScale ( 2.0f * r3dVector ( 1.0f, 1.0f, 1.0f ) );
+		DummyTargetObj->bPersistent = 0;
 		GameWorld().UnlinkObject(DummyTargetObj);
 	}
 

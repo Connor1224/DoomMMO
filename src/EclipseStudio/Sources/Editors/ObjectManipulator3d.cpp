@@ -216,6 +216,8 @@ static float GetScreenSize ( GameObject * pObj, r3dVector vVec, r3dVector vOffse
 static void GetScaleMatrix ( GameObject * pObj, D3DXMATRIX & mScale )
 {
 	r3d_assert ( pObj );
+	D3DXMATRIX mView = r3dRenderer->ViewMatrix;
+	D3DXMATRIX mProj = r3dRenderer->ProjMatrix;
 
 	float fScale = GetScreenSize ( pObj, r3dVector ( 0.0f, 0.0f, 0.0f ), r3dVector ( 1.0f, 0.0f, 0.0f ) );
 	float fNear = gCam.NearClip;
@@ -833,6 +835,12 @@ bool ObjectManipulator3d::Picker_IsPick ( GameObject * pObj, POINT ptCursor ) co
 			return false;
 	}
 
+	r3dRay tRay = Picker_GetClickRay( ptCursor );
+
+	D3DXMATRIX mView = r3dRenderer->ViewMatrix;
+	D3DXMATRIX mProj = r3dRenderer->ProjMatrix;
+
+	r3dPoint3D vCameraOrigin = r3dPoint3D ( - mView._41, - mView._42, - mView._43 );
 
 	extern gobjid_t	UI_TargetObjID;
 	GameObject* TargetObj = GameWorld().GetObject(UI_TargetObjID);
@@ -852,6 +860,7 @@ void ObjectManipulator3d::Picker_DrawPicked ( GameObject * pObj, ControlElement_
 	r3dRenderer->Flush ();
 
 	D3DXMATRIX mView = r3dRenderer->ViewMatrix;
+	D3DXMATRIX mProj = r3dRenderer->ProjMatrix;
 
 	r3dVector vPos = GetSelectionCenter ();
 
@@ -2266,6 +2275,7 @@ bool ObjectManipulator3d::MouseLeftBtnDown ( POINT pt, int delta )
 	
 	{
 		D3DXMATRIX mView = r3dRenderer->ViewMatrix;
+		D3DXMATRIX mProj = r3dRenderer->ProjMatrix;
 		
 		r3dVector vCameraOrigin = r3dVector ( - mView._41, - mView._42, - mView._43 );
 
@@ -2392,6 +2402,11 @@ bool ObjectManipulator3d::MouseLeftBtnUp ( POINT pt, int delta )
 			else
 			{
 				// select objects in rect
+
+				float fMinX = float(r3dTL::Min ( m_tSelectionStartPt.x, m_tSelectionEndPt.x )) / r3dRenderer->ScreenW;
+				float fMaxX = float(r3dTL::Max ( m_tSelectionStartPt.x, m_tSelectionEndPt.x )) / r3dRenderer->ScreenW;
+				float fMinY = float(r3dTL::Min ( m_tSelectionStartPt.y, m_tSelectionEndPt.y )) / r3dRenderer->ScreenH;
+				float fMaxY = float(r3dTL::Max ( m_tSelectionStartPt.y, m_tSelectionEndPt.y )) / r3dRenderer->ScreenH;
 				
 				Picker_Drop();
 

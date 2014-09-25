@@ -582,7 +582,7 @@ void obj_Zombie::ProcessMovement()
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eDYNAMIC|PxSceneQueryFilterFlag::eSTATIC));
 		PxSceneQueryFlags queryFlags(PxSceneQueryFlag::eIMPACT);
 		PxRaycastHit hit;
-		if (g_pPhysicsWorld->raycastSingle(PxVec3(nextPos.x, nextPos.y + 0.5f, nextPos.z), PxVec3(0, -1, 0), 1, queryFlags, hit, filter))
+		if (g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(nextPos.x, nextPos.y + 0.5f, nextPos.z), PxVec3(0, -1, 0), 1, queryFlags, hit, filter))
 		{
 			nextPos.y = hit.impact.y;
 		}
@@ -741,6 +741,9 @@ void obj_Zombie::StartWalkAnim(bool run)
 		wsk = 0.425f; //1.3f;
 	} else if(run && CreateParams.FastZombie) {
 		aid = AddAnimation("Zombie_run_01");
+		wsk = 0.5f; //0.3f;
+	} else if(!run && CreateParams.CrawlZombie) {
+		aid = AddAnimation("Zombie_crawl_01");
 		wsk = 0.5f; //0.3f;
 	} else r3d_assert(false);
 	

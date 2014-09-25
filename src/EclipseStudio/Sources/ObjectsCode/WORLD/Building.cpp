@@ -169,6 +169,13 @@ obj_Building::DrawSelected( const r3dCamera& Cam, eRenderStageID DrawState )
 
 BOOL obj_Building::OnCreate()
 {
+#ifdef FINAL_BUILD
+	PhysicsConfig.isDynamic = false;
+	PhysicsConfig.isKinematic = false;
+	PhysicsConfig.needBoxCollision = false;
+	PhysicsConfig.requireNoBounceMaterial = false;
+	PhysicsConfig.needExplicitCollisionMesh = true;
+#endif
 	parent::OnCreate();
 	
 	ChangeAnim();
