@@ -240,7 +240,7 @@ GameObject * obj_ApexDestructible::Clone()
 		return 0;
 
 	clone->SetRotationVector(GetRotationVector());
-	close->setSkipOcclusionCheck(true);
+	clone->setSkipOcclusionCheck(true);
 
 	return clone;
 }

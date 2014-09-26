@@ -245,6 +245,11 @@ GameObject::AppendSlicedShadowRenderables( RenderArray ( & render_arrays )[ rsCo
 	// find in which slice out object is
 	// squared distances are not working in some edge cases, so using normal distances
 
+	if (r_shadows_quality->GetInt() == 1) // DISABLE SHADOWS
+	{
+		ObjFlags |= OBJFLAG_DisableShadows;
+		return;
+	}
 	extern float gShadowSunMultiplier;
 
 	r3dPoint3D pos = GetBBoxWorld().Center();
@@ -314,12 +319,22 @@ GameObject::AppendSlicedShadowRenderables( RenderArray ( & render_arrays )[ rsCo
 void
 GameObject::AppendTransparentShadowRenderables( RenderArray & rarr, const r3dCamera& cam )
 {
+	if (r_shadows_quality->GetInt() == 1) // DISABLE SHADOWS
+	{
+		ObjFlags |= OBJFLAG_DisableShadows;
+		return;
+	}
 	(void)rarr, (void)cam;
 }
 
 void
 GameObject::AppendShadowRenderables( RenderArray & rarr, const r3dCamera& cam )
 {
+	if (r_shadows_quality->GetInt() == 1) // DISABLE SHADOWS
+	{
+		ObjFlags |= OBJFLAG_DisableShadows;
+		return;
+	}
 	(void)rarr, (void)cam;
 }
 
@@ -949,6 +964,11 @@ void GameObject::PrecalculateMatricesIgnoreSkinning( PrecalculatedMeshVSConsts* 
 void
 GameObject::SetTransparentShadowCasting( bool enabled )
 {
+	if (r_shadows_quality->GetInt() == 1) // DISABLE SHADOWS
+	{
+		ObjFlags |= OBJFLAG_DisableShadows;
+		return;
+	}
 	if( enabled )
 	{
 		// first set flag, then provoke adding

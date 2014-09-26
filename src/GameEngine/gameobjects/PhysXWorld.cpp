@@ -644,8 +644,10 @@ void PhysXWorld::StartSimulation()
 #endif
 
 #if APEX_ENABLED
+#ifndef WO_SERVER
 				g_pApexWorld->Simulate(substepSize, i == numStepsReq - 2);
 				g_pApexWorld->FetchResults(true);
+#endif
 #else
                 PhysXScene->simulate(substepSize);
                 PhysXScene->fetchResults(true);
@@ -662,8 +664,10 @@ void PhysXWorld::StartSimulation()
 #endif
 
 #if APEX_ENABLED
+#ifndef WO_SERVER
 			g_pApexWorld->Simulate(substepSize, true);
 			g_pApexWorld->FetchResults(true);
+#endif
 #else
 		    PhysXScene->simulate(substepSize); 
             m_needFetchResults = true;
