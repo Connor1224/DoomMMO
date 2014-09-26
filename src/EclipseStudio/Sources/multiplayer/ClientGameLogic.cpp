@@ -40,11 +40,11 @@
 #endif
 
 #ifdef  NDEBUG
-#pragma comment(lib, "../Eternity/lib/r3dLib.lib")
+#pragma comment(lib, "C:/WarZ/trunk/src/Eternity/lib/r3dLibF.lib")
 #endif
 
 #ifdef  FINAL_BUILD
-#pragma comment(lib, "../Eternity/lib/r3dLibF.lib")
+#pragma comment(lib, "C:/WarZ/trunk/src/Eternity/lib/r3dLibF.lib")
 #endif
 
 extern HUDDisplay*	hudMain;

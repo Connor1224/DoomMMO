@@ -1008,10 +1008,3 @@ void HUDDisplay::setCharTagTextVisible(Scaleform::GFx::Value& icon, bool isShowN
 	var[2].SetBoolean(isSameGroup);
 	gfxHUD.Invoke("_root.api.setCharTagTextVisible", var, 3);
 }
-
-void HUDDisplay::setThreatValue(int value)
-{
-    Scaleform::GFx::Value vars[1];
-    vars[0].SetInt(value);
-    gfxHUD.Invoke("_root.api.setThreatValue", vars, 1);
-}

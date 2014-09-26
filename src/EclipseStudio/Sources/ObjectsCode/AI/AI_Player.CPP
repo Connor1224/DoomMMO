@@ -1856,42 +1856,6 @@ BYTE obj_Player::getBodyNameFromBoneName(const char* boneName)
 	return 0;
 }
 
-void obj_Player::CheckZombiePlayer()
-{
-    if (hudMain)
-    {
-    ObjectManager& GW = GameWorld();
-    float Maxdist=50;
-    for (GameObject *targetObj = GW.GetFirstObject(); targetObj; targetObj = GW.GetNextObject(targetObj))
-    {
-        if(targetObj->isObjType(OBJTYPE_Zombie))
-        {
-            float dist = (GetPosition() - targetObj->GetPosition()).Length();
-
-
-            if(dist > 0.1 && dist < 50)    
-            {
-                 if (dist<Maxdist)
-                    {
-                        Maxdist=dist;
-                    }
-            }
-        }
-    }
- 
-      if (Maxdist>0.1 && Maxdist<=10)
-              hudMain->setThreatValue(100);
-      else if (Maxdist>10 && Maxdist<=20)
-              hudMain->setThreatValue(75);
-      else if (Maxdist>20 && Maxdist<=30)
-              hudMain->setThreatValue(50);
-      else if (Maxdist>30 && Maxdist<=40)
-              hudMain->setThreatValue(25);
-      else if (Maxdist>40)
-              hudMain->setThreatValue(0);
-    }
-}
-
 void obj_Player::CheckFireWeapon()
 {
 	r3d_assert(NetworkLocal);
@@ -3255,8 +3219,6 @@ BOOL obj_Player::Update()
 		parent::Update();
 
 	camoTimeLine.Update();
-
-	CheckZombiePlayer();
 
 	// show pending rewards, even if game finished.
 	if(NetworkLocal)

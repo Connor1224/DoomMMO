@@ -365,7 +365,6 @@ public:
 	void		stopFootstepsSound();
 
 	bool		bAllowToUseWeapons;
-	void        CheckZombiePlayer();
 	void		CheckFireWeapon();
 	float		GetGrenadeLaunchDelay();
 	void		GrenadeCallbackFromWeapon(const wiInventoryItem& wi);

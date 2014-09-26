@@ -102,7 +102,6 @@ public:
 	
 	void	moveUserIcon(Scaleform::GFx::Value& icon, const r3dPoint3D& pos, bool alwaysShow, bool force_invisible = false, bool pos_in_screen_space=false); 
 	void	setCharTagTextVisible(Scaleform::GFx::Value& icon, bool isShowName, bool isSameGroup);
-	void    setThreatValue(int value);
 	void	removeUserIcon(Scaleform::GFx::Value& icon);
 };
 
