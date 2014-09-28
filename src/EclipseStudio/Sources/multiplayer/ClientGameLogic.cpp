@@ -35,16 +35,14 @@
 #pragma comment(lib, "../external/RakNet/Lib/Debug/RakNet.lib")
 #endif
 
-#ifdef  NDEBUG
+#ifdef  RELEASE
 #pragma comment(lib, "../external/RakNet/Lib/Release/RakNet.lib")
-#endif
-
-#ifdef  NDEBUG
-#pragma comment(lib, "C:/WarZ/trunk/src/Eternity/lib/r3dLibF.lib")
+#pragma comment(lib, "../Eternity/lib/r3dLib.lib")
 #endif
 
 #ifdef  FINAL_BUILD
-#pragma comment(lib, "C:/WarZ/trunk/src/Eternity/lib/r3dLibF.lib")
+#pragma comment(lib, "../Eternity/lib/r3dLibF.lib")
+#pragma comment(lib, "../external/RakNet/Lib/Release/RakNet.lib")
 #endif
 
 extern HUDDisplay*	hudMain;

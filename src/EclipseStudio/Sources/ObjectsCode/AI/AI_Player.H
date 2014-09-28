@@ -9,6 +9,7 @@
 #include "../../../GameEngine/CamouflageDataManager.h"
 #include "APIScaleformGfx.h"
 #include "AI_PlayerSenses.h"
+#include "r3dPhysSkeleton.h"
 
 class Weapon;
 class Gear;
