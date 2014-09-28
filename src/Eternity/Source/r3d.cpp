@@ -636,8 +636,10 @@ int r3dToggleScreenShot()
 
 	char			FileName[128];
 #ifndef FINAL_BUILD
+	_mkdir("ScreenShot");
 	sprintf(FileName, "Screen_%02d%02d%04d_%02d%02d%02d.tga", curdate.tm_mday, curdate.tm_mon, 1900+curdate.tm_year, curdate.tm_hour, curdate.tm_min, curdate.tm_sec);
 #else
+	_mkdir("ScreenShot");
 	sprintf(FileName, "Screen_%02d%02d%04d_%02d%02d%02d.jpg", curdate.tm_mday, curdate.tm_mon, 1900+curdate.tm_year, curdate.tm_hour, curdate.tm_min, curdate.tm_sec);
 #endif
 

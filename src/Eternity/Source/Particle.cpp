@@ -493,6 +493,7 @@ void r3dParticleSystemClose()
 
 	if(_r3d_ParticleActiveSystems) {
 		r3dError("there is active particle systems\n");
+		r3d_assert(false);
 	}
 
 	SAFE_DELETE(partTrailCache);

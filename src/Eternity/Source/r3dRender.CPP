@@ -12,6 +12,15 @@
 #include "NVApi/nvapi.h"
 #define R3D_NVAPI "NVApi: "
 #pragma comment(lib, "../External/NVApi/x86/nvapi.lib")
+#pragma comment(lib, "../External/NVApi/amd64/nvapi64.lib")
+#endif
+
+#ifdef  _DEBUG
+#pragma comment(lib, "../external/RakNet/Lib/Debug/RakNet.lib")
+#endif
+
+#ifdef  NDEBUG
+#pragma comment(lib, "../external/RakNet/Lib/Release/RakNet.lib")
 #endif
 
 #include "../SF/Console/Config.h"
@@ -2184,6 +2193,7 @@ static void d3dSetDefaultStates()
 
 	pd3ddev->SetRenderState(D3DRS_ZENABLE, 	ZBuffer_Mode);
 	pd3ddev->SetRenderState(D3DRS_ZWRITEENABLE, 	TRUE);
+	pd3ddev->SetRenderState(D3DRS_ZFUNC, 		D3DCMP_LESSEQUAL);
 
 	pd3ddev->SetRenderState(D3DRS_SHADEMODE,    	D3DSHADE_GOURAUD);
 	pd3ddev->SetRenderState(D3DRS_SPECULARENABLE, 0);

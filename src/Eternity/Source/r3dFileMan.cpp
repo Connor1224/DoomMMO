@@ -119,13 +119,15 @@ r3dFile* r3dFile_IntOpen(const char* fname, const char* mode)
   r3dCSHolder csHolder(g_FileSysCritSection);
   bool allowDirectAccess = true;
 
-// DNC UnCommented (disabled all data files during Final build)
- #ifdef FINAL_BUILD
+#ifdef FINAL_BUILD
   // disable all data/ files in final build
-  if(strnicmp(fname, "data/", 5) == 0)
+  if(strnicmp(fname, "data", 4) == 0 || strnicmp(fname, "levels", 6) == 0)
     allowDirectAccess = false;
- #endif
+#endif
 
+#ifdef FINAL_STUDIO
+  allowDirectAccess = true;
+#endif
 
   // check for direct file
   FILE* stream;

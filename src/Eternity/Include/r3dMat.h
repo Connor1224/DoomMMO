@@ -259,19 +259,43 @@ void r3dCloseMaterials();
 //------------------------------------------------------------------------
 // Material shaders
 
+extern int VS_FOREST_ID											;
+extern int VS_FOREST_NONINSTANCED_ID							;
+extern int VS_FOREST_NOANIM_NONINSTANCED_ID						;
+extern int VS_FOREST_NOANIM_ID									;
 extern int VS_SKIN_ID											;
 extern int VS_SKIN_DEPTH_ID										;
 extern int VS_DEPTH_ID											;
+extern int VS_SMSKIN_ORTHO_ID									;
+extern int VS_SMSKIN_PROJ_ID									;
 extern int VS_DEPTH_PREPASS_ID									;
 extern int VS_FILLGBUFFER_ID									;
 extern int VS_FILLGBUFFER_EXTRUDE_ID							;
 extern int VS_FILLGBUFFER_DISP_ID								;
 extern int VS_FILLGBUFFER_APEX_ID								;
 extern int VS_FILLGBUFFER_INSTANCED_ID							;
+extern int VS_SMDEPTHPASS_ORTHO_ID								;
+extern int VS_SMDEPTHPASS_PROJ_ID								;
+extern int VS_SMDEPTHPASS_PARABOLOID_PROJ_ID					;
+extern int VS_SMDEPTHPASS_ORTHO_INSTANCED_ID					;
+extern int VS_SMDEPTHPASS_PROJ_INSTANCED_ID						;
+extern int VS_SMDEPTHPATH_FOREST_ORTHO_ID						;
+extern int VS_SMDEPTHPATH_FOREST_ORTHO_NONINSTANCED_ID			;
+extern int VS_SMDEPTHPATH_FOREST_PROJ_ID						;
+extern int VS_SMDEPTHPATH_FOREST_PROJ_NONINSTANCED_ID			;
+extern int VS_SMDEPTHPATH_FOREST_ORTHO_NOANIM_ID				;
+extern int VS_SMDEPTHPATH_FOREST_ORTHO_NOANIM_NONINSTANCED_ID	;
+extern int VS_SMDEPTHPATH_FOREST_PROJ_NOANIM_ID					;
+extern int VS_SMDEPTHPATH_FOREST_PROJ_NOANIM_NONINSTANCED_ID	;
+extern int VS_SMDEPTHPATH_APEX_ORTHO_ID							;
+extern int VS_SMDEPTHPATH_APEX_PROJ_ID							;
 
 const int MAX_LIGHTS_FOR_TRANSPARENT = 3;
 extern int VS_TRANSPARENT_ID[2][MAX_LIGHTS_FOR_TRANSPARENT];
 extern int PS_DEPTH_ID;
+extern int PS_SMDEPTHPATH_ID;
+extern int PS_SMDEPTHPATH_HW_ID;
+extern int PS_SMDEPTHPATH_NORMAL_OFFSET_ID;
 extern int PS_TRANSPARENT_ID;
 extern int PS_TRANSPARENT_AURA_ID;
 extern int PS_TRANSPARENT_CAMOUFLAGE_ID;

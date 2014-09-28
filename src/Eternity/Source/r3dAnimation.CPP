@@ -802,6 +802,8 @@ void r3dAnimation::Update(float fTimePassed, const r3dPoint3D& pos, const D3DXMA
   bSkelDirty = true;
 
   std::vector<r3dAnimInfo>::iterator it;
+  if(AnimTracks.empty())
+	  return;
 
   // remove stopped animations
   for(it = AnimTracks.begin(); it != AnimTracks.end();) 

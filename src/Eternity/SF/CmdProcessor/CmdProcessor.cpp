@@ -536,6 +536,7 @@ void CommandProcessor::FlushBuffer()
 
 		memcpy( szLine, pText, i );
 		szLine[ i ] = '\0';
+		strlwr(szLine); // PT: otherwise if you type in your var with capital letter if will not find it
 
 		// since some commands can insert text in the beginning of the buffer,
 		// it is necessary to delete current command from it first

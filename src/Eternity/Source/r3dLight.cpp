@@ -253,6 +253,48 @@ void r3dLight::SetD3DLight(int Idx, int bBright)
 { 
 }
 
+void SetupProjectiveTransform(D3DXVECTOR3 &From, D3DXVECTOR3 &To, float HotSpotA)
+{
+ D3DXMATRIX V, InvV;
+ D3DXMATRIX matTexScale;
+ D3DXMATRIX m_matTex2;
+ D3DXMATRIX m_matLightProj, m_matLightView;
+
+ D3DXVECTOR3 vUp;
+ vUp.x = 0;
+ vUp.y = 1;
+ vUp.z = 0;
+
+ // Set the light projection matrix.
+
+ D3DXMatrixPerspectiveFovLH( &m_matLightProj, R3D_DEG2RAD(HotSpotA), 1.33f, r3dRenderer->NearClip, r3dRenderer->FarClip ); //1.0f, 20000.0f);
+
+    
+ // Set the light view matrix.
+ D3DXMatrixLookAtLH( &m_matLightView, &From, &To, &vUp);
+
+ // This will scale and offset -1 to 1 range of x, y
+ // coords output by projection matrix to 0-1 texture
+ // coord range.
+    ZeroMemory( &matTexScale, sizeof( D3DMATRIX ) );
+    matTexScale._11 = 0.5f;
+    matTexScale._22 = 0.5f;
+    matTexScale._33 = 0.0f; 
+    matTexScale._41 = 0.5f; 
+    matTexScale._42 = 0.5f;
+    matTexScale._43 = 0.5f; 
+    matTexScale._44 = 1.0f;
+
+
+    D3DXMATRIX mat, mat2;
+    D3DXMatrixMultiply( &mat, &m_matLightProj, &matTexScale );
+    D3DXMatrixMultiply( &mat2, &m_matLightView, &mat ); 
+
+  D3DXMatrixTranspose( &mat2, &mat2 );
+
+  r3dRenderer->pd3ddev->SetVertexShaderConstantF(  20, (float *)&mat2,  4 );
+}
+
 void r3dLight :: SetShaderConstants(r3dCamera &Cam)
 {
 	const int MAX_CONSTANTS = 10;

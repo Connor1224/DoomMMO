@@ -638,7 +638,7 @@ void r3dTexture::LoadTextureInternal( int index, const char* FName, D3DFORMAT Ta
 		TexFormat   = D3DFMT_A8R8G8B8;
 
 		sprintf(Location.FileName, "%s", FName);
-		strlwr(&Location.FileName[0]);
+		_strlwr(&Location.FileName[0]);
 
 		m_TexArray[index].Set( 0 );
 		return;
@@ -717,7 +717,7 @@ r3dTexture::LoadTexture( struct r3dTaskParams* taskParams )
 int r3dTexture::Load( const char* fname, D3DFORMAT targetTexFormat, int downScale /*= 1*/, int downScaleMinDim /*= 1*/, D3DPOOL pool /*= D3DPOOL_MANAGED*/ )
 {
 	sprintf(Location.FileName, "%s", fname);
-	strlwr(&Location.FileName[0]);
+	_strlwr(&Location.FileName[0]);
 
 	InterlockedExchange( &m_IsLoading, 1 ) ;
 
@@ -982,10 +982,14 @@ float GetD3DTexFormatSize(D3DFORMAT Fmt)
 	case D3DFMT_R3G3B2:
 	case D3DFMT_A8:
 	case D3DFMT_L8:
+	case D3DFMT_P8:
+	case D3DFMT_A8L8:
 	case D3DFMT_A8R3G3B2: 
 		return 1.0f;
 	case D3DFMT_A32B32G32R32F:
 		return 16.0f;
+	case D3DFMT_A16B16G16R16F:
+		return 64.0f;
 	}
 }
 
