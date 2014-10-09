@@ -15,14 +15,6 @@
 #pragma comment(lib, "../External/NVApi/amd64/nvapi64.lib")
 #endif
 
-#ifdef  _DEBUG
-#pragma comment(lib, "../external/RakNet/Lib/Debug/RakNet.lib")
-#endif
-
-#ifdef  NDEBUG
-#pragma comment(lib, "../external/RakNet/Lib/Release/RakNet.lib")
-#endif
-
 #include "../SF/Console/Config.h"
 
 #include "r3dDeviceQueue.h"
