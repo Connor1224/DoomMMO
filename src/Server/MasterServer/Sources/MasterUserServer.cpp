@@ -520,20 +520,9 @@ void CMasterUserServer::DoJoinGame(CServerG* game, DWORD CustomerID, const char*
     return;
   }
 
-  // bool isAdmin = false;
-  // if(CustomerID == 1281646178 || // sagor
-	 // CustomerID == 1288125909 || // sousuke
-	 // CustomerID == 1288144549 || // cvance
-	 // CustomerID == 1288629751 || // wertyuiop
-	 // CustomerID == 1288188971 || // piki
-	 // CustomerID == 1288686686  // kewk
-	 // ) 
-  // {
-    // // do not check password for GM, we allow GMs to enter any game
-    // isAdmin = true;
-  // }
+  bool isAdmin = false;
 
-  if(game->isPassworded()) {
+  if(game->isPassworded() && !isAdmin) {
     if(strcmp(game->info_.pwd, pwd) != 0) {
       ans.result = GBPKT_M2C_JoinGameAns_s::rWrongPassword;
       return;
