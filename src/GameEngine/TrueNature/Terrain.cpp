@@ -2391,7 +2391,7 @@ void r3dTerrain::CreateDefaultPhysicsData()
 	aHeightFieldShape->setSimulationFilterData(filterData);
 	PxFilterData qfilterData(1<<PHYSCOLL_STATIC_GEOMETRY, 0, 0, 0);
 #if VEHICLES_ENABLED
-	VehicleSetupDrivableShapeQueryFilterData(qfilterData);
+//	VehicleSetupDrivableShapeQueryFilterData(qfilterData);
 #endif
 	aHeightFieldShape->setQueryFilterData(qfilterData);
 	r3d_assert(_CrtCheckMemory());
