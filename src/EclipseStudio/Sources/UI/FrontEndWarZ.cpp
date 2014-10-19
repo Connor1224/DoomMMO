@@ -3400,6 +3400,24 @@ void FrontendWarZ::processNewGameList() //For new server browser
         if(ping > 0)
             ping = R3D_CLAMP(ping + random(10)-5, 1, 1000);
         ping = R3D_CLAMP(ping/10, 1, 100); // UI accepts ping from 0 to 100 and shows bars instead of actual number
+		std::string gameType;
+
+		switch (ginfo.gameType)
+		{
+		case 1:
+			gameType = "GAMEWORLD"; break;
+		case 2:
+			gameType = "STRONGHOLD"; break;
+		default:
+			gameType = "ERROR"; break;
+		}
+		//1: TrialServer
+		//2: OfficialServers
+		//3: PrivateServers
+		//4: PremiumServers
+		//5: Strongholds
+		//6: PublicTestEnvironment
+
         //addGameToList(id:Number, name:String, mode:String, map:String, tracers:Boolean, nametags:Boolean, crosshair:Boolean, players:String, ping:int, isFavorite:Boolean, isPassword:Boolean)
         Scaleform::GFx::Value var[15];
         r3dOutToLog("GBGameInfo : Name:%s , isPre = %d , isPass = %d\n",ginfo.name,(int)ginfo.ispre,(int)ginfo.ispass);
@@ -3410,16 +3428,8 @@ void FrontendWarZ::processNewGameList() //For new server browser
             {
                 var[0].SetNumber(ginfo.gameServerId);
                 var[1].SetString(ginfo.name);
-                var[2].SetString("GAMEWORLD");
-                switch (ginfo.mapId)
-                {
-					case GBGameInfo::MAPID_WZ_Colorado:
-						var[3].SetString("COLORADO");
-						break;
-					default:
-						var[3].SetString("MAPTEST");
-						break;
-                }
+				var[2].SetString(gameType.c_str()); //"mode" : param3,
+				var[3].SetString(ginfo.mapName); // "map" : param4,
                 var[4].SetBoolean(true);
                 var[5].SetBoolean(true);
                 var[6].SetBoolean(true);
@@ -3443,15 +3453,7 @@ void FrontendWarZ::processNewGameList() //For new server browser
                     var[0].SetNumber(ginfo.gameServerId);
                     var[1].SetString(ginfo.name);
                     var[2].SetString("GAMEWORLD");
-                    switch (ginfo.mapId)
-                    {
-						case GBGameInfo::MAPID_WZ_Colorado:
-							var[3].SetString("COLORADO");
-							break;
-						default:
-							var[3].SetString("MAPTEST");
-							break;
-                    }
+					var[3].SetString(ginfo.mapName); // "map" : param4,
                     var[4].SetBoolean(true);
                     var[5].SetBoolean(true);
                     var[6].SetBoolean(true);
@@ -3475,15 +3477,7 @@ void FrontendWarZ::processNewGameList() //For new server browser
                 var[0].SetNumber(ginfo.gameServerId);
                 var[1].SetString(ginfo.name);
                 var[2].SetString("GAMEWORLD");
-                switch (ginfo.mapId)
-                {
-					case GBGameInfo::MAPID_WZ_Colorado:
-						var[3].SetString("COLORADO");
-						break;
-					default:
-						var[3].SetString("MAPTEST");
-						break;
-                }
+				var[3].SetString(ginfo.mapName); // "map" : param4,
                 var[4].SetBoolean(true);
                 var[5].SetBoolean(true);
                 var[6].SetBoolean(true);
@@ -3507,15 +3501,7 @@ void FrontendWarZ::processNewGameList() //For new server browser
                 var[0].SetNumber(ginfo.gameServerId);
                 var[1].SetString(ginfo.name);
                 var[2].SetString("GAMEWORLD");
-                switch (ginfo.mapId)
-                {
-					case GBGameInfo::MAPID_WZ_Colorado:
-						var[3].SetString("COLORADO");
-						break;
-					default:
-						var[3].SetString("MAPTEST");
-						break;
-                }
+				var[3].SetString(ginfo.mapName); // "map" : param4,
                 var[4].SetBoolean(true);
                 var[5].SetBoolean(true);
                 var[6].SetBoolean(true);
