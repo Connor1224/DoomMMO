@@ -474,7 +474,7 @@ VehicleManager::VehicleManager()
 	PxInitVehicleSDK(*g_pPhysicsWorld->PhysXSDK);
 
 	const PxMaterial *mats[] = {g_pPhysicsWorld->defaultMaterial};
-	surfaceTypePairs = PxVehicleDrivableSurfaceToTireFrictionPairs::create(MAX_NUM_TYRE_TYPES, MAX_NUM_SURFACE_TYPES, mats, &drivableSurfaceType);
+	surfaceTypePairs = PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(MAX_NUM_TYRE_TYPES, MAX_NUM_SURFACE_TYPES);
 	for (PxU32 i = 0; i < MAX_NUM_SURFACE_TYPES; i++)
 	{
 		for (PxU32 j = 0; j < MAX_NUM_TYRE_TYPES; j++)
