@@ -20,6 +20,7 @@ obj_ServerLightMesh::obj_ServerLightMesh()
 
 obj_ServerLightMesh::~obj_ServerLightMesh()
 {
+	gServerLogic.FreeNetId(this->GetNetworkID());
 }
 
 BOOL obj_ServerLightMesh::Load(const char *fname)

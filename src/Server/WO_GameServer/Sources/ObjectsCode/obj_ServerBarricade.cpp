@@ -40,10 +40,16 @@ obj_ServerBarricade::~obj_ServerBarricade()
 			break;
 		}
 	}
+
+	gServerLogic.FreeNetId(this->GetNetworkID());
 }
 
 BOOL obj_ServerBarricade::OnCreate()
 {
+
+	r3d_assert(NetworkLocal);
+	r3d_assert(GetNetworkID());
+
 	ObjFlags |= OBJFLAG_SkipCastRay;
 	
 	// set FileName based on itemid for ReadPhysicsConfig() in OnCreate() 
