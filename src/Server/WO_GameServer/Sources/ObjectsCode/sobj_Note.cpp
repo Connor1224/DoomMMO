@@ -17,6 +17,7 @@ obj_Note::obj_Note()
 
 obj_Note::~obj_Note()
 {
+	gServerLogic.FreeNetId(this->GetNetworkID());
 }
 
 BOOL obj_Note::OnCreate()

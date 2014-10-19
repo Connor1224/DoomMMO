@@ -11,6 +11,7 @@
 class Gear;
 class ServerWeapon;
 
+// !!!sync this with obj_ServerPlayer.cpp on server!!!
 enum Playerstate_e
 {
 	PLAYER_INVALID = -1,

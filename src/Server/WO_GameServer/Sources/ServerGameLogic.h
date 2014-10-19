@@ -29,6 +29,7 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
   public:
 	enum { MAX_NUM_PLAYERS = 128 };
 
+	std::list<DWORD> freeNetIdList;
 	GBGameInfo	ginfo_;	// game info
 	uint32_t	creatorID_; // customerID of player who created game, 0 - if permanent game
 	
@@ -205,12 +206,8 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 
 	DWORD		net_lastFreeId;
 	DWORD		net_mapLoaded_LastNetID; // to make sure that client has identit map as server
-	DWORD		GetFreeNetId()
-	{
-		if(net_lastFreeId > 0xFF00)
-			r3dError("net_lastFreeId overflow, make it reuse!");
-		return net_lastFreeId++;
-	}
+	DWORD		GetFreeNetId();
+	void		FreeNetId(DWORD id);
 	
   public:
 	ServerGameLogic();

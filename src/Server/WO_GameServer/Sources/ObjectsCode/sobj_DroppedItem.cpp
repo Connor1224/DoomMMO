@@ -20,6 +20,7 @@ obj_DroppedItem::obj_DroppedItem()
 
 obj_DroppedItem::~obj_DroppedItem()
 {
+	gServerLogic.FreeNetId(this->GetNetworkID());
 }
 
 BOOL obj_DroppedItem::OnCreate()
@@ -31,6 +32,7 @@ BOOL obj_DroppedItem::OnCreate()
 	r3d_assert(m_Item.itemID);
 
 	// check if we will be dropping up WHOLE clip
+
 	const WeaponAttachmentConfig* cfg = g_pWeaponArmory->getAttachmentConfig(m_Item.itemID);
 	if(cfg && cfg->category == storecat_FPSAttachment && cfg->m_type == WPN_ATTM_CLIP)
 	{

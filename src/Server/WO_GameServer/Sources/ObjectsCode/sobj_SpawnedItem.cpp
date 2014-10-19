@@ -20,6 +20,7 @@ obj_SpawnedItem::obj_SpawnedItem()
 
 obj_SpawnedItem::~obj_SpawnedItem()
 {
+	gServerLogic.FreeNetId(this->GetNetworkID());
 }
 
 BOOL obj_SpawnedItem::OnCreate()

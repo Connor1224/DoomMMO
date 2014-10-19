@@ -39,6 +39,7 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 	bool		gotWeaponUpdate_;
 	
 	bool		shuttingDown_;
+	const char*	shutdownReason_;
 	float		shutdownLeft_;
   
   public:

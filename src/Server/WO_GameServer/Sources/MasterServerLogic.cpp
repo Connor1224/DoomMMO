@@ -3,9 +3,11 @@
 
 #include "MasterServerLogic.h"
 
-	MasterServerLogic gMasterServerLogic;
-
+MasterServerLogic gMasterServerLogic;
+#include "ObjectsCode/obj_ServerPlayer.h"
 #include "../../MasterServer/Sources/NetPacketsServerBrowser.h"
+#include "ServerGameLogic.h"
+#include "AsyncFuncs.h"
 using namespace NetPacketsServerBrowser;
 
 #include "ObjectsCode/weapons/WeaponArmory.h"

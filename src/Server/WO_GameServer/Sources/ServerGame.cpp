@@ -57,21 +57,8 @@
 void PlayGameServer()
 {
   r3d_assert(gServerLogic.ginfo_.IsValid());
-  switch(gServerLogic.ginfo_.mapId) 
-  {
-    default: 
-      r3dError("invalid map id\n");
-      break;
-    case GBGameInfo::MAPID_Editor_Particles: 
-      r3dGameLevel::SetHomeDir("WorkInProgress\\Editor_Particles"); 
-      break;
-    case GBGameInfo::MAPID_ServerTest:
-      r3dGameLevel::SetHomeDir("WorkInProgress\\ServerTest");
-      break;
-    case GBGameInfo::MAPID_WZ_Colorado: 
-      r3dGameLevel::SetHomeDir("WZ_Colorado"); 
-      break;
-  }
+
+  r3dGameLevel::SetHomeDir(gServerLogic.ginfo_.workDir);
 
   r3dResetFrameTime();
   

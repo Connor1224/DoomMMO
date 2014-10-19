@@ -750,7 +750,7 @@ bool ServerGameLogic::ApplyDamageToPlayer(GameObject* fromObj, obj_ServerPlayer*
 	p2pBroadcastToActive(fromObj, &a, sizeof(a));
 
 	// check if we killed player
-	if(targetPlr->loadout_->Health <= 0) 
+	if(targetPlr->loadout_->Health <= 0 || targetPlr->loadout_->Health != targetPlr->loadout_->Health) 
 	{
 		bool fromPlayerInAir = ((airState & 0x1) != 0);
 		bool targetPlayerInAir = ((airState & 0x2) != 0);
@@ -901,13 +901,13 @@ wiStatsTracking ServerGameLogic::GetRewardData(obj_ServerPlayer* plr, EPlayerRew
 	
 	if(plr->loadout_->Hardcore)
 	{
-		stat.GD = rwd.GD_HARD;
-		stat.XP = rwd.XP_HARD;
+		stat.GD = rwd.GD_SOFT;
+		stat.XP = rwd.XP_SOFT;
 	}
 	else
 	{
-		stat.GD = rwd.GD_SOFT;
-		stat.XP = rwd.XP_SOFT;
+		stat.GD = rwd.GD_HARD;
+		stat.XP = rwd.XP_HARD;
 	}
 	
 	return stat;
@@ -1243,11 +1243,11 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_StartGameReq)
 	peer.SetStatus(PEER_PLAYING);
 
 	// if by some fucking unknown method you appeared at 0,0,0 - pretend he was dead, so it'll spawn at point
-	if(loadout.Alive == 1 && loadout.GameMapId != GBGameInfo::MAPID_ServerTest && loadout.GamePos.Length() < 10)
+	/*if(loadout.Alive == 1 && loadout.GamePos.Length() < 10)
 	{
 		LogCheat(peerId, PKT_S2C_CheatWarning_s::CHEAT_Data, false, "ZeroSpawn", "%f %f %f", loadout.GamePos.x, loadout.GamePos.y, loadout.GamePos.z);
 		loadout.Alive = 2;
-	}
+	}*/
 
 	// get spawn position
 	r3dPoint3D spawnPos;
@@ -2163,13 +2163,18 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_UseNetObject)
 	{
 		obj_SpawnedItem* obj = (obj_SpawnedItem*)base;
 		if(fromPlr->BackpackAddItem(obj->m_Item))
+		{
 			obj->setActiveFlag(0);
+		}
 	}
 	else if(base->Class->Name == "obj_DroppedItem")
 	{
 		obj_DroppedItem* obj = (obj_DroppedItem*)base;
 		if(fromPlr->BackpackAddItem(obj->m_Item))
+		{
 			obj->setActiveFlag(0);
+			ApiPlayerUpdateChar(fromPlr);
+		}
 	}
 	else if(base->Class->Name == "obj_Note")
 	{
@@ -2404,7 +2409,7 @@ void ServerGameLogic::Tick()
 	}*/
 
 	//@@@ kill all players
-	if(GetAsyncKeyState(VK_F11) & 0x8000) 
+	/*if(GetAsyncKeyState(VK_F11) & 0x8000) 
 	{
 		r3dOutToLog("trying to kill all players\n");
 		for(int i=0; i<maxPlayers_; i++) {
@@ -2414,7 +2419,7 @@ void ServerGameLogic::Tick()
 
 			DoKillPlayer(plr, plr, storecat_INVALID, true);
 		}
-	}
+	}*/
 
 	static float nextDebugLog_ = 0;
 	if(curTime > nextDebugLog_) 
@@ -2507,4 +2512,28 @@ void ServerGameLogic::SendWeaponsInfoToPlayer(DWORD peerId)
 	}
 
 	return;
+}
+
+DWORD ServerGameLogic::GetFreeNetId()
+{
+	//if(net_lastFreeId > 0xFFFF)
+	//	r3dError("net_lastFreeId overflow, make it reuse!");
+	if (freeNetIdList.size() < 20)
+	{
+		return net_lastFreeId++;
+	}
+	else
+	{
+		DWORD ret = freeNetIdList.back();
+		freeNetIdList.pop_back();
+		return ret;
+	}
+}
+
+void ServerGameLogic::FreeNetId(DWORD id)
+{
+	if (id > NETID_OBJECTS_START && id != NULL && id != 0)
+	{
+		freeNetIdList.push_front(id);
+	}
 }

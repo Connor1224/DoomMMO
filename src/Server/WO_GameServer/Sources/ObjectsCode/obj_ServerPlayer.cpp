@@ -9,6 +9,7 @@
 
 #include "multiplayer/P2PMessages.h"
 #include "ServerGameLogic.h"
+#include "MasterServerLogic.h"
 
 #include "ObjectsCode/obj_ServerPostBox.h"
 #include "ObjectsCode/sobj_DroppedItem.h"
@@ -98,7 +99,7 @@ BOOL obj_ServerPlayer::OnCreate()
 
 	if(loadout_->Stats.skillid1 == 1)
 	{
-		m_Stamina +=  25.5f;
+		m_Stamina +=  15.5f;
 		if(loadout_->Stats.skillid4 == 1)
 		{
 			m_Stamina += 30.5f;
@@ -277,6 +278,7 @@ void obj_ServerPlayer::DoDeath()
 	savedLoadout_ = *loadout_;
 
 	gServerLogic.ApiPlayerUpdateChar(this);
+	OnLoadoutChanged();
 
 	SetLatePacketsBarrier("death");
 
@@ -342,6 +344,8 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 		GameObject* targetObj = GameWorld().GetNetworkObject(targetId);
 		if(targetObj == NULL) 
 		{
+			FireHitCount++;
+			gServerLogic.LogInfo(peerId_, "debug: invalid id", "%s %d", pktName, wid);
 			// target already disconnected (100% cases right now) or invalid.
 			return false;
 		}
@@ -349,18 +353,22 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 
 	if(wid < 0 || wid >= NUM_WEAPONS_ON_PLAYER)
 	{
+		FireHitCount++;
 		gServerLogic.LogInfo(peerId_, "wid invalid", "%s %d", pktName, wid);
 		return false;
 	}
 
 	if(wid != m_SelectedWeapon) 
 	{
+		FireHitCount++;
 		// just log for now... we'll see how much mismatches we'll get
 		gServerLogic.LogInfo(peerId_, "wid mismatch", "%s %d vs %d", pktName, wid, m_SelectedWeapon);
+		return false;
 	}
 
 	if(m_ForcedEmptyHands)
 	{
+				FireHitCount++;
 		gServerLogic.LogInfo(peerId_, "empty hands", "%s %d vs %d", pktName, wid, m_SelectedWeapon);
 		return false;
 	}
@@ -369,12 +377,14 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 	if(wpn == NULL) 
 	{
 		gServerLogic.LogInfo(peerId_, "no wid", "%s %d", pktName, wid);
+		FireHitCount++;
 		return false;
 	}
 
 	// can't fire in safe zones
 	if(loadout_->GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox)
 	{
+		FireHitCount++;
 		return false;
 	}
 
@@ -387,17 +397,23 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 		return true;
 	}
 
-	if(wpn->getCategory() == storecat_GRENADE) // grenades are treated as items
+	if (wpn->getCategory() == storecat_GRENADE) // grenades are treated as items
 	{
 		gServerLogic.TrackWeaponUsage(wpn->getConfig()->m_itemID, 1, 0, 0);
 
 		wiInventoryItem& wi = wpn->getPlayerItem();
-
+		if (!&wi)
+		{
+			gServerLogic.LogInfo(peerId_, "no grenade", "%s %d", pktName, wid);
+			return false;
+		}
 		// remove used item
 		wi.quantity--;
-		if(wi.quantity <= 0) {
+		if (wi.quantity <= 0)
+		{
 			wi.Reset();
 		}
+		FireHitCount++;
 
 		return true;
 	}
@@ -421,9 +437,16 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 	{
 		// check if we fired more that we was able
 		wiInventoryItem& wi = wpn->getPlayerItem();
-		if(wi.Var1 <= 0)
+
+		if(!&wi)
 		{
-			gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_NumShots, true, "bullethack",
+		gServerLogic.LogInfo(peerId_, "inventory item invalid", "%s %d", pktName, wid);
+		return false;
+		}
+
+		if(wi.Var1 <= 0)// gonna try -1 was <=0
+		{
+			gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_NumShots, false, "FireWeapon bullethack",
 				"%d/%d clip:%d(%s)", 
 				wi.Var1,
 				wpn->getClipConfig()->m_Clipsize,
@@ -433,6 +456,7 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 			return false;
 		}
 		
+		if(wpn->getPlayerItem().Var1 != 0)
 		wpn->getPlayerItem().Var1--;
 	}
 	
@@ -729,11 +753,12 @@ BOOL obj_ServerPlayer::Update()
 		lastVitals_.FromChar(loadout_);
 	}
 
-	const float CHAR_UPDATE_INTERVAL = 60;
-	if(curTime > lastCharUpdateTime_ + CHAR_UPDATE_INTERVAL)
+	float CHAR_UPDATE_INTERVAL = 60 + u_GetRandom(5, 30);
+	if (curTime > lastCharUpdateTime_ + CHAR_UPDATE_INTERVAL)
 	{
 		lastCharUpdateTime_ = curTime;
 		gServerLogic.ApiPlayerUpdateChar(this);
+		OnLoadoutChanged();
 	}
 	
 	const float WORLD_UPDATE_INTERVAL = 0.5f;
@@ -1051,6 +1076,20 @@ void obj_ServerPlayer::BackpackDropItem(int idx)
 
 void obj_ServerPlayer::OnBackpackChanged(int idx)
 {
+	if(loadout_->Items[idx].itemID == 0)
+	{
+		gServerLogic.ApiPlayerUpdateChar(this);
+
+		if(wiCharDataFull::CHAR_LOADOUT_ARMOR == idx)
+			SetGearSlot(SLOT_Armor, loadout_->Items[idx].itemID);
+		if(wiCharDataFull::CHAR_LOADOUT_HEADGEAR == idx)
+			SetGearSlot(SLOT_Headgear, loadout_->Items[idx].itemID);
+
+		OnLoadoutChanged();
+		return;
+	}
+
+
 	// if slot changed is related to loadout - relay to other players
 	switch(idx)
 	{
@@ -1080,6 +1119,10 @@ void obj_ServerPlayer::OnBackpackChanged(int idx)
 		case wiCharDataFull::CHAR_LOADOUT_ITEM4:
 			OnLoadoutChanged();
 			break;
+		case wiCharDataFull::CHAR_REAL_BACKPACK_IDX_START:
+			OnLoadoutChanged();
+			break;
+			
 	}
 }
 
@@ -1126,6 +1169,8 @@ void obj_ServerPlayer::OnChangeBackpackSuccess(const std::vector<wiInventoryItem
 		// vars
 		obj->m_Item       = droppedItems[i];
 	}
+	gServerLogic.ApiPlayerUpdateChar(this);
+	OnLoadoutChanged();
 }
 
 void obj_ServerPlayer::UseItem_CreateNote(const PKT_C2S_CreateNote_s& n)
@@ -1213,7 +1258,6 @@ bool obj_ServerPlayer::CheckForFastMove()
 			);
 		isCheat = true;
 	}
-
 	// reset accomulated vars
 	moveAccumTime = 0;
 	moveAccumDist = 0;
@@ -1234,15 +1278,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PacketBarrier_s& n)
 
 void obj_ServerPlayer::OnNetPacket(const PKT_C2C_MoveSetCell_s& n)
 {
-	// if by some fucking unknown method you appeared at 0,0,0 - don't do that!
-	if(gServerLogic.ginfo_.mapId != GBGameInfo::MAPID_ServerTest && n.pos.Length() < 10)
-	{
-		gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Data, true, "ZeroTeleport",
-			"%f %f %f", 
-			n.pos.x, n.pos.y, n.pos.z);
-		return;
-	}
-	
+		
 	if(moveInited)
 	{
 		// for now we will check ONLY ZX, because somehow players is able to fall down
@@ -1831,20 +1867,27 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerHitDynamic_s& n)
 		float dmod = float(n.damageFromPiercing)/100.0f;
 		damage *= dmod;
 	}
+	
 	if(loadout_->Stats.skillid8 == 1)
 	{
-		if(m_WeaponArray[m_SelectedWeapon]->getCategory()==storecat_MELEE)
-		{
+		if(m_WeaponArray[m_SelectedWeapon]->getCategory()==storecat_MELEE){
 			damage *= 1.25f;
 		}
-		if(loadout_->Stats.skillid10 == 1)
-		{
-			if(m_WeaponArray[m_SelectedWeapon]->getCategory()==storecat_MELEE)
-			{
-				damage *= 1.25f;
+	}
+
+	if(loadout_->Stats.skillid10 == 1)
+	{
+			if(m_WeaponArray[m_SelectedWeapon]->getCategory()==storecat_MELEE){
+				damage *= 1.30f;
 			}
+	}
+	if (loadout_->Stats.skillid13 == 1)
+	{
+		if (m_WeaponArray[m_SelectedWeapon]->getCategory() == storecat_MELEE){
+			damage *= 1.35f;
 		}
 	}
+	
 
 	// track ShotsHits
 	loadout_->Stats.ShotsHits++;
@@ -2119,7 +2162,16 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_UnloadClipReq_s& n)
 
 				if(BackpackAddItem(wi))
 					loadout_->Items[n.slotID] = item;
-
+				else
+				{
+					// create network object
+					obj_DroppedItem* obj = (obj_DroppedItem*)srv_CreateGameObject("obj_DroppedItem", "obj_DroppedItem", GetRandomPosForItemDrop());
+					obj->SetNetworkID(gServerLogic.GetFreeNetId());
+					obj->NetworkLocal = true;
+					// vars
+					obj->m_Item       = wi;
+				}
+				
 				OnBackpackChanged(n.slotID);
 				gServerLogic.ApiPlayerUpdateChar(this); // Vault
 

@@ -570,7 +570,12 @@ void CJobUpdateChar::OnSuccess()
 	// confirm player if needed disconnect
 	if(Disconnect)
 	{
-		peer.player->wasDisconnected_ = true;
+		if(peer.player->wasDisconnected_ == false)
+		{
+			Disconnect = false;
+			return;
+		}
+		//peer.player->wasDisconnected_ = true;
 	
 		PKT_C2S_DisconnectReq_s n;
 		gServerLogic.p2pSendToPeer(peerId, peer.player, &n, sizeof(n));
