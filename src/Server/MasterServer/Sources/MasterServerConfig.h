@@ -9,7 +9,7 @@ class CMasterServerConfig
 	int		clientPort_;
 	int		serverId_;
 	int		masterCCU_;	// max number of connected peers
-
+	int     idCount;
 	float supervisorCoolDownSeconds_;
 
 	//

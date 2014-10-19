@@ -38,6 +38,7 @@ class CMasterGameServer : public r3dNetCallback
 	void		DeleteGame(CServerG* game);	// deregister and delete game
 	
 	bool		CreateNewGame(const CMSNewGameData& ngd, DWORD* out_ip, DWORD* out_port, __int64* out_sessionId);
+	bool		CreateNewGame(const CMSNewGameData& ngd, DWORD* out_ip, DWORD* out_port, __int64* out_sessionId, CServerS* super);
 	
 	enum { MAX_PEERS_COUNT = 1024, };
 	enum EPeerStatus

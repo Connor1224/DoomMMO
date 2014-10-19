@@ -55,7 +55,8 @@ void CMasterGameServer::Start(int port, int in_serverId)
   r3d_assert(masterServerId_ > 0 && masterServerId_ < 255);
   
   // give time for supervisors to connect to us (except for dev server 2000)
-  supersCooldown_  = r3dGetTime() + gServerConfig->supervisorCoolDownSeconds_;
+  supersCooldown_  = r3dGetTime() + 10.0f;
+  if(masterServerId_ == 200) supersCooldown_ = -1;
   
 #if ENABLED_SERVER_WEAPONARMORY
   DoFirstItemsDbUpdate();
@@ -127,57 +128,32 @@ void CMasterGameServer::UpdatePermanentGames()
   if(supers_.size() == 0)
     return;
 
-  // scan each permanent game slot and spawn new game if there isn't enough of them
-  for(int pgslot=0; pgslot<gServerConfig->numPermGames_; pgslot++)
+  for(TSupersList::iterator it = supers_.begin(); it != supers_.end(); ++it) 
   {
-    const CMasterServerConfig::permGame_s& pg = gServerConfig->permGames_[pgslot];
-    
-    // check if we have supervisors with correct region, if not - skip it
-    bool haveSupers = false;
-    for(TSupersList::iterator it = supers_.begin(); it != supers_.end(); ++it) {
-      const CServerS* super = it->second;
-      if(super->region_ == pg.ginfo.region) {
-        haveSupers = true;
-        break;
-      }
-    }
-    // silently continue, no need to spam log about that
-    if(!haveSupers) {
-      //r3dOutToLog("permgame: %d, no supervisors in region %d\n", pgslot, pg.ginfo.region);
-      continue;
-    }
-    
-    // there should be only ONE game server of that ID running
-    if(IsGameServerIdStarted(pg.ginfo.gameServerId))
-      continue;
+	  CServerS* super = it->second;
+	  for (int i = 0; i < super->maxGames_; i++)
+	  {
+		  const CMasterServerConfig::permGame_s& pg = gServerConfig->permGames_[i];
 
-    r3dOutToLog("gameServerId %d - spawning new\n", pg.ginfo.gameServerId);
-    CLOG_INDENT;
+		  if (pg.ginfo.gameServerId == 0)
+			  continue;
+		  if (IsGameServerIdStarted(pg.ginfo.gameServerId))
+			  continue;
 
-    // spawn new game
-    CMSNewGameData ngd(pg.ginfo, "", 0);
+		  r3dOutToLog("gameServerId %d - spawning new\n", pg.ginfo.gameServerId);
+		  CLOG_INDENT;
 
-    DWORD ip;
-    DWORD port;
-    __int64 sessionId;
-    if(!CreateNewGame(ngd, &ip, &port, &sessionId)) {
-      continue;
-    }
+		  // spawn new game
+		  CMSNewGameData ngd(pg.ginfo, "", 0);
 
-/*
-    r3dOutToLog("permgame: %d(%d out of %d) created at %s:%d\n", 
-      pgslot,
-      pg.curGames,
-      pg.maxGames,
-      inet_ntoa(*(in_addr*)&ip), 
-      port);
-*/      
-
-    // spawn 50 games per sec to avoid all servers spawning at once
-    nextCheck = curTime + 0.02f;
-    break;
+		  DWORD ip;
+		  DWORD port;
+		  __int64 sessionId;
+		  if (!CreateNewGame(ngd, &ip, &port, &sessionId, super))
+			  break;
+	  }
   }
-  
+  nextCheck = curTime + 0.02f;
 }
 
 void CMasterGameServer::RequestShutdown()
@@ -685,23 +661,62 @@ CServerG* CMasterGameServer::GetQuickJoinGame(int gameMap, EGBGameRegion region)
 
 bool CMasterGameServer::CreateNewGame(const CMSNewGameData& ngd, DWORD* out_ip, DWORD* out_port, __int64* out_sessionId)
 {
-  CServerS* super = GetLeastUsedServer((EGBGameRegion)ngd.ginfo.region);
-  if(super == NULL)
+	CServerS* supervisor = GetLeastUsedServer((EGBGameRegion)ngd.ginfo.region);
+	if(supervisor == NULL)
+	{
+		r3dOutToLog("there is no free game servers at region:%d\n", ngd.ginfo.region);
+		return false;
+	}
+
+	CREATE_PACKET(SBPKT_M2S_StartGameReq, n);
+	if(supervisor->RegisterNewGameSlot(ngd, n) == false)
+	{
+		r3dOutToLog("request for new game failed at %s\n", supervisor->GetName());
+		return false;
+	}
+
+#if 1
+	r3dOutToLog("request for new game send to %s, creator:%d, players:%d, id:%x, port:%d\n", supervisor->GetName(), ngd.CustomerID, ngd.ginfo.maxPlayers, n.gameId, n.port);
+	net_->SendToPeer(&n, sizeof(n), supervisor->peer_, true);
+#else
+	char strginfo[256];
+	ginfo.ToString(strginfo);
+
+	char cmd[512];
+	sprintf(cmd, "\"%u %u %u\" \"%s\"", n.gameId, n.port, ngd.CustomerID, strginfo);
+	const char* exe = "GameServer.exe";
+	int err;
+	if(err = (int)ShellExecute(NULL, "open", exe, cmd, "", SW_SHOW) < 32) {
+		r3dOutToLog("!!! unable to run %s: %d\n", exe, err);
+	}
+#endif
+
+	*out_ip        = supervisor->ip_;
+	*out_port      = n.port;
+	*out_sessionId = n.sessionId;
+
+	return true;
+}
+
+bool CMasterGameServer::CreateNewGame(const CMSNewGameData& ngd, DWORD* out_ip, DWORD* out_port, __int64* out_sessionId, CServerS* super)
+{
+  CServerS* supervisor = super;
+  if(supervisor == NULL)
   {
     r3dOutToLog("there is no free game servers at region:%d\n", ngd.ginfo.region);
     return false;
   }
   
   CREATE_PACKET(SBPKT_M2S_StartGameReq, n);
-  if(super->RegisterNewGameSlot(ngd, n) == false)
+  if(supervisor->RegisterNewGameSlot(ngd, n) == false)
   {
-    r3dOutToLog("request for new game failed at %s\n", super->GetName());
+    r3dOutToLog("request for new game failed at %s\n", supervisor->GetName());
     return false;
   }
 
 #if 1
-  r3dOutToLog("request for new game send to %s, creator:%d, players:%d, id:%x, port:%d\n", super->GetName(), ngd.CustomerID, ngd.ginfo.maxPlayers, n.gameId, n.port);
-  net_->SendToPeer(&n, sizeof(n), super->peer_, true);
+  r3dOutToLog("request for new game send to %s, creator:%d, players:%d, id:%x, port:%d\n", supervisor->GetName(), ngd.CustomerID, ngd.ginfo.maxPlayers, n.gameId, n.port);
+  net_->SendToPeer(&n, sizeof(n), supervisor->peer_, true);
 #else
   char strginfo[256];
   ginfo.ToString(strginfo);
@@ -715,7 +730,7 @@ bool CMasterGameServer::CreateNewGame(const CMSNewGameData& ngd, DWORD* out_ip, 
   }
 #endif
   
-  *out_ip        = super->ip_;
+  *out_ip        = supervisor->ip_;
   *out_port      = n.port;
   *out_sessionId = n.sessionId;
 

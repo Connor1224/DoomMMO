@@ -18,7 +18,7 @@ CMasterServerConfig::CMasterServerConfig()
   masterPort_  = r3dReadCFG_I(configFile, group, "masterPort", SBNET_MASTER_PORT);
   clientPort_  = r3dReadCFG_I(configFile, group, "clientPort", GBNET_CLIENT_PORT);
   masterCCU_   = r3dReadCFG_I(configFile, group, "masterCCU",  3000);
-
+  idCount = 1;
   supervisorCoolDownSeconds_ = r3dReadCFG_F(configFile, group, "supervisorCoolDownSeconds",  15.0f);
 
   #define CHECK_I(xx) if(xx == 0)  r3dError("missing %s value in %s", #xx, configFile);
@@ -52,30 +52,38 @@ void CMasterServerConfig::LoadConfig()
   numPermGames_ = 0;
 
   LoadPermGamesConfig();
-  Temp_Load_WarZGames();
+  //Temp_Load_WarZGames();
 }
 
 void CMasterServerConfig::Temp_Load_WarZGames()
 {
   char group[128];
-  sprintf(group, "WarZGames");
+  sprintf(group, "Doom-MMO Games");
 
   int numGames   = r3dReadCFG_I(configFile, group, "numGames", 0);
   int maxPlayers = r3dReadCFG_I(configFile, group, "maxPlayers", 32);
+  int mapid		 = r3dReadCFG_I(configFile, group, "mapID", 1);
+  int maptype    = r3dReadCFG_I(configFile, group, "gameType", 1);
+  const char *workdir    = r3dReadCFG_S(configFile, group, "workDir", "WZ_COLORADO");
+  std::string workstr = workdir;
+  const char *mapname    = r3dReadCFG_S(configFile, group, "mapName", "Colorado");	
   
-  r3dOutToLog("WarZ %d games, %d players each\n", numGames, maxPlayers);
+  r3dOutToLog("Doom-MMO %d games, %d players each\n", numGames, maxPlayers);
   
   for(int i=0; i<numGames; i++)
   {
     GBGameInfo ginfo;
-    ginfo.mapId      = GBGameInfo::MAPID_WZ_Colorado;
+    ginfo.mapId        = mapid;
+	ginfo.gameType	 = maptype;
     ginfo.maxPlayers = maxPlayers;
-
+	sprintf(ginfo.name, "US Server %03d", i + 1);
+	r3dscpy(ginfo.workDir, workstr.c_str());
+	r3dscpy(ginfo.mapName, mapname);
     sprintf(ginfo.name, "US Server %03d", i + 1);
     AddPermanentGame(10000 + i, ginfo, GBNET_REGION_US_West);
 
-    sprintf(ginfo.name, "EU Server %03d", i + 1);
-    AddPermanentGame(20000 + i, ginfo, GBNET_REGION_Europe);
+    /*sprintf(ginfo.name, "EU Server %03d", i + 1);
+    AddPermanentGame(20000 + i, ginfo, GBNET_REGION_Europe);*/
   }
 }
 
@@ -142,15 +150,19 @@ void CMasterServerConfig::LoadPermGamesConfig()
 
 static int StringToGBMapID(char* str)
 {
-  if(stricmp(str, "MAPID_WZ_Colorado") == 0)
+ /* if(stricmp(str, "MAPID_WZ_Colorado") == 0)
     return GBGameInfo::MAPID_WZ_Colorado;
 
   if(stricmp(str, "MAPID_Editor_Particles") == 0)
     return GBGameInfo::MAPID_Editor_Particles;
   if(stricmp(str, "MAPID_ServerTest") == 0)
     return GBGameInfo::MAPID_ServerTest;
+  if(stricmp(str, "MAPID_WZ_TestTown") == 0)
+    return GBGameInfo::MAPID_WZ_TestTown;
+  if(stricmp(str, "MAPID_WZ_Stronghold") == 0)
+    return GBGameInfo::MAPID_WZ_StrongHold;
     
-  r3dError("bad GBMapID %s\n", str);
+  r3dError("bad GBMapID %s\n", str);*/
   return 0;
 }
 
@@ -164,56 +176,70 @@ static EGBGameRegion StringToGBRegion(const char* str)
     return GBNET_REGION_Europe;
   if(stricmp(str, "GBNET_REGION_Russia") == 0)
     return GBNET_REGION_Russia;
-    
+
   r3dError("bad GBGameRegion %s\n", str);
   return GBNET_REGION_Unknown;
 }
 
-void CMasterServerConfig::ParsePermamentGame(int gameServerId, const char* name, const char* map, const char* data,const char* pwdchar,bool ispass,bool ispre,bool isfarm)
+void CMasterServerConfig::ParsePermamentGame(int gameServerId, const char* name, const char* map, const char* data, const char* pwdchar, bool ispass, bool ispre, bool isfarm)
 {
-  char mapid[128];
-  char maptype[128];
-  char region[128];
-  int minGames;
-  int maxGames;
+	int mapid;
+	int maptype;
+	char workDir[128];
+	char mapName[128];
+	int minGames;
+	int maxGames;
 
-  if(5 != sscanf(map, "%s %s %s %d %d", mapid, maptype, region, &minGames, &maxGames)) {
-    r3dError("bad map format: %s\n", map);
-  }
+	if (6 != sscanf(map, "%d %d %s %s %d %d", &mapid, &maptype, workDir, mapName, &minGames, &maxGames)) {
+		r3dError("bad map format: %s\n", map);
+	}
 
-  int maxPlayers;
-  int minLevel = 0;
-  int maxLevel = 0;
+	int maxPlayers;
+	int minLevel = 0;
+	int maxLevel = 0;
 
-  if(3 != sscanf(data, "%d %d %d", &maxPlayers, &minLevel, &maxLevel)) {
-    r3dError("bad data format: %s\n", data);
-  }
+	if (3 != sscanf(data, "%d %d %d", &maxPlayers, &minLevel, &maxLevel)) {
+		r3dError("bad data format: %s\n", data);
+	}
 
-  GBGameInfo ginfo;
-  ginfo.mapId        = StringToGBMapID(mapid);
-  ginfo.maxPlayers   = maxPlayers;
-  ginfo.ispass = ispass; 
-  ginfo.ispre = ispre;
-  ginfo.isfarm = isfarm;
-  r3dscpy(ginfo.name, name);
-  r3dscpy(ginfo.pwdchar, pwdchar);
+	for (int i = 0; i < maxGames; i++)
+	{
+		GBGameInfo ginfo;
+		ginfo.mapId = mapid;
+		ginfo.gameType = maptype;
+		ginfo.maxPlayers = maxPlayers;
+		ginfo.ispass = ispass;
+		ginfo.ispre = ispre;
+		ginfo.isfarm = isfarm;
 
-  r3dOutToLog("permgame: ID:%d, %s, %s, %s\n", 
-    gameServerId, name, mapid,pwdchar);
+		char nameMsg[16];
+		r3dscpy(nameMsg, name);
+		char id[2];				//WARNING DO NOT MAKE MORE THAN 2 DIGITS WORTH OF SERVERS
+		strcat(nameMsg, " ");
+		strcat(nameMsg, itoa(i + 1, id, 10));
 
-  EGBGameRegion eregion = StringToGBRegion(region);
-  AddPermanentGame(gameServerId, ginfo, eregion);
+		r3dscpy(ginfo.name, nameMsg);
+		r3dscpy(ginfo.workDir, workDir);
+		r3dscpy(ginfo.mapName, mapName);
+		r3dscpy(ginfo.pwdchar, pwdchar);
+
+		r3dOutToLog("permgame: ID:%d, %s, %d, %s\n",
+			idCount, name, mapid, pwdchar);
+
+		EGBGameRegion eregion = GBNET_REGION_US_West;
+		AddPermanentGame(idCount++, ginfo, eregion);
+	}
 }
 
 void CMasterServerConfig::AddPermanentGame(int gameServerId, const GBGameInfo& ginfo, EGBGameRegion region)
 {
-  r3d_assert(numPermGames_ < R3D_ARRAYSIZE(permGames_));
-  permGame_s& pg = permGames_[numPermGames_++];
+	r3d_assert(numPermGames_ < R3D_ARRAYSIZE(permGames_));
+	permGame_s& pg = permGames_[numPermGames_++];
 
-  r3d_assert(gameServerId);
-  pg.ginfo = ginfo;
-  pg.ginfo.gameServerId = gameServerId;
-  pg.ginfo.region       = region;
-  
-  return;
+	r3d_assert(gameServerId);
+	pg.ginfo = ginfo;
+	pg.ginfo.gameServerId = gameServerId;
+	pg.ginfo.region = region;
+
+	return;
 }

@@ -91,12 +91,16 @@ class CServerS : public CServerBase
   public:
 	int		region_;
 	std::string	serverName_;
+	std::string mapName_;
+	std::string workDir_;
 
 	int		maxPlayers_;
+	int		maxReservedSlots_;
 	int		maxGames_;
 	int		portStart_;
 	int		startedGames_;
-	
+	int		gameType_;
+
 	static const int REGISTER_EXPIRE_TIME = 30;	// game create request will expire afer this <N> sec
 	struct games_s
 	{
