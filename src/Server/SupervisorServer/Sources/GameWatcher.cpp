@@ -138,7 +138,7 @@ void CGameWatcher::CheckProcess()
     return;
   }
   
-  const float WAIT_CRASH_TIME = 5.0f;
+  const float WAIT_CRASH_TIME = 30.0f;
   if(r3dGetTime() > lastTick + WAIT_CRASH_TIME) {
     OnGameCrash(false);
     return;

@@ -23,15 +23,15 @@ CSupervisorConfig::CSupervisorConfig()
   serverName_  = r3dReadCFG_S(configFile, group, "serverName", "");
   
   // override serverName_ with our machine name
-  char  sname[256] = {0};
+  /*char  sname[256] = {0};
   DWORD ssize = sizeof(sname);
   ::GetComputerName(sname, &ssize);
-  serverName_ = sname;
+  serverName_ = sname;*/
 
   maxPlayers_  = r3dReadCFG_I(configFile, group, "maxPlayers", 1024);
   maxGames_    = r3dReadCFG_I(configFile, group, "maxGames", 32);
   portStart_   = r3dReadCFG_I(configFile, group, "portStart", SBNET_GAME_PORT);
-  gameServerExe_ = r3dReadCFG_S(configFile, group, "gameServerExe", "WZ_GameServer.exe");
+  gameServerExe_ = r3dReadCFG_S(configFile, group, "gameServerExe", "GameServer.exe");
   externalIpStr_ = r3dReadCFG_S(configFile, group, "externalIp", "70.42.74.46");
   externalIpAddr_= 0;
   
