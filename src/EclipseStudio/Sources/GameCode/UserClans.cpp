@@ -361,6 +361,7 @@ int CUserClans::ApiClanBuyAddMembers(int AddMemberIdx)
 	}
 	
 	clanInfo_.MaxClanMembers += gUserProfile.ShopClanAddMembers_Num[AddMemberIdx];
+	gUserProfile.ProfileData.GamePoints -= gUserProfile.ShopClanAddMembers_GP[AddMemberIdx];
 	return 0;
 }
 

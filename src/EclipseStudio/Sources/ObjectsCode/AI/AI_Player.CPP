@@ -1,12 +1,12 @@
 #include "r3dpch.h"
 #include "r3d.h"
-
+#include "GameLevel.h"
 #include "APIScaleformGfx.h"
 #include "AI_Player.h"
 #include "AI_PlayerAnim.h"
 
 #include "r3dPhysSkeleton.h"
-
+#include "r3dAtmosphere.h"
 #include "ObjectsCode\Effects\obj_ParticleSystem.h"
 
 #include "Particle.h"
@@ -1570,7 +1570,7 @@ static bool updateShootingTarget(obj_Player* pl, const r3dPoint3D& shootFrom, co
 			dir2.normalize();
 
 			PxRaycastHit hit2;
-			g_pPhysicsWorld->raycastSingle(PxVec3(muzzlePos.x, muzzlePos.y, muzzlePos.z), dir2, MAX_CASTING_DISTANCE, PxSceneQueryFlag::eIMPACT|PxSceneQueryFlag::eNORMAL, hit2, filter);
+			g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(muzzlePos.x, muzzlePos.y, muzzlePos.z), dir2, MAX_CASTING_DISTANCE, PxSceneQueryFlag::eIMPACT|PxSceneQueryFlag::eNORMAL, hit2, filter);
 			if(hit2.shape != hit.shape)
 			{
 				// replace old collision data with new one
@@ -1650,7 +1650,7 @@ static bool updateMeleeTarget(obj_Player* pl, const r3dPoint3D& shootFrom, const
 			PxRaycastHit hit;
 			PhysicsCallbackObject* target = NULL;
 			PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK|(1<<PHYSCOLL_NETWORKPLAYER), 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC);
-			g_pPhysicsWorld->raycastSingle(PxVec3(shootFrom.x, shootFrom.y, shootFrom.z), PxVec3(dirWithSpread.x, dirWithSpread.y, dirWithSpread.z), MAX_CASTING_DISTANCE, 
+			g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(shootFrom.x, shootFrom.y, shootFrom.z), PxVec3(dirWithSpread.x, dirWithSpread.y, dirWithSpread.z), MAX_CASTING_DISTANCE, 
 				PxSceneQueryFlag::eIMPACT|PxSceneQueryFlag::eNORMAL, hit, filter);
 
 			if( hit.shape && (target = static_cast<PhysicsCallbackObject*>(hit.shape->getActor().userData)))
@@ -1713,7 +1713,7 @@ static bool isMuzzlerBlocked(obj_Player* pl, const r3dPoint3D& muzzlePos)
 		{
 			PxRaycastHit hit;
 			PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eDYNAMIC|PxSceneQueryFilterFlag::eSTATIC));
-			muzzlerBlocked = g_pPhysicsWorld->raycastSingle( PxVec3(gCam.x,gCam.y,gCam.z), PxVec3(temp.x, temp.y, temp.z), len, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
+			muzzlerBlocked = g_pPhysicsWorld->PhysXScene->raycastSingle( PxVec3(gCam.x,gCam.y,gCam.z), PxVec3(temp.x, temp.y, temp.z), len, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
 		}
 	}
 	if(muzzlerBlocked)
@@ -1731,15 +1731,32 @@ static bool isMuzzlerBlocked(obj_Player* pl, const r3dPoint3D& muzzlePos)
 	{
 		PxRaycastHit hit;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eDYNAMIC|PxSceneQueryFilterFlag::eSTATIC));
-		if(g_pPhysicsWorld->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dir.x, dir.y, dir.z), MAX_CASTING_DISTANCE, PxSceneQueryFlags(PxSceneQueryFlag::eDISTANCE), hit, filter))
+		if(g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dir.x, dir.y, dir.z), MAX_CASTING_DISTANCE, PxSceneQueryFlags(PxSceneQueryFlag::eDISTANCE), hit, filter))
 		{
-            if(hit.distance < distToMuzzler)
-            {
-                // shooting blocked before muzzler
-                return true;
-            }
+			if(hit.distance < distToMuzzler)
+			{
+				// shooting blocked before muzzler
+				return true;
+			}
 		}
 	}
+
+	// for check some crap shit player shoot in colision but muzzler and gcam is outside of colision.
+
+	// this game writen by idiot
+	{
+		r3dVector temp = pl->GetPosition()-muzzlePos;
+		float len = temp.Length();
+		temp.Normalize();
+		if(len > 0)
+		{
+			PxRaycastHit hit;
+			PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eDYNAMIC|PxSceneQueryFilterFlag::eSTATIC));
+			muzzlerBlocked = g_pPhysicsWorld->PhysXScene->raycastSingle( PxVec3(muzzlePos.x,muzzlePos.y,muzzlePos.z), PxVec3(temp.x, temp.y, temp.z), len, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
+		}
+	}
+	if(muzzlerBlocked)
+		return true;
 
 	return false;
 }
@@ -1864,28 +1881,28 @@ void obj_Player::CheckFireWeapon()
 
 	bool needExit = false;
 #ifndef FINAL_BUILD
-	if(d_video_spectator_mode->GetBool()) needExit = true;
-	if(d_observer_mode->GetBool()) needExit = true;
+	if (d_video_spectator_mode->GetBool()) needExit = true;
+	if (d_observer_mode->GetBool()) needExit = true;
 #endif
-	if(hudPause && hudPause->isActive()) needExit = true;
-	if(hudAttm && hudAttm->isActive()) needExit = true;
-	if(hudGeneralStore && hudGeneralStore->isActive()) needExit = true;
-	if(hudVault && hudVault->isActive()) needExit = true;
-	if(Mouse->GetMouseVisibility()) needExit = true;
-	if(hudMain && hudMain->isChatInputActive()) needExit = true;
-	if(hudMain && hudMain->isPlayersListVisible()) needExit = true;
+	if (hudPause && hudPause->isActive()) needExit = true;
+	if (hudAttm && hudAttm->isActive()) needExit = true;
+	if (hudGeneralStore && hudGeneralStore->isActive()) needExit = true;
+	if (hudVault && hudVault->isActive()) needExit = true;
+	if (Mouse->GetMouseVisibility()) needExit = true;
+	if (hudMain && hudMain->isChatInputActive()) needExit = true;
+	if (hudMain && hudMain->isPlayersListVisible()) needExit = true;
 
 	static bool wasReloading = false; // static is okay, this code is running for local player only
 	lifeProperties.weaponFired = false;
 
 	Weapon* wpn = m_Weapons[m_SelectedWeapon];
-	if((wpn == NULL || forcedEmptyHands))
+	if ((wpn == NULL || forcedEmptyHands))
 	{
 		if (!needExit)
 		{
-			if(g_toggle_aim->GetBool())
+			if (g_toggle_aim->GetBool())
 			{
-				if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
+				if (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
 					m_isAiming = !m_isAiming;
 			}
 			else
@@ -1896,31 +1913,31 @@ void obj_Player::CheckFireWeapon()
 		return;
 	}
 
-	if((PlayerState == PLAYER_MOVE_SPRINT && wpn->getCategory()!=storecat_MELEE) || bDead)  
+	if ((PlayerState == PLAYER_MOVE_SPRINT && wpn->getCategory() != storecat_MELEE) || bDead)
 	{
-		if(wasReloading)
+		if (wasReloading)
 		{
 			wasReloading = false;
 		}
 		needExit = true;
 	}
-	if(PlayerState == PLAYER_PRONE_DOWN || PlayerState == PLAYER_PRONE_UP)
+	if (PlayerState == PLAYER_PRONE_DOWN || PlayerState == PLAYER_PRONE_UP)
 		needExit = true;
-	
+
 	float gamepadLeftTrigger, gamepadRightTrigger;
 	Gamepad->GetTrigger(gamepadLeftTrigger, gamepadRightTrigger);
 
 	bool wpnIsNoLongerAvailable = false; // workaround for the fast that when you use last item, it will call OnBackpackChanged and will DELETE current weapon that you are using
-										// not sure what is the proper way to fix this. Use smart pointers maybe?? 
-	if(wpn->isUsableItem() && !needExit)
+	// not sure what is the proper way to fix this. Use smart pointers maybe?? 
+	if (wpn->isUsableItem() && !needExit)
 	{
 		// special case items
-		if(wpn->getItemID() == WeaponConfig::ITEMID_Binoculars || wpn->getItemID() == WeaponConfig::ITEMID_RangeFinder) // binoculars, range finder, etc
+		if (wpn->getItemID() == WeaponConfig::ITEMID_Binoculars || wpn->getItemID() == WeaponConfig::ITEMID_RangeFinder) // binoculars, range finder, etc
 		{
 			bool oldAiming = m_isAiming;
-			if(g_toggle_aim->GetBool())
+			if (g_toggle_aim->GetBool())
 			{
-				if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
+				if (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
 					m_isAiming = !m_isAiming;
 			}
 			else
@@ -1932,61 +1949,64 @@ void obj_Player::CheckFireWeapon()
 			m_isInScope = hasScopeMode() && CurrentRig.allowScope;
 
 			// remember that aiming was changed
-			if(m_isAiming != oldAiming)
+			if (m_isAiming != oldAiming)
 				m_isChangedAiming1 = true;
 
 			extern float LerpValue;
-			m_isFinishedAiming = m_isAiming && LerpValue==1.0f;
+			m_isFinishedAiming = m_isAiming && LerpValue == 1.0f;
 
-			if(wpn->getItemID() == 101319 && hudMain)
+			if (wpn->getItemID() == 101319 && hudMain)
 				hudMain->showRangeFinderUI(m_isFinishedAiming && m_isInScope);
 		}
-		else if(wpn->getItemID() == WeaponConfig::ITEMID_PieceOfPaper)
+		else if (wpn->getItemID() == WeaponConfig::ITEMID_PieceOfPaper)
 		{
 			m_isAiming = false;
 			m_isFinishedAiming = false;
-			if(InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_PRIMARY_FIRE) || m_ItemSimulateLeftClick)
+			if (InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_PRIMARY_FIRE) || m_ItemSimulateLeftClick)
 			{
 				m_ItemSimulateLeftClick = false;
-				if(hudMain && hudMain->canShowWriteNote())
+				if (hudMain && hudMain->canShowWriteNote())
 					hudMain->showWriteNote(wpn->m_BackpackIdx);
 			}
 		}
-		else if(wpn->getItemID() == WeaponConfig::ITEMID_AirHorn)
+		else if (wpn->getItemID() == WeaponConfig::ITEMID_AirHorn)
 		{
-			// todo
+			float var1 = 0.0f;
+			r3dPoint3D pos = GetPosition() + GetvForw()*1.0f + r3dPoint3D(0, 1, 0);
+			var1 = (m_fPlayerRotation)+R3D_RAD2DEG(bodyAdjust_x) + 180;
+			localPlayer_UseItem(wpn->m_BackpackIdx, wpn->getItemID(), pos, var1);
 		}
 		else
 		{
 			m_isAiming = false;
 			m_isFinishedAiming = false;
-			if(m_needToDrawBarricadePlacement && InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_AIM))
+			if (m_needToDrawBarricadePlacement && InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_AIM))
 			{
 				m_needToDrawBarricadePlacement = 0;
 				m_BarricadeMeshPlacement = NULL;
 			}
 
 			// consumables
-			if(InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_PRIMARY_FIRE) || m_ItemSimulateLeftClick)
+			if (InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_PRIMARY_FIRE) || m_ItemSimulateLeftClick)
 			{
 				m_ItemSimulateLeftClick = false;
 
 				wiInventoryItem wi = wpn->getPlayerItem(); // COPY of item, not reference. because it can be reset in Fire()
-				if(wi.quantity > 0 && wpn->isReadyToFire(true, false)) // consumables have rate of fire (cooldown)
+				if (wi.quantity > 0 && wpn->isReadyToFire(true, false)) // consumables have rate of fire (cooldown)
 				{
-					if(wpn->getItemID() == WeaponConfig::ITEMID_BarbWireBarricade || 
+					if (wpn->getItemID() == WeaponConfig::ITEMID_BarbWireBarricade ||
 						wpn->getItemID() == WeaponConfig::ITEMID_WoodShieldBarricade ||
 						wpn->getItemID() == WeaponConfig::ITEMID_RiotShieldBarricade ||
-						wpn->getItemID() == WeaponConfig::ITEMID_SandbagBarricade )
+						wpn->getItemID() == WeaponConfig::ITEMID_SandbagBarricade)
 					{
-						if(m_needToDrawBarricadePlacement == 0)
+						if (m_needToDrawBarricadePlacement == 0)
 						{
 							m_needToDrawBarricadePlacement = wpn->getItemID();
 							return;
 						}
 						else
 						{
-							if(m_canPlaceConsumableItem)
+							if (m_canPlaceConsumableItem)
 							{
 								m_needToDrawBarricadePlacement = 0; // and let user place riot shield by sending packet to server
 								m_BarricadeMeshPlacement = NULL;
@@ -1996,47 +2016,47 @@ void obj_Player::CheckFireWeapon()
 						}
 					}
 
-					if((wpn->getItemID() == WeaponConfig::ITEMID_Bandages || wpn->getItemID() == WeaponConfig::ITEMID_Bandages2 || wpn->getItemID() == WeaponConfig::ITEMID_Antibiotics ||
-						wpn->getItemID() == WeaponConfig::ITEMID_Painkillers || wpn->getItemID() == WeaponConfig::ITEMID_Medkit) 
+					if ((wpn->getItemID() == WeaponConfig::ITEMID_Bandages || wpn->getItemID() == WeaponConfig::ITEMID_Bandages2 || wpn->getItemID() == WeaponConfig::ITEMID_Antibiotics ||
+						wpn->getItemID() == WeaponConfig::ITEMID_Painkillers || wpn->getItemID() == WeaponConfig::ITEMID_Medkit)
 						&& CurLoadout.Health > 99)
 					{
-						if(hudMain) hudMain->showMessage(gLangMngr.getString("InfoMsg_MaxHealthAlready"));
+						if (hudMain) hudMain->showMessage(gLangMngr.getString("InfoMsg_MaxHealthAlready"));
 						return;
 					}
-					if((wpn->getItemID() == WeaponConfig::ITEMID_C01Vaccine || wpn->getItemID() == WeaponConfig::ITEMID_C04Vaccine) 
+					if ((wpn->getItemID() == WeaponConfig::ITEMID_C01Vaccine || wpn->getItemID() == WeaponConfig::ITEMID_C04Vaccine)
 						&& CurLoadout.Toxic < 1.0f)
 					{
-						if(hudMain) hudMain->showMessage(gLangMngr.getString("InfoMsg_NoTocixInBlood"));
+						if (hudMain) hudMain->showMessage(gLangMngr.getString("InfoMsg_NoTocixInBlood"));
 						return;
 					}
 
 					uberAnim_->StartShootAnim();
-					wpn->Fire(r3dPoint3D(0,0,0), D3DXMATRIX(), true); // to update last fire time
+					wpn->Fire(r3dPoint3D(0, 0, 0), D3DXMATRIX(), true); // to update last fire time
 
 					showSlotsInfoTimer = r3dGetTime() + 5.0f; // show weapon info for X seconds
-					if(hudMain)
+					if (hudMain)
 						hudMain->showSlots(true);
 
 					// todo: we need to sync this crap over network, so that network players will see us using item
 					// todo: also, we need to sync when we sent this packet, so that it is in sync with animation
 					float var1 = 0.0f;
-					r3dPoint3D pos       = GetPosition() + GetvForw()*1.0f + r3dPoint3D(0,1,0);
+					r3dPoint3D pos = GetPosition() + GetvForw()*1.0f + r3dPoint3D(0, 1, 0);
 					bool needCorrectPos = false; // those objects require precise position, otherwise there will be desync between client\server (mainly spawn beacon problem)
-					if(wi.itemID == WeaponConfig::ITEMID_BarbWireBarricade ||
+					if (wi.itemID == WeaponConfig::ITEMID_BarbWireBarricade ||
 						wi.itemID == WeaponConfig::ITEMID_WoodShieldBarricade ||
-						wi.itemID == WeaponConfig::ITEMID_RiotShieldBarricade || 
+						wi.itemID == WeaponConfig::ITEMID_RiotShieldBarricade ||
 						wi.itemID == WeaponConfig::ITEMID_SandbagBarricade)
 					{
-						var1 = (m_fPlayerRotation) + R3D_RAD2DEG(bodyAdjust_x) + 180;
-						needCorrectPos = true; 
+						var1 = (m_fPlayerRotation)+R3D_RAD2DEG(bodyAdjust_x) + 180;
+						needCorrectPos = true;
 					}
 
-					if(needCorrectPos)
+					if (needCorrectPos)
 					{
 						PxRaycastHit hit;
-						PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC));
-						if(g_pPhysicsWorld->raycastSingle(PxVec3(pos.x, pos.y, pos.z), PxVec3(0,-1,0), 3.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
-							pos = r3dPoint3D(hit.impact.x, hit.impact.y+0.1f, hit.impact.z);
+						PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK, 0, 0, 0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC));
+						if (g_pPhysicsWorld->raycastSingle(PxVec3(pos.x, pos.y, pos.z), PxVec3(0, -1, 0), 3.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
+							pos = r3dPoint3D(hit.impact.x, hit.impact.y + 0.1f, hit.impact.z);
 					}
 					localPlayer_UseItem(wpn->m_BackpackIdx, wi.itemID, pos, var1);
 
@@ -2044,15 +2064,15 @@ void obj_Player::CheckFireWeapon()
 
 					// after Fire() check new quantity
 					{
-						if(wpn->getConfig()->m_isConsumable)
+						if (wpn->getConfig()->m_isConsumable)
 							wi.quantity--; // simulate what fire() does
-						if(wi.quantity <= 0) {
+						if (wi.quantity <= 0) {
 							wpnIsNoLongerAvailable = true;
 							OnBackpackChanged(m_SelectedWeapon);
 						}
 						else
 						{
-							if(hudMain)
+							if (hudMain)
 								hudMain->updateSlotInfo(m_SelectedWeapon, wi.quantity);
 						}
 					}
@@ -2062,35 +2082,35 @@ void obj_Player::CheckFireWeapon()
 		}
 		needExit = true;
 	}
-	
-	if(!bAllowToUseWeapons)
+
+	if (!bAllowToUseWeapons)
 		needExit = true;
 
-	if(needExit)
+	if (needExit)
 	{
-		if(!wpnIsNoLongerAvailable)
+		if (!wpnIsNoLongerAvailable)
 			wpn->isReadyToFire(false, false); // very important to call ready to fire with false to reset internal counter of how long trigger was pressed
 		return;
 	}
 
 	m_isPressedFireTrigger = InputMappingMngr->isPressed(r3dInputMappingMngr::KS_PRIMARY_FIRE) || gamepadRightTrigger > 0;
 	// check muzzle block except when using scope
-	if(!m_isInScope && wpn->getCategory()!=storecat_MELEE && isMuzzlerBlocked(this, GetMuzzlerPosition()))
+	if (!m_isInScope && wpn->getCategory() != storecat_MELEE && isMuzzlerBlocked(this, GetMuzzlerPosition()))
 		m_isPressedFireTrigger = false;
 
 	bool oldAiming = m_isAiming;
-	if(g_toggle_aim->GetBool())
+	if (g_toggle_aim->GetBool())
 	{
-		if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
+		if (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
 			m_isAiming = !m_isAiming;
 	}
 	else
 	{
 		m_isAiming = InputMappingMngr->isPressed(r3dInputMappingMngr::KS_AIM) || gamepadLeftTrigger > 0;
 	}
-	
+
 	// check if we just switched weapon and do not allow to fire
-	if((r3dGetTime() - lastTimeWeaponSwitch) < 0.4f)
+	if ((r3dGetTime() - lastTimeWeaponSwitch) < 0.4f)
 	{
 		m_isPressedFireTrigger = false;
 		m_isAiming = false;
@@ -2099,43 +2119,43 @@ void obj_Player::CheckFireWeapon()
 	extern 	PlayerStateVars_s CurrentRig;
 	m_isInScope = hasScopeMode() && CurrentRig.allowScope;
 
-	if(wpn->isReloading())
+	if (wpn->isReloading())
 		m_isAiming = false;
 
 	//if(wpn->getAnimType()== WPN_ANIM_MELEE) // no aiming in melee
 	//	m_isAiming = false;
 
 	// remember that aiming was changed
-	if(m_isAiming != oldAiming)
+	if (m_isAiming != oldAiming)
 		m_isChangedAiming1 = true;
 
 	extern float LerpValue;
 	if (wpn->getCategory() != storecat_SNP)
 	{
-		m_isFinishedAiming = m_isAiming && LerpValue==1.0f;
+		m_isFinishedAiming = m_isAiming && LerpValue == 1.0f;
 	}
-	else 
+	else
 	{
-		m_isFinishedAiming = m_isAiming && LerpValue==1.0f && m_isInScope;
+		m_isFinishedAiming = m_isAiming && LerpValue == 1.0f && m_isInScope;
 	}
 
-	bool playerCrouching = PlayerState==PLAYER_MOVE_CROUCH || PlayerState==PLAYER_MOVE_CROUCH_AIM; 
-	bool playerProning = PlayerState==PLAYER_MOVE_PRONE || PlayerState==PLAYER_PRONE_AIM || PlayerState == PLAYER_PRONE_IDLE;
-	bool playerMoving  = InputAcceleration.Length() > 0.01f;
-	bool playerRunning = PlayerState==PLAYER_MOVE_RUN;
+	bool playerCrouching = PlayerState == PLAYER_MOVE_CROUCH || PlayerState == PLAYER_MOVE_CROUCH_AIM;
+	bool playerProning = PlayerState == PLAYER_MOVE_PRONE || PlayerState == PLAYER_PRONE_AIM || PlayerState == PLAYER_PRONE_IDLE;
+	bool playerMoving = InputAcceleration.Length() > 0.01f;
+	bool playerRunning = PlayerState == PLAYER_MOVE_RUN;
 	int triggerPressedCounter = wpn->getTriggerPressedCounter();
 
 	float recoilCoolDownMod = 1.0f;
-	if(triggerPressedCounter < 3)
+	if (triggerPressedCounter < 3)
 		recoilCoolDownMod = 2.50f;
 	else
 		recoilCoolDownMod = 3.2f;
 
 	// BEGIN SPREAD\RECOIL LOGIC
 
-	if(!m_isPressedFireTrigger) // if user let go of trigger, start return recoil back to normal right away, so that it doesn't linger at the top for a second or two after stopping firing
+	if (!m_isPressedFireTrigger) // if user let go of trigger, start return recoil back to normal right away, so that it doesn't linger at the top for a second or two after stopping firing
 	{
-		if(wpn->getCategory() != storecat_SNP)
+		if (wpn->getCategory() != storecat_SNP)
 		{
 			RecoilCooldown = 0;
 		}
@@ -2143,35 +2163,41 @@ void obj_Player::CheckFireWeapon()
 
 	//[ST] trying to get higher recoil without changing database. hack :)
 	float recoil = wpn->getRecoil()*1.1f;
-		
+
 	float spread = CurrentSpread; // spread will be affected now by player state and other modificators
 
 	//[ST] - just in case - not sure why we needed it
 	//spread *= GPP->c_fGlobalSpreadMod;
 
 	// Okay by default in NON ADS mode we're increasing spread
-	spread *= 1.1f;
+	spread *= 1.3f;
 
-	if (wpn->getCategory()==storecat_SHTG) spread *= 1.2f;
+	if (CurLoadout.Stats.skillid11 == 1)
+		recoil *= 0.6f;
+
+	if (CurLoadout.Stats.skillid9 == 1)
+		spread *= 0.6f;
+
+	if (wpn->getCategory() == storecat_SHTG) spread *= 1.2f;
 
 
-	if(playerCrouching)
+	if (playerCrouching)
 	{
 		//recoil *= GPP->c_fSpreadRecoilMod_Crouch;
-		if(wpn->getCategory()==storecat_SHTG)
+		if (wpn->getCategory() == storecat_SHTG)
 			spread *= GPP->c_fSpreadModShotgun_Crouch;
 		else
 			spread *= GPP->c_fSpreadRecoilMod_Crouch;
 	}
-	if(m_isFinishedAiming)
+	if (m_isFinishedAiming)
 	{
 		recoil *= GPP->c_fSpreadRecoilMod_Aim*2.0f;
-		if(wpn->getCategory()==storecat_SHTG)
+		if (wpn->getCategory() == storecat_SHTG)
 			spread *= GPP->c_fSpreadModShotgun_Aim;
 		else
 			spread *= GPP->c_fSpreadRecoilMod_Aim;
 	}
-	if(playerRunning)
+	if (playerRunning)
 	{
 		recoil *= GPP->c_fSpreadRecoilMod_Running;
 		spread *= GPP->c_fSpreadRecoilMod_Running;
@@ -2184,34 +2210,34 @@ void obj_Player::CheckFireWeapon()
 
 	/*if(wpn->getCategory() == storecat_SNP && !m_isAiming)
 	{
-		m_ReticleTargetScale = 25.0f;
+	m_ReticleTargetScale = 25.0f;
 	}*/
 
 	// first bullet logic
-	if(!playerRunning && m_isFinishedAiming && wpn->getCategory() != storecat_SHTG && bOnGround)
+	if (!playerRunning && m_isFinishedAiming && wpn->getCategory() != storecat_SHTG && bOnGround)
 	{
 		// spr_mod - to prevent player from shooting straight at target by just clicking on a mouse, rather than holding fire
-		float spr_mod = 1.0f - R3D_CLAMP(((r3dGetTime() - wpn->getLastTimeFired())/GPP->c_fZeroSpreadDelayBetweenShots), 0.0f, 0.9f); // 0.9 - first bullet 10% spread
+		float spr_mod = 1.0f - R3D_CLAMP(((r3dGetTime() - wpn->getLastTimeFired()) / GPP->c_fZeroSpreadDelayBetweenShots), 0.0f, 0.9f); // 0.9 - first bullet 10% spread
 		// if shooting for 10 bullets straight you spread will slowly increase
 		//[ST] - Removed this code
 		//spread = R3D_LERP(spread*spr_mod, spread, R3D_CLAMP(float(triggerPressedCounter)/10.0f, 0.0f, 1.0f)); 
 
 		// special case for sniper rifle
-		if(wpn->getCategory() == storecat_SNP && m_isInScope && triggerPressedCounter==0)
+		if (wpn->getCategory() == storecat_SNP && m_isInScope && triggerPressedCounter == 0)
 			spread = 0;
 	}
 
 	// if in air
-	if(!bOnGround)
+	if (!bOnGround)
 	{
-		if(wpn->getCategory() == storecat_HG)
+		if (wpn->getCategory() == storecat_HG)
 			spread *= 2.0f;
 		else
 			spread *= 4.0f; // hard coded, if jumping = spread increased by X times
 	}
 
 	// special case for sniper rifle
-	if(wpn->getCategory() == storecat_SNP && !m_isInScope)
+	if (wpn->getCategory() == storecat_SNP && !m_isInScope)
 		spread = 11; // fixed spread at 11 for sniper rifles if not aiming - per sergey's request
 
 
@@ -2219,28 +2245,28 @@ void obj_Player::CheckFireWeapon()
 
 	{
 		bool isReloading = wpn->isReloading();
-		if(isReloading && !wasReloading)
+		if (isReloading && !wasReloading)
 		{
 			wasReloading = true;
 		}
-		if(!isReloading && wasReloading)
+		if (!isReloading && wasReloading)
 		{
 			wasReloading = false;
 		}
-		if(isReloading)
+		if (isReloading)
 		{
-			float progress = R3D_CLAMP((wpn->getReloadProgress()/wpn->getReloadTime()), 0.0f, 1.0f);
+			float progress = R3D_CLAMP((wpn->getReloadProgress() / wpn->getReloadTime()), 0.0f, 1.0f);
 		}
 	}
 
-	if((InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_RELOAD)||Gamepad->WasReleased(gpX)) && !wpn->isReloading())
+	if ((InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_RELOAD) || Gamepad->WasReleased(gpX)) && !wpn->isReloading())
 		wpn->Reload();
 
-	if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_CHANGE_RATE_FIRE) && !wpn->isReloading())
+	if (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_CHANGE_RATE_FIRE) && !wpn->isReloading())
 	{
 		wpn->switchFiremode();
-//		if(hudMain)
-//			hudMain->setFireMode(wpn->getFiremode());
+		if (hudMain)
+				hudMain->setFireMode(wpn->getFiremode());
 	}
 
 	// check for grenade throw, if successful it will go to normal fire code
@@ -2767,6 +2793,9 @@ void obj_Player::ApplyDamage(const r3dPoint3D& dmgPos, float damage, GameObject*
 	case storecat_MG:
 		dmgForce = 40.0f;
 		break;
+	case storecat_SUPPORT:
+		dmgForce = 70.0f;
+		break;
 	case storecat_HG:
 		dmgForce = 10.0f;
 		break;
@@ -2881,7 +2910,7 @@ float obj_Player::getMaxStamina()
 	#ifdef FINAL_BUILD
 	if(CurLoadout.Stats.skillid1 == 1)
 	{
-		maxStamina += 25.5f;
+		maxStamina += 15.5f;
 
 		if(CurLoadout.Stats.skillid4 == 1)
 		{
@@ -2922,7 +2951,7 @@ void obj_Player::StartJump()
 		r3dPoint3D newPos = vel + GetPosition();
 		PxRaycastHit hit;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC));
-		bool hitResult = g_pPhysicsWorld->raycastSingle(PxVec3(newPos.x, newPos.y + 0.5f, newPos.z), PxVec3(0, -1, 0), 10.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
+		bool hitResult = g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(newPos.x, newPos.y + 0.5f, newPos.z), PxVec3(0, -1, 0), 10.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
 		r3dPoint3D posForWater = newPos;
 		if( hitResult )
 			posForWater = r3dPoint3D(hit.impact.x, hit.impact.y, hit.impact.z);			
@@ -3136,9 +3165,9 @@ void obj_Player::UpdateLocalPlayerMovement()
 		#ifdef FINAL_BUILD
 				if(CurLoadout.Stats.skillid3 == 1)
 				{
-					regen_rate *= 2.0f;
+					regen_rate *= 1.5f;
 					if(CurLoadout.Stats.skillid5 == 1)
-						regen_rate *= 3.0f;
+						regen_rate *= 2.5f;
 				}
 		#endif
 
@@ -4225,6 +4254,9 @@ void obj_Player::OnNetPacket(const PKT_C2C_PlayerSwitchWeapon_s& n)
 		return;
 	}
 
+	if(!m_Weapons[n.wid])
+		return; //Prevents crashes for using the studio on the public servers.
+
 	r3d_assert(m_Weapons[n.wid]);
 			
 	if(m_Weapons[n.wid] == NULL)
@@ -4292,6 +4324,10 @@ void obj_Player::OnNetPacket(const PKT_C2C_PlayerReload_s& n)
 
 void obj_Player::OnNetPacket(const PKT_C2C_PlayerFired_s& n)
 {
+	if(!m_Weapons[m_SelectedWeapon])
+		return; //Prevents crashing on studio builds in the live environment
+
+
 	m_SelectedWeapon = n.debug_wid;
 	r3d_assert(m_SelectedWeapon>=0 && m_SelectedWeapon < NUM_WEAPONS_ON_PLAYER);
 	r3d_assert(m_Weapons[m_SelectedWeapon]);
@@ -4324,6 +4360,9 @@ void obj_Player::OnNetPacket(const PKT_C2C_PlayerHitNothing_s& n)
 
 void obj_Player::OnNetPacket(const PKT_C2C_PlayerHitStatic_s& n)
 {
+	if(!m_Weapons[m_SelectedWeapon])
+		return; //Crashfix for unpacked client
+	
 	r3d_assert(m_Weapons[m_SelectedWeapon]);
 
 	const ClientGameLogic& CGL = gClientLogic();
@@ -4396,21 +4435,93 @@ void obj_Player::OnNetPacket(const PKT_C2C_PlayerHitStatic_s& n)
 
 void obj_Player::OnNetPacket(const PKT_C2C_PlayerHitStaticPierced_s& n)
 {
-	PKT_C2C_PlayerHitStatic_s n2;
-	r3d_assert(sizeof(n) == sizeof(n2));
-	memcpy(&n2, &n, sizeof(n));
-	OnNetPacket(n2);
+	r3d_assert(m_Weapons[m_SelectedWeapon]);
+
+	const ClientGameLogic& CGL = gClientLogic();
+
+			// create decal
+			if(n.decalIdx != 0 )
+			{
+				DecalParams params;
+				params.Dir	= n.hit_norm;
+				params.Pos	= n.hit_pos;
+				params.TypeID	= (uint32_t)(n.decalIdx) - 1;
+				if(params.TypeID >= 0 && params.TypeID < (int)g_pDecalChief->GetTypeCount())
+				{
+					g_pDecalChief->Add( params );
+				}
+				else
+				{
+					// some cheat or invalid data
+				}
+			}
+
+			// impact particle
+			if(n.particleIdx != 0)
+			{
+				uint32_t particleIdx = (uint32_t)(n.particleIdx) - 1;
+				if(particleIdx < ImpactParticleEntry::NumRegistered)
+				{
+					SpawnImpactParticle(particleIdx, n.hit_pos, n.hit_norm);
+				}
+				else
+				{
+					// some cheat or invalid data
+				}
+			}
+
+			{
+				if(GameObject* from = GameWorld().GetNetworkObject(n.FromID))
+				{
+					r3dPoint3D waterSplashPos;
+					extern bool TraceWater(const r3dPoint3D& start, const r3dPoint3D& finish, r3dPoint3D& waterSplashPos);
+					if( TraceWater( from->GetPosition(), n.hit_pos, waterSplashPos))
+					{	
+						extern void WaterSplash(const r3dPoint3D& waterSplashPos, float height, float size, float amount, int texIdx);
+						waterSplashPos.y -= 0.1f;
+						WaterSplash(waterSplashPos, 0.1f, 30.0f, 0.04f, 2);
+					}
+				}
+			//}
+
+			// add impulse
+			GameObject* target = GameWorld().GetObjectByHash(n.hash_obj);
+			if(m_Weapons[m_SelectedWeapon]->isImmediateShooting() && target)
+				if(target->PhysicsObject)
+					target->PhysicsObject->AddImpulseAtPos(-n.hit_norm*m_Weapons[m_SelectedWeapon]->getAmmoSpeed()*m_Weapons[m_SelectedWeapon]->getAmmoMass()/150.0f, n.hit_pos);
+
+			// play near miss sound
+			if(m_Weapons[m_SelectedWeapon]->isImmediateShooting())
+			{
+				if(CGL.localPlayer_)
+				{
+					float dist = dist_Point_to_Line(CGL.localPlayer_->GetPosition(), GetPosition(), n.hit_pos);
+					if(dist < 5.0f && rand()%5==0)
+					{
+						static int bulletHitMissSoundID = -1;
+						if(bulletHitMissSoundID==-1)
+							bulletHitMissSoundID = SoundSys.GetEventIDByPath("Sounds/BulletHits/Miss");
+						snd_PlaySound(bulletHitMissSoundID, CGL.localPlayer_->GetPosition());
+					}
+				}
+			}
+			}
 }
 
 void obj_Player::OnNetPacket(const PKT_C2C_PlayerHitDynamic_s& n)
 {
+	if(!m_Weapons[m_SelectedWeapon])
+		return;
+	
 	r3d_assert(m_Weapons[m_SelectedWeapon]);
 
 	r3dPoint3D dir = (GetPosition()-n.hit_pos).NormalizeTo();
 
 	GameObject* target = GameWorld().GetNetworkObject(n.targetId);
 	if(!target) // current player doesn't see target
+	{
 		return;
+	}
 
 	const ClientGameLogic& CGL = gClientLogic();
 
@@ -4530,12 +4641,20 @@ void obj_Player::OnNetPacket(const PKT_S2C_BackpackModify_s& n)
 
 	r3d_assert(n.SlotTo < wiCharDataFull::CHAR_MAX_BACKPACK_SIZE);
 	wiInventoryItem& wi = CurLoadout.Items[n.SlotTo];
-	r3d_assert(wi.itemID == n.dbg_ItemID);
-
-	if(wi.quantity < n.Quantity)
+	bool bSuppressOtherMessage = false;
+	if(wi.itemID != n.dbg_ItemID)
+	{
+		hudMain->showMessage(gLangMngr.getString("InfoMsg_ItemAdded"));
+		wi.itemID = n.dbg_ItemID;
+		bSuppressOtherMessage = true;
+	}
+	if(!bSuppressOtherMessage)
+	{
+		if(wi.quantity < n.Quantity)
 		hudMain->showMessage(gLangMngr.getString("InfoMsg_ItemAdded"));
 	else
 		hudMain->showMessage(gLangMngr.getString("InfoMsg_ItemRemoved"));
+}
 
 	wi.quantity = n.Quantity;
 	if(wi.quantity <= 0)
@@ -4612,8 +4731,15 @@ bool obj_Player::hasScopeMode() const
 	if(forcedEmptyHands)
 		return false;
 
-	bool isFirstPerson = g_camera_mode->GetInt()==2 && NetworkLocal;
-	return (m_Weapons[m_SelectedWeapon] && m_Weapons[m_SelectedWeapon]->hasScopeMode(isFirstPerson)); 
+	bool isFirstPerson = g_camera_mode->GetInt() == 2 && NetworkLocal;
+	if (isFirstPerson)
+	{
+		return (m_Weapons[m_SelectedWeapon] && m_Weapons[m_SelectedWeapon]->hasScopeMode(isFirstPerson));
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool obj_Player::hasScopeMode_hidePlayerModel() const 
@@ -4728,7 +4854,7 @@ void obj_Player::DrawReticle()
 					PxRaycastHit hit;
 					PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK|(1<<PHYSCOLL_NETWORKPLAYER),0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC));
 					r3dPoint3D dirToAttm = (attmPos - gCam).NormalizeTo();
-					bool hitResult = g_pPhysicsWorld->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dirToAttm.x, dirToAttm.y, dirToAttm.z), distToCamera, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
+					bool hitResult = g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dirToAttm.x, dirToAttm.y, dirToAttm.z), distToCamera, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
 					if(!hitResult)
 					{
 						/*{
@@ -6153,8 +6279,19 @@ void obj_Player::OnBackpackChanged(int idx)
 	// check if we need to modify loadout
 	if(idx >= wiCharDataFull::CHAR_LOADOUT_WEAPON1 && idx <= wiCharDataFull::CHAR_LOADOUT_HEADGEAR)
 	{
+		bool isAmmo = false; //checking if the weapon is actually ammo. Otherwise, animations get bugged resulting in instant reload!
+		if(CurLoadout.Items[idx].itemID != 0)
+		{
+			const BaseItemConfig* cfg = g_pWeaponArmory->getConfig(CurLoadout.Items[idx].itemID);
+			if(cfg->category == storecat_FPSAttachment)
+				isAmmo = true;
+		}
+		if(!isAmmo)
+		{
+			UpdateLoadoutSlot(CurLoadout);
+			updateWeaponUI();
+		}
 		UpdateLoadoutSlot(CurLoadout);
-
 		updateWeaponUI();
 	}
 

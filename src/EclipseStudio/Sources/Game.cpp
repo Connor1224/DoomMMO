@@ -1145,6 +1145,7 @@ void PlayEditor()
 				}
 			}
 			if (Keyboard->WasPressed(kbsF7)) 	CurHUDID = 3;
+            if (Keyboard->WasPressed(kbsF5)) 	CurHUDID = 4;
 			if (Keyboard->WasPressed(kbsF6)) 	CurHUDID = 0;
 		}
 

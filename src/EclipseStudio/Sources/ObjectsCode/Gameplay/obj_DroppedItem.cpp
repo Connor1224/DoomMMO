@@ -88,7 +88,6 @@ BOOL obj_DroppedItem::OnCreate()
 	PhysicsConfig.group = PHYSCOLL_TINY_GEOMETRY; // skip collision with players
 	PhysicsConfig.requireNoBounceMaterial = true;
 	PhysicsConfig.isFastMoving = true;
-
 	SetPosition(GetPosition()+r3dPoint3D(0,0.25f,0));
 	
 	m_spawnPos = GetPosition();

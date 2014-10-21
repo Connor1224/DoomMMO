@@ -2371,6 +2371,7 @@ void RenderLevelMinimap ( const char* TargetFile )
 
 			PrevView			= r3dRenderer->ViewMatrix;
 			PrevProj			= r3dRenderer->ProjMatrix;
+			PrevCamPosition		= r3dRenderer->CameraPosition;
 			PrevNear			= r3dRenderer->NearClip;
 			PrevFar				= r3dRenderer->FarClip;			
 
@@ -2411,6 +2412,7 @@ void RenderLevelMinimap ( const char* TargetFile )
 
 		D3DXMATRIX	PrevView;
 		D3DXMATRIX	PrevProj;
+		r3dPoint3D	PrevCamPosition;
 		float		PrevNear;
 		float		PrevFar;
 		DWORD		PrevScissor;

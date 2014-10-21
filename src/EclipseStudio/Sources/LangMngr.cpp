@@ -21,20 +21,10 @@ void LanguageManager::Init(Languages lang)
 	r3d_assert(!m_Inited);
 	m_Inited = true;
 	
-	//lang = LANG_RU;
+	lang = LANG_EN;
 
 	if(lang == LANG_EN)
 		readLanguageFile("data/LangPack/english.lang");
-	else if(lang == LANG_RU)
-		readLanguageFile("data/LangPack/russian.lang");
-	else if(lang == LANG_FR)
-		readLanguageFile("data/LangPack/french.lang");
-	else if(lang == LANG_DE)
-		readLanguageFile("data/LangPack/german.lang");
-	else if(lang == LANG_IT)
-		readLanguageFile("data/LangPack/italian.lang");
-	else if(lang == LANG_SP)
-		readLanguageFile("data/LangPack/spanish.lang");
 	else
 		r3dError("Unknown language %d\n", lang);
 }

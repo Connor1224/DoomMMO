@@ -23,6 +23,17 @@ struct NameHashFunc_T
 };
 static HashTableDynamic<const char*, FixedString256, NameHashFunc_T, 1024> dictionaryHash_;
 
+int convertFireModeIntoInt(WeaponFiremodeEnum firemode)
+{
+	if(firemode == WPN_FRM_SINGLE)
+		return 1;
+	else if(firemode == WPN_FRM_TRIPLE)
+		return 3;
+	else if(firemode == WPN_FRM_AUTO)
+		return 5;
+
+	return 1;
+}
 
 HUDDisplay :: HUDDisplay()
 {
@@ -1007,4 +1018,28 @@ void HUDDisplay::setCharTagTextVisible(Scaleform::GFx::Value& icon, bool isShowN
 	var[1].SetBoolean(isShowName);
 	var[2].SetBoolean(isSameGroup);
 	gfxHUD.Invoke("_root.api.setCharTagTextVisible", var, 3);
+}
+
+void HUDDisplay::showReloading(bool set)
+{
+	if(!Inited)
+		return;
+	if(set)
+		gfxHUD.Invoke("_global.showReload", "");
+	else
+		gfxHUD.Invoke("_global.hideReload", "");
+}
+
+void HUDDisplay::SetReloadingProgress(float progress)
+{
+	if(!Inited)
+		return;
+	gfxHUD.Invoke("_global.updateReload", progress);
+}
+
+void HUDDisplay::setFireMode(WeaponFiremodeEnum firemode)
+{
+	if(!Inited)
+		return;
+	gfxHUD.Invoke("_global.setFireMode", convertFireModeIntoInt(firemode));
 }

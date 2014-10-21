@@ -12,7 +12,7 @@
 #include "../../../ServerNetPackets/NetPacketsGameInfo.h"
 #include "../../../ServerNetPackets/NetPacketsWeaponInfo.h"
 #include "Gameplay_Params.h"
-
+#include "../../../EclipseStudio/Sources/ObjectsCode/WEAPONS/WeaponArmory.h"
 class GameObject;
 
 // all data packets should be as minimal as possible - so, no data aligning

@@ -14,9 +14,15 @@ private:
 		bool tracers;
 		bool nameplates;
 		bool crosshair;
+		bool privateServers;
 
 		bool region_us;
 		bool region_eu;
+		bool region_ru;
+		bool region_sa;
+
+		bool enabled;
+		bool passworded;
 
 		FilterGames() 
 		{ 
@@ -24,6 +30,7 @@ private:
 			stronghold = true;
 			hideempty = false;
 			hidefull = false;
+			privateServers = true;
 
 			tracers = false;
 			nameplates = false;
@@ -31,6 +38,10 @@ private:
 
 			region_us = true;
 			region_eu = false;
+			region_ru = false;
+			region_sa = false;
+			enabled = true;
+			passworded = false;
 		}
 	};
 public:

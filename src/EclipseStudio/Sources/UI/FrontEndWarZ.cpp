@@ -616,10 +616,6 @@ static bool ActualGetProfileData(FrontendWarZ* UI)
 		r3dOutToLog("@@@@@@@@@@ProfileDataDirty: %d\n", gUserProfile.ProfileDataDirty);
 	}
 
-	SetLoadStage("ApiSteamGetShop");
-	if(gSteam.inited_)
-		gUserProfile.ApiSteamGetShop();
-
 	// retreive friends status
 /*	SetLoadStage("ApiFriendGetStats");
 	gUserProfile.friends->friendsPrev_.clear();
@@ -880,6 +876,8 @@ void FrontendWarZ::postLoginStepInit(EGameResult gameResult)
 		r3dRenderer->EndFrame();
 	}
 	r3dRenderer->EndRender( true );
+
+	r3dRenderer->TryToRestoreDevice();
 
 	// init things to load game level
 	r3dGameLevel::SetHomeDir("WZ_FrontEndLighting");
@@ -1211,6 +1209,8 @@ int FrontendWarZ::Update()
 		m_Player->SetPosition(playerPosCreate);
 	else if(m_needPlayerRenderingRequest==3) // play game screen
 		m_Player->SetPosition(playerPosCreate);
+	else
+		m_Player->SetPosition(playerPosCreate);
 
 	m_Player->m_fPlayerRotationTarget = m_Player->m_fPlayerRotation = 0;
 
@@ -1394,6 +1394,8 @@ void FrontendWarZ::drawPlayer()
 
 void FrontendWarZ::addClientSurvivor(const wiCharDataFull& slot, int slotIndex)
 {
+
+	float Weight = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].getTotalWeight();
 	Scaleform::GFx::Value var[23];
 	char tmpGamertag[128];
 	if(slot.ClanID != 0)
@@ -2098,6 +2100,7 @@ void FrontendWarZ::updateInventoryAndSkillItems()
 		var[0].SetUInt(uint32_t(gUserProfile.ProfileData.Inventory[i].InventoryID));
 		var[1].SetUInt(gUserProfile.ProfileData.Inventory[i].itemID);
 		var[2].SetNumber(gUserProfile.ProfileData.Inventory[i].quantity);
+		const WeaponConfig* wc = g_pWeaponArmory->getWeaponConfig(gUserProfile.ProfileData.Inventory[i].itemID);
 		var[3].SetNumber(gUserProfile.ProfileData.Inventory[i].Var1);
 		var[4].SetNumber(gUserProfile.ProfileData.Inventory[i].Var2);
 		bool isConsumable = false;
@@ -2337,6 +2340,14 @@ void FrontendWarZ::eventBackpackFromInventory(r3dScaleformMovie* pMovie, const S
 		bic = g_pWeaponArmory->getConfig(itemID);
 		if(bic)
 			totalWeight += bic->m_Weight*m_Amount;
+				// Skillsystem
+		
+		if(slot.Stats.skillid2 == 1){
+			totalWeight *= 0.9f;
+			if(slot.Stats.skillid6 == 1)
+				totalWeight *= 0.7f;
+		}
+		
 
 		const BackpackConfig* bc = g_pWeaponArmory->getBackpackConfig(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].BackpackID);
 		r3d_assert(bc);
@@ -2448,10 +2459,24 @@ void FrontendWarZ::OnBackpackFromInventorySuccess()
 
 void FrontendWarZ::updateSurvivorTotalWeight(int survivor)
 {
+	wiCharDataFull& slot = gUserProfile.ProfileData.ArmorySlots[survivor];
+
+	char tmpGamertag[128];
+	if(slot.ClanID != 0)
+		sprintf(tmpGamertag, "[%s] %s", slot.ClanTag, slot.Gamertag);
+	else
+		r3dscpy(tmpGamertag, slot.Gamertag);
 	float totalWeight = gUserProfile.ProfileData.ArmorySlots[survivor].getTotalWeight();
 
+	// Skillsystem
+	if(gUserProfile.ProfileData.ArmorySlots[survivor].Stats.skillid2 == 1){
+		totalWeight *= 0.9f;
+		if(gUserProfile.ProfileData.ArmorySlots[survivor].Stats.skillid6 == 1)
+			totalWeight *= 0.7f;
+	}
+
 	Scaleform::GFx::Value var[2];
-	var[0].SetString(gUserProfile.ProfileData.ArmorySlots[survivor].Gamertag);
+	var[0].SetString(tmpGamertag);
 	var[1].SetNumber(totalWeight);
 	gfxMovie.Invoke("_root.api.updateClientSurvivorWeight", var, 2);
 }
@@ -2530,6 +2555,7 @@ void FrontendWarZ::eventSetSelectedChar(r3dScaleformMovie* pMovie, const Scalefo
 	gUserProfile.SelectedCharID = args[0].GetInt();
 	m_Player->uberAnim_->anim.StopAll();	// prevent animation blending on loadout switch
 	m_Player->UpdateLoadoutSlot(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID]);
+	updateSurvivorTotalWeight(gUserProfile.SelectedCharID);
 }
 
 void FrontendWarZ::eventOpenBackpackSelector(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
@@ -2757,33 +2783,11 @@ void FrontendWarZ::OnBackpackGridSwapSuccess()
 
 void FrontendWarZ::eventOptionsLanguageSelection(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
-	r3d_assert(args);
-	r3d_assert(argCount == 1);
-
-	const char* newLang = args[0].GetString();
-
-	if(strcmp(newLang, g_user_language->GetString())==0)
-		return; // same language
-
-#ifdef FINAL_BUILD
-	{
 		Scaleform::GFx::Value var[2];
-		var[0].SetStringW(L"LOCALIZATIONS ARE COMING SOON");
+		var[0].SetStringW(L"English is the only language selectable.");
 		var[1].SetBoolean(true);
 		pMovie->Invoke("_root.api.showInfoMsg", var, 2);		
 		return;
-	}
-#endif
-
-	g_user_language->SetString(newLang);
-
-	Scaleform::GFx::Value var[2];
-	var[0].SetStringW(gLangMngr.getString("NewLanguageSetAfterRestart"));
-	var[1].SetBoolean(true);
-	pMovie->Invoke("_root.api.showInfoMsg", var, 2);		
-
-	// write to ini file
-	writeGameOptionsFile();
 }
 
 void FrontendWarZ::AddSettingsChangeFlag( DWORD flag )
@@ -3781,6 +3785,16 @@ void FrontendWarZ::OnCreateClanSuccess()
 	}
 
 	setClanInfo();
+	char tmpGamerTag[128];
+	if(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanID != 0)
+	sprintf(tmpGamerTag, "[%s] %s", gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanTag, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+	else
+	r3dscpy(tmpGamerTag, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+
+	Scaleform::GFx::Value var2[2];
+	var2[0].SetString(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+	var2[1].SetString(tmpGamerTag);
+	gfxMovie.Invoke("_root.api.changeSurvivorName", var2, 2);
 	gfxMovie.Invoke("_root.api.Main.showScreen", "MyClan");
 }
 
@@ -3966,6 +3980,12 @@ void FrontendWarZ::eventClanLeaveClan(r3dScaleformMovie* pMovie, const Scaleform
 {
 	r3d_assert(argCount == 0);
 	CUserClans* clans = gUserProfile.clans[gUserProfile.SelectedCharID];
+	char tmpGamertag[128];
+	if(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanID != 0)
+	sprintf(tmpGamertag, "[%s] %s", gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanTag, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+	else
+	r3dscpy(tmpGamertag, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+
 	int api = clans->ApiClanLeave();
 	if(api != 0)
 	{
@@ -3978,6 +3998,14 @@ void FrontendWarZ::eventClanLeaveClan(r3dScaleformMovie* pMovie, const Scaleform
 	}
 	else
 	{
+		std::string clanName = tmpGamertag;
+		char tmpNewName[128];
+		r3dscpy(tmpNewName, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+		std::string tmpNew = tmpNewName;
+		Scaleform::GFx::Value var2[2];
+		var2[0].SetString(clanName.c_str());
+		var2[1].SetString(tmpNew.c_str());
+		gfxMovie.Invoke("_root.api.changeSurvivorName", var2, 2);
 		gfxMovie.Invoke("_root.api.Main.showScreen", "Clans");
 	}
 }
@@ -4177,6 +4205,8 @@ void FrontendWarZ::eventClanRespondToInvite(r3dScaleformMovie* pMovie, const Sca
 	else if(!isAccepted)
 	{
 		checkForInviteFromClan();
+		setClanInfo();
+		gfxMovie.Invoke("_root.api.Main.showScreen", "MyClan");
 	}
 }
 

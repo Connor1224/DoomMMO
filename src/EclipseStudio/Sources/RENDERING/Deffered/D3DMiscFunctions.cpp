@@ -306,6 +306,7 @@ void UpdateD3DAntiCheat_WallHack()
 		{
 			r3dRenderer->SetDeviceLost();
 			deviceWasLost = true;
+			r3dOutToLog("Device Lost, can't get a Screen!");
 			break;
 		}
 

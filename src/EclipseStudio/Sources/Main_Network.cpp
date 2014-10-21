@@ -295,7 +295,9 @@ repeat_the_menu:
 
 	gLoginSessionPoller.ForceTick(); // force to update that we joined the game
 
-	switch(gClientLogic().m_gameInfo.mapId) 
+	r3dGameLevel::SetHomeDir(gClientLogic().m_gameInfo.workDir);
+
+	/*switch(gClientLogic().m_gameInfo.mapId) 
 	{
 	default: 
 		r3dError("invalid map id\n");
@@ -308,7 +310,10 @@ repeat_the_menu:
 	case GBGameInfo::MAPID_WZ_Colorado: 
 		r3dGameLevel::SetHomeDir("WZ_Colorado"); 
 		break;
-	}
+	case GBGameInfo::MAPID_WZ_TestTown: 
+		r3dGameLevel::SetHomeDir("TestTown"); 
+		break;
+	}*/
 
 	// start the game
 	gameResult = PlayNetworkGame();

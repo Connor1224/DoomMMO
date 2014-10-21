@@ -468,7 +468,7 @@ static void setWeaponAnimByFNAME(const char* FNAME, int* wid, int* wid_fps)
 		if(config)
 		{
 			const char* name = strrchr(config->m_StoreIcon, '/') + 1;
-			if(stricmp(name, FNAME2) != 0)
+			if(_stricmp(name, FNAME2) != 0)
 				continue;
 
 			// fill animation ids for that weapon
@@ -1449,6 +1449,9 @@ void CUberAnim::SyncAnimation(int PlayerState, int MoveDir, bool force, const We
 			break;
 		case storecat_SMG:
 			animIdx = 5;
+			break;
+		case storecat_SUPPORT:
+			animIdx = 6;
 			break;
 		default:
 			r3d_assert(false);

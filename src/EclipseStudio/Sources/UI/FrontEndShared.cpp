@@ -359,6 +359,12 @@ void getWeaponParamForUI(const WeaponConfig* wc, int* damage, int* spread, int* 
 		fr1 = 10;  fr2 = 200;
 		re1 = 1.0f;  re2 = 13.0f;
 		break;
+	case storecat_GRENADE:
+	case storecat_SUPPORT:
+		d1 = 100;  d2 = 400;
+		fr1 = 0;  fr2 = 100;
+		sp1 = 0.5f;   sp2 = 4.5f;
+		break;
 	default:
 		break;
 	}

@@ -79,6 +79,9 @@ public:
 	void	setChatTransparency(float alpha); //[0,1]
 	void	setChatChannel(int index);
 	void	enableClanChannel();
+	void	setFireMode(WeaponFiremodeEnum firemode); // 1, 3, 5
+	void	showReloading(bool set);
+	void	SetReloadingProgress(float progress); // progress - 0-100
 
 	// player list fn
 	void	clearPlayersList();

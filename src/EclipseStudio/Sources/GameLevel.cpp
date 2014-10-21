@@ -6,11 +6,13 @@
 namespace r3dGameLevel
 {
 	static char	HomeDirectory[256];
+	static char	ColorDirectory[256];
 	static char	SaveDirectory[256];
 	float		StartLevelTime = 0;
 
 	r3dAtmosphere	Environment;
 
+	const char*	GetHome2Dir() { return ColorDirectory; }
 	const char*	GetHomeDir() { return HomeDirectory; }
 	const char* GetSaveDir() { return SaveDirectory; }
 	void		SetHomeDir(const char* MapName);

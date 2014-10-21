@@ -3,6 +3,7 @@
 #include "r3dProtect.h"
 #include "r3dNetwork.h"
 #include "multiplayer/P2PMessages.h"
+#include "../../../EclipseStudio/Sources/UI/UIAsync.h"
 
 class GameObject;
 class obj_Player;

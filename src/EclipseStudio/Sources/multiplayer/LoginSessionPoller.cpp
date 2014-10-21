@@ -87,6 +87,10 @@ bool CLoginSessionPoller::UpdateLoginSession()
 			isConnected_ = false;
 			r3dOutToLog("UpdateLoginSession: disconnected\n");
 			return true;
+		case 7:
+			isConnected_ = false;
+			r3dOutToLog("Still Ingame\n");
+			return true;
 		default:
 			// some shit happens
 			return true;

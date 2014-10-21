@@ -1359,25 +1359,7 @@ void game::Init()
 	readGameOptionsFile();
 	g_num_game_executed2->SetInt(g_num_game_executed2->GetInt()+1);
 	writeGameOptionsFile(); // to make sure that it always exists
-
-	// set language
-	if(strcmp(g_user_language->GetString(), "english")==0)
-		gLangMngr.Init(LANG_EN);
-	else if(strcmp(g_user_language->GetString(), "french")==0)
-		gLangMngr.Init(LANG_FR);
-	else if(strcmp(g_user_language->GetString(), "german")==0)
-		gLangMngr.Init(LANG_DE);
-	else if(strcmp(g_user_language->GetString(), "italian")==0)
-		gLangMngr.Init(LANG_IT);
-	else if(strcmp(g_user_language->GetString(), "spanish")==0)
-		gLangMngr.Init(LANG_SP);
-	else if(strcmp(g_user_language->GetString(), "russian")==0)
-		gLangMngr.Init(LANG_RU);
-	else // default to english, should not happen
-	{
-		r3d_assert(false);
-		gLangMngr.Init(LANG_EN);
-	}
+	gLangMngr.Init(LANG_EN);
 
 	InputMappingMngr = new r3dInputMappingMngr;
 

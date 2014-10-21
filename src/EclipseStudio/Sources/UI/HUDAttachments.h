@@ -26,5 +26,10 @@ public:
 	void	Activate();
 	void	Deactivate();
 
+	int		ItemIdAdded[72];
+	void	AddItemIdAdded(int ItemId);
+	bool	isItemAdded(int ItemId);
+	void	ResetItemId();
+
 	void	eventSelectAttachment(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 };
