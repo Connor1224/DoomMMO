@@ -268,7 +268,7 @@ void r3dThreadEntryHelper(threadEntry_fn fn, DWORD in)
 		info.pszAppVersion = L"1.0";
 		info.pszEmailTo = NULL;
 		
-		info.pszUrl = L"https://localhost/WarZ/api/php/api_CrashRpt.php";
+		info.pszUrl = L"https://localhost/api/php/api_CrashRpt.php";
 		
 		info.pszCrashSenderPath = NULL;
 		info.pfnCrashCallback = &r3dCrashRptCallback;

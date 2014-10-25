@@ -2,8 +2,8 @@
 	$db_apikey = "ACOR4823G%sjYU*@476xnDvYaK@!56";
 	function db_connect()
 	{
-		$db_user   = "wz_api_user";
-		$db_pass   = "5vj5K9BznB9K3K83Df6x7kUs9X7x3W";
+		$db_user   = "dm_api_user1224";
+		$db_pass   = "frES2a6upE5UsweDa4he";
 		$db_dbname = "WarZ";
 
 		$db_serverName     = "localhost,1444";

@@ -120,12 +120,12 @@
 // physX
 #define APEX_ENABLED 0
 #ifdef FINAL_BUILD
-	#define VEHICLES_ENABLED 1
+	#define VEHICLES_ENABLED 0
 #else 
 #ifndef WO_SERVER
-	#define VEHICLES_ENABLED 1 // temp disabled due to new PhysX API changes
+	#define VEHICLES_ENABLED 0 // temp disabled due to new PhysX API changes
 #else
-	#define VEHICLES_ENABLED 1
+	#define VEHICLES_ENABLED 0
 #endif
 #endif
 

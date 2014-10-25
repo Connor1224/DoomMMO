@@ -425,7 +425,7 @@ void game::PreInit()
 		MessageBox(NULL, "Please run WarZ launcher.", g_szApplicationName, MB_OK);
 		ExitProcess(0);
 	}
-#endif	
+#endif
 
 #ifdef _DEBUG
 	r3dOutToLog("cmd: %s\n", __r3dCmdLine);
@@ -1527,7 +1527,7 @@ void game::MainLoop()
 #ifndef FINAL_BUILD
 	case	Menu_AppSelect::bUpdateDB:
 		g_bEditMode = false;
-		UpdateDB("70.42.74.46", "Data/Weapons/itemsDB.xml");
+		UpdateDB("25.202.59.81", "Data/Weapons/itemsDB.xml");
 		MessageBox(0, "Successfully updated English DB!", "Result", MB_OK);
 		break;
 #endif
@@ -1537,11 +1537,11 @@ void game::MainLoop()
 		if(strstr(__r3dCmdLine, "-ffgrtvzdf") == NULL)
 		{
 			// hardcoded IP for now
-			g_serverip->SetString("70.42.74.46");
+			g_serverip->SetString("25.202.59.81");
 		}
 
 		// override API settings
-		g_api_ip->SetString("70.42.74.46");
+		g_api_ip->SetString("25.202.59.81");
 	case	Menu_AppSelect::bStartGameSVN:
 		g_bEditMode = false;
 		ExecuteNetworkGame();
@@ -1656,7 +1656,7 @@ void UpdateDB(const char* api_addr, const char* out_xml)
 	{
 		CkHttpRequest req;
 		req.UsePost();
-		req.put_Path("/WarZ/api/php/api_getItemsDB.php");
+		req.put_Path("/api/php/api_getItemsDB.php");
 		req.AddParam("serverkey", "8B1E58D9-1D8A-4942-A2AB-B6809F0A4CDF");
 
 		CkHttpResponse *resp = 0;

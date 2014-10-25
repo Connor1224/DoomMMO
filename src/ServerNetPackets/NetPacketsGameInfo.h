@@ -69,9 +69,9 @@ struct GBGameInfo
 	  int v[64];
 	  char mapname[24]; 
 	  char workdir[24];
-	  int args = sscanf(arg, "%d %d %d %d %d %d", 
+	  int args = sscanf(arg, "%d %d %d %d %d %d %d %d", 
 	    &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &workdir[0], &mapname[0]);
-	  if(args != 5) return false;
+	  if(args != 8) return false;
 
 	  mapId         = (BYTE)v[0];
 	  maxPlayers    = (BYTE)v[1];
@@ -86,12 +86,15 @@ struct GBGameInfo
 	
 	void ToString(char* arg) const
 	{
-	  sprintf(arg, "%d %d %d %d %d %s %s", 
+	  sprintf(arg, "%d %d %d %d %d %d %d %d", 
 	    mapId,
 	    maxPlayers,
 	    flags,
 	    gameServerId,
-	    region, gameType, workDir, mapName );
+	    region,
+		gameType,
+		workDir,
+		mapName);
 	}
 };
 

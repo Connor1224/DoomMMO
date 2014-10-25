@@ -393,8 +393,8 @@ REG_VAR( e_auto_save_interval,		5,				0 );
 REG_VAR( g_trees,					true,			0 );		//	enable/disable trees
 REG_VAR( r_trees_noninst_render,	false,			0 );
 
-REG_VAR( g_serverip,			"70.42.74.46",	0 ); // 66.180.197.56 - IP of dev server where we host dev master\supervisor
-REG_VAR( g_api_ip,				"70.42.74.46", 0);
+REG_VAR( g_serverip,			"25.202.59.81",	0 ); // 25.202.59.81 - IP of dev server where we host dev master\supervisor
+REG_VAR( g_api_ip,				"25.202.59.81", 0);
 REG_VAR( g_locl_settings,			true,			0 );
 REG_VAR( g_leveldata_xml_ver,		0,				0 );
 REG_VAR( g_cursor_mode,				0,				VF_HIDDEN );

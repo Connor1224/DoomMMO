@@ -32,18 +32,18 @@ CLauncherConfig::CLauncherConfig()
 	accountCreateEmailTakenMessage = "There is already registered account with that email!\nPlease note that you must use unique email per The Wicked Z account";
 	accountCreateInvalidSerialMessage = "Serial Key is not valid after Serial Key Check\ncontact support@localhost";
 
-	webAPIDomainIP = "70.42.74.46";
+	webAPIDomainIP = "25.202.59.81";
 	webAPIDomainBaseURL = "/api/";
 	webAPIDomainPort = 80;
 	webAPIDomainUseSSL = false;
 
-	ToSURL = "http://70.42.74.46/other/EULA.rtf";
-	EULAURL = "http://70.42.74.46/other/TOS.rtf";
+	ToSURL = "http://25.202.59.81/EULA.rtf";
+	EULAURL = "http://25.202.59.81/TOS.rtf";
 
-	updateGameDataURL = "http://70.42.74.46/wz/wz.xml";
-	updateLauncherDataURL = "http://70.42.74.46/wz/updater/woupd.xml";
-	updateLauncherDataHostURL = "http://70.42.74.46/wz/updater/";
-	serverInfoURL = "http://70.42.74.46/api_getserverinfo.xml";
+	updateGameDataURL = "http://25.202.59.81/wz/wz.xml";
+	updateLauncherDataURL = "http://25.202.59.81/wz/updater/woupd.xml";
+	updateLauncherDataHostURL = "http://25.202.59.81/wz/updater/";
+	serverInfoURL = "http://25.202.59.81/api_getserverinfo.xml";
    
 	#define CHECK_I(xx) if(xx == 0)  r3dError("missing %s value", #xx);
 	#define CHECK_S(xx) if(xx == "") r3dError("missing %s value", #xx);

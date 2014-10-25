@@ -32,13 +32,13 @@ CSupervisorConfig::CSupervisorConfig()
   maxGames_    = r3dReadCFG_I(configFile, group, "maxGames", 32);
   portStart_   = r3dReadCFG_I(configFile, group, "portStart", SBNET_GAME_PORT);
   gameServerExe_ = r3dReadCFG_S(configFile, group, "gameServerExe", "GameServer.exe");
-  externalIpStr_ = r3dReadCFG_S(configFile, group, "externalIp", "70.42.74.46");
+  externalIpStr_ = r3dReadCFG_S(configFile, group, "externalIp", "25.202.59.81");
   externalIpAddr_= 0;
   
   // enable upload logs by default, it can be disabled by setting it to 0
   uploadLogs_ = r3dReadCFG_I(configFile, group, "uploadLogs", 1);
 
-  webAPIDomainIP_ = r3dReadCFG_S(configFile, group, "webAPIDomainIP", "70.42.74.46");
+  webAPIDomainIP_ = r3dReadCFG_S(configFile, group, "webAPIDomainIP", "25.202.59.81");
   webAPIDomainBaseURL_ = r3dReadCFG_S(configFile, group, "webAPIDomainBaseURL", "api/");
   webAPIDomainPort_ = r3dReadCFG_I(configFile, group, "webAPIDomainPort", 80);
   webAPIDomainUseSSL_ = r3dReadCFG_I(configFile, group, "webAPIDomainUseSSL", 0) ? true : false;

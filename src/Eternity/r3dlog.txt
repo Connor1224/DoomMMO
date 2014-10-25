@@ -1,0 +1,17 @@
+--- Log started at Fri Oct 24 12:57:59 2014
+
+000000.126| ComputerID: 0x1e0a7408bb81
+000000.126| Game Version: WarZ v1.0  (build: Oct 24 2014 12:55:08) - final
+000000.127| Available memory: 8130 MB
+000000.127| r3dFS: there is no volume file wz_00.bin
+000000.129| r3dFile: can't open game.ini
+000000.129| Can't open file "game.ini"
+000000.130| r3dFile: can't open local.ini
+000000.130| Can't open file "local.ini"
+000000.132| readGameOptionsFile: found INI at C:\Users\Connor\Documents\Arktos\WarZ\gameSettings.ini
+000000.133| r3dFile: can't open local.ini
+000000.133| Can't open file "local.ini"
+000000.134| writeGameOptionsFile: Saving settings to C:\Users\Connor\Documents\Arktos\WarZ\gameSettings.ini
+000000.134| r3dFile: can't open data/LangPack/english.lang
+000000.134| !!! ERROR: Cannot open language file 'data/LangPack/english.lang'
+000000.134| ... exiting
