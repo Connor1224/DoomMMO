@@ -69,7 +69,7 @@ struct GBGameInfo
 	  int v[64];
 	  char mapname[24]; 
 	  char workdir[24];
-	  int args = sscanf(arg, "%d %d %d %d %d %d %d %d", 
+	  int args = sscanf(arg, "%d %d %d %d %d %d %s %s", 
 	    &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &workdir[0], &mapname[0]);
 	  if(args != 8) return false;
 
@@ -86,7 +86,7 @@ struct GBGameInfo
 	
 	void ToString(char* arg) const
 	{
-	  sprintf(arg, "%d %d %d %d %d %d %d %d", 
+	  sprintf(arg, "%d %d %d %d %d %d %s %s", 
 	    mapId,
 	    maxPlayers,
 	    flags,
