@@ -5,7 +5,7 @@
 
 	CMasterServerConfig* gServerConfig = NULL;
 
-static const char* configFile = "MasterServer.cfg";
+static const char* configFile = "ServerProperties.cfg";
 
 CMasterServerConfig::CMasterServerConfig()
 {
