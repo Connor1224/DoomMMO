@@ -9,7 +9,7 @@ CSupervisorConfig* gSupervisorConfig;
 
 CSupervisorConfig::CSupervisorConfig()
 {
-  const char* configFile = "SupervisorServer.cfg";
+  const char* configFile = "ServerProperties.cfg";
   const char* group      = "SupervisorServer";
 
   if(_access(configFile, 4) != 0) {
