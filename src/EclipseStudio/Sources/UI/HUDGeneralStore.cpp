@@ -4,6 +4,9 @@
 #include "HUDGeneralStore.h"
 
 #include "FrontendShared.h"
+#include "multiplayer/ClientGameLogic.h"
+#include "LangMngr.h"
+#include "ObjectsCode/AI/AI_Player.H"
 
 HUDGeneralStore::HUDGeneralStore() :
 isActive_(false),
@@ -23,7 +26,55 @@ void HUDGeneralStore::eventReturnToGame(r3dScaleformMovie* pMovie, const Scalefo
 
 void HUDGeneralStore::eventBuyItem(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
-	market_.eventBuyItem(pMovie, args, argCount);
+	const unsigned int storeBuyItemID = args[0].GetUInt();
+	const int storeBuyPrice = args[1].GetInt();
+	const int storeBuyPriceGD = args[2].GetInt();
+
+	if(gUserProfile.ProfileData.GameDollars < storeBuyPriceGD || gUserProfile.ProfileData.GamePoints < storeBuyPrice)
+	{
+		Scaleform::GFx::Value var[2];
+		var[0].SetStringW(gLangMngr.getString("NotEnougMoneyToBuyItem"));
+		var[1].SetBoolean(true);
+		gfxMovie_.Invoke("_root.api.showInfoMsg", var, 2);
+		return;
+	}
+
+	const int buyIdx = StoreDetectBuyIdx(storeBuyPrice, storeBuyPriceGD);
+	if(buyIdx == 0)
+	{
+		Scaleform::GFx::Value args[2];
+		args[0].SetStringW(gLangMngr.getString("BuyItemFailNoIndex"));
+		args[1].SetBoolean(true);
+		gfxMovie_.Invoke("_root.api.showInfoMsg", args, 2);
+		return;
+	}
+
+	Scaleform::GFx::Value var[2];
+	var[0].SetStringW(gLangMngr.getString("OneMomentPlease"));
+	var[1].SetBoolean(false);
+	gfxMovie_.Invoke("_root.api.showInfoMsg", var, 2);
+
+	PKT_C2S_MarketBuyItemReq_s n;
+	n.itemId = storeBuyItemID;
+	n.buyIdx = (BYTE)buyIdx;
+	p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+}
+
+void HUDGeneralStore::OnBuyItemAnswer(BYTE result)
+{
+	if (result != 0)
+	{
+		Scaleform::GFx::Value args[2];
+		args[0].SetStringW(gLangMngr.getString("BuyItemFail"));
+		args[1].SetBoolean(true);
+		gfxMovie_.Invoke("_root.api.showInfoMsg", args, 2);
+	}
+	else
+	{
+		market_.setCurrency();
+		gfxMovie_.Invoke("_root.api.buyItemSuccessful", "");
+		gfxMovie_.Invoke("_root.api.hideInfoMsg", "");
+	}
 }
 
 bool HUDGeneralStore::Init()
@@ -102,4 +153,5 @@ void HUDGeneralStore::Activate()
 	Scaleform::GFx::Value var[1];
 	var[0].SetString("menu_open");
 	gfxMovie_.OnCommandCallback("eventSoundPlay", var, 1);
+	
 }

@@ -52,6 +52,8 @@ void getWeaponStatMinMaxForUI(const WeaponConfig* wc, int* mindamage, int* maxda
 
 void getAdditionalDescForItem(uint32_t itemID, int Var1, int Var2, char* res);
 
+int StoreDetectBuyIdx(int storeBuyPrice, int storeBuyPriceGD);
+
 extern float		_p2p_idleTime;
 
 enum EBuyType

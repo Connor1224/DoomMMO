@@ -342,7 +342,8 @@ class CClientUserProfile : public CUserProfile
 	int		ApiCharCreate(const char* Gamertag, int Hardcore, int HeroItemID, int HeadIdx, int BodyIdx, int LegsIdx);
 	int		ApiCharDelete();
 	int		ApiCharRevive();
-	int		ApiChangeName(const char* Name);
+	int		ApiChangeOutfit(int headIdx, int bodyIdx, int legsIdx);
+	int		ApiRenameChar(const char* charName);
 
 	// skill system
 	int		ApiLearnSkill(uint32_t skillid, int CharID);
@@ -353,9 +354,6 @@ class CClientUserProfile : public CUserProfile
 	int		ApiBackpackGridSwap(int GridFrom, int GridTo);
 	int		ApiBackpackGridJoin(int GridFrom, int GridTo);
 	int		ApiChangeBackpack(__int64 InventoryID);
-	
-	// change outfit
-	int		ApiChangeOutfit(int headIdx, int bodyIdx, int legsIdx);
 
 	// friends APIs
 	int		ApiFriendAddReq(const char* gamertag, int* outFriendStatus);

@@ -15,6 +15,7 @@
 #include "CkHttpResponse.h"
 #include "backend/HttpDownload.h"
 #include "backend/WOBackendAPI.h"
+#include "HUDDisplay.h"
 
 #include "../rendering/Deffered/CommonPostFX.h"
 #include "../rendering/Deffered/PostFXChief.h"
@@ -50,6 +51,7 @@
 
 extern	char		_p2p_masterHost[MAX_PATH];
 extern	int		_p2p_masterPort;
+extern HUDDisplay*	hudMain;
 
 char	Login_PassedUser[256] = "";
 char	Login_PassedPwd[256] = "";
@@ -269,88 +271,6 @@ bool FrontendWarZ::DecodeAuthParams()
 	return true;
 }
 
-void FrontendWarZ::InitButtons()
-{
-    Scaleform::GFx::Value vars[7];
-    vars[0].SetBoolean(false);
-    vars[1].SetBoolean(true); // Oficial
-    vars[2].SetBoolean(false);
-    vars[3].SetBoolean(false);
-    vars[4].SetBoolean(false);
-    vars[5].SetBoolean(false); // PTE
-    vars[6].SetBoolean(false);
-    gfxMovie.Invoke("_root.api.Main.BrowseGamesChannelsAnim.initButtons", vars, 7);
-}
-
-void FrontendWarZ::eventSetCurrentBrowseChannel(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
-{
-    CurrentBrowse = args[0].GetUInt(); // used for server filter (Official , Private , PTE , Stronghold , Tiral , Veteran , Premium) only work in allright source
-    gfxMovie.Invoke("_root.api.Main.showScreen","ServerBrowse"); // show browse screen
-}
-
-void FrontendWarZ::eventRenameCharacter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
-{
-//args[0].GetString();
-    Scaleform::GFx::Value var[2];
-    var[0].SetStringW(gLangMngr.getString("Please Wait..."));
-    var[1].SetBoolean(false);
-    gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
-
-    gUserProfile.GetProfile();
-
-    updateInventoryAndSkillItems();
-
-    char tmpGamertag[128];
-
-        if(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanID != 0)
-            sprintf(tmpGamertag, "[%s] %s", gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanTag, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
-        else
-            r3dscpy(tmpGamertag, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
-
-        int apiCode = gUserProfile.ApiChangeName(args[0].GetString());
-
-    if(apiCode == 50)
-	{
-        gfxMovie.Invoke("_root.api.hideInfoMsg", "");
-		var[0].SetString("Change Name Failed");
-		var[1].SetBoolean(true);
-		gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
-        return;
-    }
-
-    var[0].SetString(tmpGamertag);
-    var[1].SetString(args[0].GetString());
-    gfxMovie.Invoke("_root.api.changeSurvivorName", var, 2);
-
-    gfxMovie.Invoke("_root.api.hideInfoMsg", "");
-
-    updateInventoryAndSkillItems();
-
-    Scaleform::GFx::Value vars[1];
-    vars[0].SetInt(gUserProfile.ProfileData.GamePoints);
-    gfxMovie.Invoke("_root.api.setGC", vars, 1);
-
-
-    var[0].SetInt(gUserProfile.ProfileData.GameDollars);
-    gfxMovie.Invoke("_root.api.setDollars", vars, 1);
-}
-
-void FrontendWarZ::eventLearnSkill(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
-{
-	// Skillsystem
-	skillid = args[0].GetUInt();
-	const wiCharDataFull& slot = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID];
-	CharID = slot.LoadoutID;
-
-	Scaleform::GFx::Value var[2];
-	var[0].SetStringW(gLangMngr.getString("AomBESkillSystem : Running API..."));
-	var[1].SetBoolean(false);
-	gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
-	r3dOutToLog("AomBESkillSystem : Running API...\n");
-	//Sleep(3000);
-	async_.StartAsyncOperation(this, &FrontendWarZ::as_LearnSkillThread, &FrontendWarZ::OnLearnSkillSuccess);
-}
-
 void FrontendWarZ::LoginCheckAnswerCode()
 {
 	if(loginAnswerCode == ANS_Unactive)
@@ -403,45 +323,6 @@ void FrontendWarZ::LoginCheckAnswerCode()
 		gfxMovie.Invoke("_root.api.showInfoMsg", vars, 2);
 		break;
 	}
-}
-
-void FrontendWarZ::OnLearnSkillSuccess()
-{
-
-	const wiCharDataFull& slot = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID];
-
-	Scaleform::GFx::Value var[2];	
-
-	char tmpGamertag[128];
-	if(slot.ClanID != 0)
-		sprintf(tmpGamertag, "[%s] %s", slot.ClanTag, slot.Gamertag);
-	else
-		r3dscpy(tmpGamertag, slot.Gamertag);
-
-	var[0].SetString(tmpGamertag);
-	var[1].SetInt(skillid);
-
-	gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var, 2);
-
-	updateInventoryAndSkillItems();
-	const wiCharDataFull& slot2 = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID];
-	Scaleform::GFx::Value var2[11];
-	var2[0].SetString(tmpGamertag);
-	var2[1].SetNumber(slot2.Health);
-	var2[2].SetNumber(slot2.Stats.XP);
-	var2[3].SetNumber(slot2.Stats.TimePlayed);
-	var2[4].SetNumber(slot2.Alive);
-	var2[5].SetNumber(slot2.Hunger);
-	var2[6].SetNumber(slot2.Thirst);
-	var2[7].SetNumber(slot2.Toxic);
-	var2[8].SetNumber(slot2.BackpackID);
-	var2[9].SetNumber(slot2.BackpackSize);
-	var2[10].SetNumber(slot2.Stats.SkillXPPool);
-	gfxMovie.Invoke("_root.api.updateClientSurvivor", var2, 11);
-	gfxMovie.Invoke("_root.api.Main.SkillTree.refreshSkillTree", ""); //[Krit] Refresh Skill Tree When Learn Skill Success
-	gfxMovie.Invoke("_root.api.hideInfoMsg", "");
-
-	return;
 }
 
 void FrontendWarZ::initLoginStep(const wchar_t* loginErrorMsg)
@@ -753,6 +634,10 @@ bool FrontendWarZ::Initialize()
 // 	if(r_brightness->GetFloat() < r_brightness->GetMinVal() || r_brightness->GetFloat() > r_brightness->GetMaxVal())
 // 		r_brightness->SetFloat(0.5f);
 	
+	// reset filters
+	r_hud_filter_mode->SetInt(HUDFilter_Default);
+	g_fCCBlackWhitePwr = 0;
+	g_CCBlackWhite = 0;
 	if(g_mouse_sensitivity->GetFloat() < g_mouse_sensitivity->GetMinVal() || g_mouse_sensitivity->GetFloat() > g_mouse_sensitivity->GetMaxVal())
 		g_mouse_sensitivity->SetFloat(0.5f);
 	if(s_sound_volume->GetFloat() < s_sound_volume->GetMinVal() || s_sound_volume->GetFloat() > s_sound_volume->GetMaxVal())
@@ -1404,24 +1289,23 @@ void FrontendWarZ::addClientSurvivor(const wiCharDataFull& slot, int slotIndex)
 		r3dscpy(tmpGamertag, slot.Gamertag);
 	var[0].SetString(tmpGamertag);
 	var[1].SetNumber(slot.Health);
-	var[2].SetNumber(slot.Stats.XP);
-	var[3].SetNumber(slot.Stats.TimePlayed);
-	var[4].SetNumber(slot.Hardcore);
-	var[5].SetNumber(slot.HeroItemID);
-	var[6].SetNumber(slot.HeadIdx);
-	var[7].SetNumber(slot.BodyIdx);
-	var[8].SetNumber(slot.LegsIdx);
-	var[9].SetNumber(slot.Alive);
-	var[10].SetNumber(slot.Hunger);
-	var[11].SetNumber(slot.Thirst);
-	var[12].SetNumber(slot.Toxic);
-	var[13].SetNumber(slot.BackpackID);
-	var[14].SetNumber(slot.BackpackSize);
-
-	var[15].SetNumber(0);		// weight
-	var[16].SetNumber(slot.Stats.KilledZombies);		// zombies Killed
-	var[17].SetNumber(slot.Stats.KilledBandits);		// bandits killed
-	var[18].SetNumber(slot.Stats.KilledSurvivors);		// civilians killed
+	var[2].SetInt(slot.Stats.XP);
+	var[3].SetInt(slot.Stats.TimePlayed);
+	var[4].SetInt(slot.Hardcore);
+	var[5].SetInt(slot.HeroItemID);
+	var[6].SetInt(slot.HeadIdx);
+	var[7].SetInt(slot.BodyIdx);
+	var[8].SetInt(slot.LegsIdx);
+	var[9].SetInt(slot.Alive);
+	var[10].SetInt((int)slot.Hunger);
+	var[11].SetInt((int)slot.Thirst);
+	var[12].SetInt((int)slot.Toxic);
+	var[13].SetInt(slot.BackpackID);
+	var[14].SetInt(slot.BackpackSize);
+	var[15].SetNumber(Weight);		// weight
+	var[16].SetInt(slot.Stats.KilledZombies);		// zombies Killed
+	var[17].SetInt(slot.Stats.KilledBandits);		// bandits killed
+	var[18].SetInt(slot.Stats.KilledSurvivors);		// civilians killed
 	var[19].SetStringW(getReputationString(slot.Stats.Reputation));	// alignment
 	var[20].SetString("COLORADO");	// last Map
 	var[21].SetBoolean(slot.GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox);
@@ -1430,9 +1314,24 @@ void FrontendWarZ::addClientSurvivor(const wiCharDataFull& slot, int slotIndex)
 
 	gfxMovie.Invoke("_root.api.addClientSurvivor", var, 23);
 
-	updateInventoryAndSkillItems();
-
+	updateInventoryAndSkillItems(); // Update Inventory and Skills Data
 	addBackpackItems(slot, slotIndex);
+
+	Scaleform::GFx::Value vars[12];
+	vars[0].SetInt(slot.GameServerId);					//serverID":param1,
+	vars[1].SetString("Doom-MMO");		//"name":param2,
+	vars[2].SetString("USA");			//"location" : param3,
+	vars[3].SetString("USA");			//"region" : param4,
+	vars[4].SetString("Online");		//"status" : param5,
+	vars[5].SetInt(0);					//"playersOnline" : param6,
+	vars[6].SetInt(60);				//"maxPlayers" : param7,
+	vars[7].SetInt(1);					//"timeLeft" : param8,
+	vars[8].SetString("PVE");			//"type" : param9,
+	vars[9].SetString("ColoradoV2");	//"map" : param10,
+	vars[10].SetInt(0);				//"movie" : null,
+	vars[11].SetInt(1);				//"renew" : param11
+	gfxMovie.Invoke("_root.api.Main.MyServers.addServerInfo", vars, 12);
+	gfxMovie.Invoke("_root.api.Main.MyServers.Activate", "");
 }
 
 void FrontendWarZ::addBackpackItems(const wiCharDataFull& slot, int slotIndex)
@@ -1457,6 +1356,19 @@ void FrontendWarZ::addBackpackItems(const wiCharDataFull& slot, int slotIndex)
 	}
 }
 
+void FrontendWarZ::InitButtons()
+{
+	Scaleform::GFx::Value vars[7];
+	vars[0].SetBoolean(false); //1: TrialServer
+	vars[1].SetBoolean(true);  //2: OfficialServers
+	vars[2].SetBoolean(false);  //3: PrivateServers
+	vars[3].SetBoolean(false); //4: PremiumServers
+	vars[4].SetBoolean(false); //5: Strongholds
+	vars[5].SetBoolean(false); //6: PublicTestEnvironment
+	vars[6].SetBoolean(false); // Veterans Server
+	gfxMovie.Invoke("_root.api.Main.BrowseGamesChannelsAnim.initButtons", vars, 7);
+}
+
 void FrontendWarZ::initFrontend()
 {
 	market_.initialize(&gfxMovie);
@@ -1470,6 +1382,15 @@ void FrontendWarZ::initFrontend()
 	}
 
 	updateSurvivorTotalWeight(gUserProfile.SelectedCharID);
+
+	var[0].SetInt(gUserProfile.ProfileData.GamePoints);
+	gfxMovie.Invoke("_root.api.setGC", var, 1);
+
+	var[0].SetInt(gUserProfile.ProfileData.GameDollars);
+	gfxMovie.Invoke("_root.api.setDollars", var, 1);
+
+	var[0].SetInt(0);
+	gfxMovie.Invoke("_root.api.setCells", var, 1);
 
 	for(int i=0; i<r3dInputMappingMngr::KS_NUM; ++i)
 	{
@@ -1491,8 +1412,11 @@ void FrontendWarZ::initFrontend()
 
 	gfxMovie.SetVariable("_root.api.ChangeName_Price",80); // 80 is price
 
-	InitButtons();
+	InitButtons(); // activate the server broswer buttons
 
+	// makes a preimum account active
+	if (gUserProfile.ProfileData.AccountType)
+		gfxMovie.SetVariable("_root.api.Main.SurvivorsAnim.Survivors.PremiumAcc.visible", true);
 	// init clan icons
 	// important: DO NOT CHANGE THE ORDER OF ICONS!!! EVER!
 	{
@@ -1562,6 +1486,7 @@ void FrontendWarZ::initFrontend()
 			var[5].SetInt(100 + i * 10);
 			gfxMovie.Invoke("_root.api.addSkillInfo", var, 6);
 		}
+		updateInventoryAndSkillItems();
 	}
 
 	{
@@ -1643,36 +1568,6 @@ void FrontendWarZ::initFrontend()
 	prevGameResult = GRESULT_Unknown;
 }
 
-unsigned int WINAPI FrontendWarZ::as_LearnSkillThread(void* in_data)
-{
-	//Skillsystem
-	r3dThreadAutoInstallCrashHelper crashHelper;
-	FrontendWarZ* This = (FrontendWarZ*)in_data;
-
-	This->async_.DelayServerRequest();
-	int apiCode = gUserProfile.ApiLearnSkill(This->skillid, This->CharID);
-	r3dOutToLog("AomBESkillSystem : Learn Skill...\n");
-
-	if(apiCode == 50){
-		This->async_.SetAsyncError(0, gLangMngr.getString("FailedToLearnSkill"));
-		r3dOutToLog("AomBESkillSystem : Learn Skill Failed Code : 50\n");
-		r3dOutToLog("AomBESkillSystem : Close Thread\n");
-		r3dOutToLog("AomBESkillSystem : Closed\n");
-		return 0;
-	}
-	else
-	{
-		r3dOutToLog("AomBESkillSystem : Learn Skill Success\n");
-		//  r3dOutToLog("AomBESkillSystem : Refresh Skill Tree...\n");
-		//updateInventoryAndSkillItems(); // AomBeSystem - Update Skill Tree
-		// r3dOutToLog("AomBESkillSystem : Refresh\n");
-		r3dOutToLog("AomBESkillSystem : Close Thread\n");
-		r3dOutToLog("AomBESkillSystem : Closed\n");
-	}
-
-	return 1;
-}
-
 void FrontendWarZ::eventPlayGame(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
 	if(gUserProfile.ProfileData.NumSlots == 0)
@@ -1748,7 +1643,256 @@ void FrontendWarZ::eventReviveChar(r3dScaleformMovie* pMovie, const Scaleform::G
 
 void FrontendWarZ::eventBuyItem(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
-	market_.eventBuyItem(pMovie, args, argCount);
+	storeBuyItemID_ = args[0].GetUInt(); // legsID
+	storeBuyPrice_ = args[1].GetInt();
+	storeBuyPriceGD_ = args[2].GetInt();
+
+	if(gUserProfile.ProfileData.GameDollars < storeBuyPriceGD_ || gUserProfile.ProfileData.GamePoints < storeBuyPrice_)
+	{
+		Scaleform::GFx::Value var[2];
+		var[0].SetStringW(gLangMngr.getString("NotEnougMoneyToBuyItem"));
+		var[1].SetBoolean(true);
+		gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
+		return;
+	}
+
+	Scaleform::GFx::Value var[2];
+	var[0].SetStringW(gLangMngr.getString("OneMomentPlease"));
+	var[1].SetBoolean(false);
+	gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
+
+	async_.StartAsyncOperation(this, &FrontendWarZ::as_BuyItemThread, &FrontendWarZ::OnBuyItemSuccess);
+}
+
+void FrontendWarZ::OnLearnSkillSuccess()
+{
+
+	const wiCharDataFull& slot = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID];
+
+	Scaleform::GFx::Value var[2];	
+
+	char tmpGamertag[128];
+	if(slot.ClanID != 0)
+		sprintf(tmpGamertag, "[%s] %s", slot.ClanTag, slot.Gamertag);
+	else
+		r3dscpy(tmpGamertag, slot.Gamertag);
+
+
+	var[0].SetString(tmpGamertag);
+	var[1].SetInt(skillid);
+	
+
+	gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var, 2);
+	updateInventoryAndSkillItems();
+	const wiCharDataFull& slot2 = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID];
+	Scaleform::GFx::Value var2[11];
+	var2[0].SetString(tmpGamertag);
+	var2[1].SetNumber(slot.Health);
+	var2[2].SetInt(slot.Stats.XP);
+	var2[3].SetInt(slot.Stats.TimePlayed);
+	var2[4].SetInt(slot.Alive);
+	var2[5].SetInt((int)slot.Hunger);
+	var2[6].SetInt((int)slot.Thirst);
+	var2[7].SetInt((int)slot.Toxic);
+	var2[8].SetInt(slot.BackpackID);
+	var2[9].SetInt(slot.BackpackSize);
+	var2[10].SetInt(slot.Stats.SkillXPPool);
+	gfxMovie.Invoke("_root.api.updateClientSurvivor", var2, 11);
+	gfxMovie.Invoke("_root.api.Main.SkillTree.refreshSkillTree", "");
+	gfxMovie.Invoke("_root.api.hideInfoMsg", "");
+	
+
+	return;
+}
+
+unsigned int WINAPI FrontendWarZ::as_LearnSkilLThread(void* in_data)
+{
+	//Skillsystem
+	r3dThreadAutoInstallCrashHelper crashHelper;
+	FrontendWarZ* This = (FrontendWarZ*)in_data;
+
+	This->async_.DelayServerRequest();
+	int apiCode = gUserProfile.ApiLearnSkill(This->skillid, This->CharID);
+
+	
+	if(apiCode == 50)
+	{
+		This->async_.SetAsyncError(0, gLangMngr.getString("FailedToLearnSkill"));
+		return 0;
+	}
+	
+		
+
+	return 1;
+}
+
+unsigned int WINAPI FrontendWarZ::as_BuyItemThread(void* in_data)
+{
+	r3dThreadAutoInstallCrashHelper crashHelper;
+	FrontendWarZ* This = (FrontendWarZ*)in_data;
+
+	This->async_.DelayServerRequest();
+	
+	int buyIdx = StoreDetectBuyIdx(This->storeBuyPrice_, This->storeBuyPriceGD_);
+	if(buyIdx == 0)
+	{
+		This->async_.SetAsyncError(-1, gLangMngr.getString("BuyItemFailNoIndex"));
+		return 0;
+	}
+
+	int apiCode = gUserProfile.ApiBuyItem(This->storeBuyItemID_, buyIdx, &This->inventoryID_);
+	if(apiCode != 0)
+	{
+		This->async_.SetAsyncError(apiCode, gLangMngr.getString("BuyItemFail"));
+		return 0;
+	}
+
+	return 1;
+}
+
+void FrontendWarZ::OnBuyItemSuccess()
+{
+	//
+	// TODO: get inventory ID stored in ApiBuyItem, search in inventory.
+	// if found - increate quantity by 1, if not - add new item with that ID
+	//
+	bool isNewItem = !UpdateInventoryWithBoughtItem();
+	market_.setCurrency();
+	gfxMovie.Invoke("_root.api.buyItemSuccessful", "");
+	gfxMovie.Invoke("_root.api.hideInfoMsg", "");
+	return;
+}
+
+bool FrontendWarZ::UpdateInventoryWithBoughtItem()
+{
+	int numItem = gUserProfile.ProfileData.NumItems;
+
+	// check if we bought consumable
+	int quantityToAdd = 1;
+	int totalQuantity = 1;
+
+	// see if we already have this item in inventory
+	bool found = false;
+	uint32_t inventoryID = 0;
+	int	var1 = -1;
+	int	var2 = 0;
+
+	const WeaponConfig* wc = g_pWeaponArmory->getWeaponConfig(storeBuyItemID_);
+	const GearConfig* gc = g_pWeaponArmory->getGearConfig(storeBuyItemID_);
+	const FoodConfig* fc = g_pWeaponArmory->getFoodConfig(storeBuyItemID_);
+
+	// todo: store should report how much items we bought...
+	if (wc)
+		quantityToAdd = wc->m_ShopStackSize;
+	if (fc)
+		quantityToAdd = fc->m_ShopStackSize;
+
+	for( int i=0; i<numItem; ++i)
+	{
+		if(gUserProfile.ProfileData.Inventory[i].InventoryID == inventoryID_)
+		{
+			inventoryID = uint32_t(gUserProfile.ProfileData.Inventory[i].InventoryID);
+			var1 = gUserProfile.ProfileData.Inventory[i].Var1;
+			var2 = gUserProfile.ProfileData.Inventory[i].Var2;
+
+			gUserProfile.ProfileData.Inventory[i].quantity += quantityToAdd;
+			totalQuantity = gUserProfile.ProfileData.Inventory[i].quantity;
+
+			found = true;
+			break; 
+		}
+	}
+
+	if(!found)
+	{
+		wiInventoryItem& itm = gUserProfile.ProfileData.Inventory[gUserProfile.ProfileData.NumItems++];
+		itm.InventoryID = inventoryID_;
+		itm.itemID     = storeBuyItemID_;
+		itm.quantity   = quantityToAdd;
+		itm.Var1   = var1;
+		itm.Var2   = var2;
+		
+		inventoryID = uint32_t(itm.InventoryID);
+
+		totalQuantity = quantityToAdd;
+	}
+
+	Scaleform::GFx::Value var[7];
+	var[0].SetUInt(inventoryID);
+	var[1].SetUInt(storeBuyItemID_);
+	var[2].SetNumber(totalQuantity);
+	var[3].SetNumber(var1);
+	var[4].SetNumber(var2);
+	var[5].SetBoolean(false);
+	char tmpStr[128] = {0};
+	getAdditionalDescForItem(storeBuyItemID_, var1, var2, tmpStr);
+	var[6].SetString(tmpStr);
+	gfxMovie.Invoke("_root.api.addInventoryItem", var, 7);
+
+	updateDefaultAttachments(!found, storeBuyItemID_);
+	return found;
+}
+
+void FrontendWarZ::updateDefaultAttachments(bool isNewItem, uint32_t itemID)
+{
+	// add default attachments
+/*	const WeaponConfig* wpn = g_pWeaponArmory->getWeaponConfig(itemID);
+	if(wpn)
+	{
+		if(isNewItem)
+		{
+			for(int i=0; i<WPN_ATTM_MAX; ++i)
+			{
+				if(wpn->FPSDefaultID[i]>0)
+				{
+					gUserProfile.ProfileData.FPSAttachments[gUserProfile.ProfileData.NumFPSAttachments++] = wiUserProfile::temp_fps_attach(itemID, wpn->FPSDefaultID[i], mStore_buyItemExp*1440, 1);
+					const WeaponAttachmentConfig* attm = gWeaponArmory.getAttachmentConfig(wpn->FPSDefaultID[i]);
+					Scaleform::GFx::Value var[3];
+					var[0].SetNumber(itemID);
+					var[1].SetNumber(attm->m_type);
+					var[2].SetNumber(attm->m_itemID);
+					gfxMovie.Invoke("_root.api.setAttachmentSpec", var, 3);
+				}
+			}
+		}
+		else
+		{
+			for(int i=0; i<WPN_ATTM_MAX; ++i)
+			{
+				if(wpn->FPSDefaultID[i]>0)
+				{
+					for(uint32_t j=0; j<gUserProfile.ProfileData.NumFPSAttachments; ++j)
+					{
+						if(gUserProfile.ProfileData.FPSAttachments[j].WeaponID == itemID && gUserProfile.ProfileData.FPSAttachments[j].AttachmentID == wpn->FPSDefaultID[i])
+						{
+							gUserProfile.ProfileData.FPSAttachments[j].expiration += mStore_buyItemExp*1440;
+						}
+					}
+				}
+			}
+		}
+	}
+*/
+}
+
+// BETA //
+
+/*
+
+*/
+void FrontendWarZ::eventLearnSkill(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
+{
+	// Skillsystem
+	skillid = args[0].GetUInt();
+	const wiCharDataFull& slot = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID];
+	CharID = slot.LoadoutID;
+
+	Scaleform::GFx::Value var[2];
+	var[0].SetStringW(gLangMngr.getString("OneMomentPlease"));
+	var[1].SetBoolean(false);
+	gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
+
+	async_.StartAsyncOperation(this, &FrontendWarZ::as_LearnSkilLThread, &FrontendWarZ::OnLearnSkillSuccess);
 }
 
 void FrontendWarZ::eventRentServer(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
@@ -1766,16 +1910,39 @@ void FrontendWarZ::eventRequestMyServerList(r3dScaleformMovie* pMovie, const Sca
 
 void FrontendWarZ::eventRequestGCTransactionData(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
+	CWOBackendReq req("api_FinancialTransactions.aspx");
+	req.AddParam("s_id", gUserProfile.CustomerID);
+
+	if(!req.Issue())
+	{
+		r3dOutToLog("Financial Transaction lookup FAILED, code: %d\n", req.resultCode_);
+	}
+
 	// TODO ADD LOGIC
-	Scaleform::GFx::Value var[5];
-	var[0].SetInt(1);
-	var[1].SetString("1/1/2013");
-	var[2].SetString("test1");
-	var[3].SetString("+45.43");
-	var[4].SetString("1233.12");
-	gfxMovie.Invoke("_root.api.Main.Marketplace.addTransactionData", var, 5);
+	pugi::xml_document xmlFile;
+	req.ParseXML(xmlFile);
+	parseTransactions(xmlFile.child("transactions"));	
+}
+
+void FrontendWarZ::parseTransactions(pugi::xml_node xmlNote)
+{
+	xmlNote = xmlNote.first_child();
+	while(!xmlNote.empty())
+	{
+		Scaleform::GFx::Value var[5];
+		var[0].SetInt(xmlNote.attribute("TransactionsID").as_int());
+		var[1].SetString(xmlNote.attribute("Date").value());
+		var[2].SetString(xmlNote.attribute("ItemName").value());
+		var[3].SetString(xmlNote.attribute("Amount").value());
+		var[4].SetString(xmlNote.attribute("CurrentGC").value());
+		gfxMovie.Invoke("_root.api.Main.Marketplace.addTransactionData", var, 5);
+
+		xmlNote = xmlNote.next_sibling();
+	}
 
 	gfxMovie.Invoke("_root.api.Main.Marketplace.showTransactionsPopup", "");
+	
+	return;
 }
 
 void FrontendWarZ::eventRentServerUpdatePrice(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
@@ -2061,9 +2228,10 @@ void FrontendWarZ::OnReviveCharSuccess()
 	var[0].SetInt(gUserProfile.ProfileData.GamePoints);
 	gfxMovie.Invoke("_root.api.setGC", var, 1);
 
-	//AomBESkill : Update
 	updateInventoryAndSkillItems();
+	
 	const wiCharDataFull& slot2 = gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID];
+	
 	Scaleform::GFx::Value var2[11];
 	var2[0].SetString(slot2.Gamertag);
 	var2[1].SetNumber(slot2.Health);
@@ -2076,10 +2244,10 @@ void FrontendWarZ::OnReviveCharSuccess()
 	var2[8].SetNumber(slot2.BackpackID);
 	var2[9].SetNumber(slot2.BackpackSize);
 	var2[10].SetNumber(slot2.Stats.SkillXPPool);
+	
 	gfxMovie.Invoke("_root.api.updateClientSurvivor", var2, 11);
 	gfxMovie.Invoke("_root.api.hideInfoMsg", "");
 	gfxMovie.Invoke("_root.api.Main.SkillTree.refreshSkillTree", "");
-	//r3dOutToLog("AomBESkillSystem : Update Health");
 	return;
 }
 
@@ -2116,188 +2284,188 @@ void FrontendWarZ::updateInventoryAndSkillItems()
 		gfxMovie.Invoke("_root.api.addInventoryItem", var, 7);
 	}
 	for(int i=0;i<=4; i++)
-	{
-		const wiCharDataFull& slot = gUserProfile.ProfileData.ArmorySlots[i];
-		char tmpGamertag[128];
-		if(slot.ClanID != 0)
-			sprintf(tmpGamertag, "[%s] %s", slot.ClanTag, slot.Gamertag);
-		else
-			r3dscpy(tmpGamertag, slot.Gamertag);
+		{
+			const wiCharDataFull& slot = gUserProfile.ProfileData.ArmorySlots[i];
+			char tmpGamertag[128];
+			if(slot.ClanID != 0)
+				sprintf(tmpGamertag, "[%s] %s", slot.ClanTag, slot.Gamertag);
+			else
+				r3dscpy(tmpGamertag, slot.Gamertag);
 
 
-		Scaleform::GFx::Value var2[2];
-		if(slot.Stats.skillid0 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(0);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid1 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(1);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid2 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(2);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid3 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(3);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid4 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(4);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid5 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(5);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid6 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(6);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid7 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(7);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid8 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(8);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid9 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(9);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid10 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(10);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid11 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(11);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid12 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(12);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid13 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(13);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid14 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(14);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid15 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(15);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid16 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(16);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid17 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(17);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid18 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(18);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid19 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(19);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid20 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(20);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid21 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(21);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid22 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(22);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid23 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(23);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid24 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(24);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid25 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(25);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid26 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(26);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid27 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(27);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid28 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(28);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid29 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(29);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid30 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(30);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid31 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(31);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid32 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(32);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
-		if(slot.Stats.skillid33 == 1){
-			var2[0].SetString(tmpGamertag);
-			var2[1].SetInt(33);
-			gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
-		}
+			Scaleform::GFx::Value var2[2];
+			if(slot.Stats.skillid0 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(0);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid1 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(1);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid2 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(2);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid3 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(3);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid4 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(4);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid5 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(5);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid6 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(6);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid7 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(7);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid8 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(8);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid9 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(9);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid10 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(10);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid11 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(11);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid12 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(12);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid13 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(13);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid14 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(14);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid15 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(15);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid16 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(16);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid17 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(17);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid18 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(18);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid19 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(19);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid20 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(20);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid21 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(21);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid22 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(22);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid23 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(23);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid24 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(24);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid25 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(25);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid26 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(26);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid27 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(27);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid28 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(28);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid29 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(29);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid30 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(30);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid31 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(31);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid32 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(32);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
+			if(slot.Stats.skillid33 == 1){
+				var2[0].SetString(tmpGamertag);
+				var2[1].SetInt(33);
+				gfxMovie.Invoke("_root.api.setSkillLearnedSurvivor", var2, 2);
+			}
 
-	}
+		}
 }
 
 void FrontendWarZ::eventBackpackFromInventory(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
@@ -2371,12 +2539,19 @@ void FrontendWarZ::eventBackpackFromInventory(r3dScaleformMovie* pMovie, const S
 		const BaseItemConfig* bic = g_pWeaponArmory->getConfig(itemID);
 		if(bic)
 			totalWeight += bic->m_Weight*m_Amount;
+		//Skillsystem
+		if(slot.Stats.skillid2 == 1){
+			totalWeight *= 0.9f;
+			if(slot.Stats.skillid6 == 1)
+				totalWeight *= 0.7f;
+		}
 
+		
 		const BackpackConfig* bc = g_pWeaponArmory->getBackpackConfig(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].BackpackID);
 		r3d_assert(bc);
 		if(totalWeight > bc->m_maxWeight)
 		{
-			Scaleform::GFx::Value var[2];
+			Scaleform::GFx::Value var[3];
 			var[0].SetStringW(gLangMngr.getString("FR_PAUSE_TOO_MUCH_WEIGHT"));
 			var[1].SetBoolean(true);
 			var[2].SetString("");
@@ -2686,15 +2861,15 @@ void FrontendWarZ::OnBackpackChangeSuccess()
 	Scaleform::GFx::Value var[11];
 	var[0].SetString(slot.Gamertag);
 	var[1].SetNumber(slot.Health);
-	var[2].SetNumber(slot.Stats.XP);
-	var[3].SetNumber(slot.Stats.TimePlayed);
-	var[4].SetNumber(slot.Alive);
-	var[5].SetNumber(slot.Hunger);
-	var[6].SetNumber(slot.Thirst);
-	var[7].SetNumber(slot.Toxic);
-	var[8].SetNumber(slot.BackpackID);
-	var[9].SetNumber(slot.BackpackSize);
-	var[10].SetNumber(slot.Stats.SkillXPPool);
+	var[2].SetInt(slot.Stats.XP);
+	var[3].SetInt(slot.Stats.TimePlayed);
+	var[4].SetInt(slot.Alive);
+	var[5].SetInt((int)slot.Hunger);
+	var[6].SetInt((int)slot.Thirst);
+	var[7].SetInt((int)slot.Toxic);
+	var[8].SetInt(slot.BackpackID);
+	var[9].SetInt(slot.BackpackSize);
+	var[10].SetInt(slot.Stats.SkillXPPool);
 	gfxMovie.Invoke("_root.api.updateClientSurvivor", var, 11);
 
 	addBackpackItems(slot, gUserProfile.SelectedCharID);
@@ -2705,21 +2880,57 @@ void FrontendWarZ::OnBackpackChangeSuccess()
 	gfxMovie.Invoke("_root.api.changeBackpackSuccess", "");
 }
 
-void FrontendWarZ::eventChangeOutfit(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
+void FrontendWarZ::eventSetCurrentBrowseChannel(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
-    r3d_assert(argCount == 4);
-    int headIdx = args[1].GetInt();
-    int bodyIdx = args[2].GetInt();
-    int legsIdx = args[3].GetInt();
+	r3d_assert(args);
+	r3d_assert(argCount == 2);
+	CurrentBrowser = args[0].GetUInt();
+	
+	//gfxMovie.Invoke("_root.api.Main.showScreen", "ServerBrowse");
 
-    gUserProfile.ApiChangeOutfit(headIdx, bodyIdx, legsIdx);
+	gUserSettings.BrowseGames_Filter.gameworld = false;
+	gUserSettings.BrowseGames_Filter.privateServers = false;
+	gUserSettings.BrowseGames_Filter.stronghold = false;
 
-    gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].HeadIdx = headIdx;
-    gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].BodyIdx = bodyIdx;
-    gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].LegsIdx = legsIdx;
-    
-    m_Player->uberAnim_->anim.StopAll();
-    m_Player->UpdateLoadoutSlot(m_Player->CurLoadout);
+	//1: TrialServer
+	//2: OfficialServers
+	//3: PrivateServers
+	//4: PremiumServers
+	//5: Strongholds
+	//6: PublicTestEnvironment
+
+	if (CurrentBrowser == 1)
+	{
+
+		//1: TrialServer
+		return;
+	}
+	else if (CurrentBrowser == 2)
+	{
+		gUserSettings.BrowseGames_Filter.gameworld = true;
+	}
+	else if (CurrentBrowser == 3)
+	{
+		gUserSettings.BrowseGames_Filter.privateServers = true;
+	}
+	else if (CurrentBrowser == 4)
+	{
+
+		//4: PremiumServers
+		return;
+	}
+	else if (CurrentBrowser == 5)
+	{
+		gUserSettings.BrowseGames_Filter.stronghold = true;
+	}
+	else if (CurrentBrowser == 6)
+	{
+		//6: PublicTestEnvironment
+		return;
+	}
+
+	gfxMovie.Invoke("_root.api.Main.showScreen", "ServerBrowse"); // used for server filter (Official , Private , PTE , Stronghold , Tiral , Veteran , Premium) only work in allright , WarZTH source
+
 }
 
 void FrontendWarZ::eventCreateChangeCharacter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
@@ -3243,47 +3454,46 @@ void FrontendWarZ::eventBrowseGamesRequestFilterStatus(r3dScaleformMovie* pMovie
 	r3d_assert(args);
 	r3d_assert(argCount == 0);
 
-	// setBrowseGamesOptions(regus:Boolean, regeu:Boolean, regru:Boolean, filt_gw:Boolean, filt_sh:Boolean, filt_empt:Boolean,
-	//filt_full:Boolean, opt_trac:Boolean, opt_nm:Boolean, opt_ch:Boolean, opt_enabled:Boolean, opt_passworded:Boolean)
-	Scaleform::GFx::Value var[12];
+	Scaleform::GFx::Value var[14];
 	var[0].SetBoolean(gUserSettings.BrowseGames_Filter.region_us);
 	var[1].SetBoolean(gUserSettings.BrowseGames_Filter.region_eu);
-	//var[2].SetBoolean(gUserSettings.BrowseGames_Filter.region_ru);
-	var[3].SetBoolean(gUserSettings.BrowseGames_Filter.gameworld);
-	var[4].SetBoolean(gUserSettings.BrowseGames_Filter.stronghold);
-	var[5].SetBoolean(gUserSettings.BrowseGames_Filter.hideempty);
-	var[6].SetBoolean(gUserSettings.BrowseGames_Filter.hidefull);
-	var[7].SetBoolean(gUserSettings.BrowseGames_Filter.tracers);
-	var[8].SetBoolean(gUserSettings.BrowseGames_Filter.nameplates);
-	var[9].SetBoolean(gUserSettings.BrowseGames_Filter.crosshair);
-	//var[10].SetBoolean(gUserSettings.BrowseGames_Filter.enabled);
-	//var[11].SetBoolean(gUserSettings.BrowseGames_Filter.passworded);
-	gfxMovie.Invoke("_root.api.setBrowseGamesOptions", var, 12);
-}
+	var[2].SetBoolean(gUserSettings.BrowseGames_Filter.region_ru);
+	var[3].SetBoolean(gUserSettings.BrowseGames_Filter.region_sa);
+	var[4].SetBoolean(gUserSettings.BrowseGames_Filter.gameworld);
+	var[5].SetBoolean(gUserSettings.BrowseGames_Filter.stronghold);
+	var[6].SetBoolean(gUserSettings.BrowseGames_Filter.hideempty);
+	var[7].SetBoolean(gUserSettings.BrowseGames_Filter.hidefull);
+	var[8].SetBoolean(gUserSettings.BrowseGames_Filter.privateServers);
+	var[9].SetBoolean(gUserSettings.BrowseGames_Filter.tracers);
+	var[10].SetBoolean(gUserSettings.BrowseGames_Filter.nameplates);
+	var[11].SetBoolean(gUserSettings.BrowseGames_Filter.crosshair);
+	var[12].SetBoolean(gUserSettings.BrowseGames_Filter.enabled);
+	var[13].SetBoolean(gUserSettings.BrowseGames_Filter.passworded);
+	gfxMovie.Invoke("_root.api.setBrowseGamesOptions", var, 14);
 
+}
 void FrontendWarZ::eventBrowseGamesSetFilter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
-	//regus:Boolean, regeu:Boolean, regru:Boolean, filt_gw:Boolean, filt_sh:Boolean, filt_empt:Boolean, filt_full:Boolean,
-	//opt_trac:Boolean, opt_nm:Boolean, opt_ch:Boolean, nameFilter:String, opt_enable:Boolean, opt_Password:Boolean
 	r3d_assert(args);
-	r3d_assert(argCount == 13);
+	r3d_assert(argCount == 16);
 	gUserSettings.BrowseGames_Filter.region_us = args[0].GetBool();
 	gUserSettings.BrowseGames_Filter.region_eu = args[1].GetBool();
-	//gUserSettings.BrowseGames_Filter.region_ru = args[2].GetBool();
+	gUserSettings.BrowseGames_Filter.region_ru = args[2].GetBool();
+	gUserSettings.BrowseGames_Filter.region_sa = args[3].GetBool();
 	gUserSettings.BrowseGames_Filter.gameworld = args[3].GetBool();
 	gUserSettings.BrowseGames_Filter.stronghold = args[4].GetBool();
 	gUserSettings.BrowseGames_Filter.hideempty = args[5].GetBool();
 	gUserSettings.BrowseGames_Filter.hidefull = args[6].GetBool();
-	gUserSettings.BrowseGames_Filter.tracers = args[7].GetBool();
-	gUserSettings.BrowseGames_Filter.nameplates = args[8].GetBool();
-	gUserSettings.BrowseGames_Filter.crosshair = args[9].GetBool();
-	//gUserSettings.BrowseGames_Filter.nameFilter = args[10].GetString();
-	//gUserSettings.BrowseGames_Filter.enabled = args[11].GetBool();
-	//gUserSettings.BrowseGames_Filter.passworded = args[12].GetBool();
-
+	gUserSettings.BrowseGames_Filter.privateServers = args[7].GetBool();
+	gUserSettings.BrowseGames_Filter.tracers = args[8].GetBool();
+	gUserSettings.BrowseGames_Filter.nameplates = args[9].GetBool();
+	gUserSettings.BrowseGames_Filter.crosshair = args[10].GetBool();
+	//r3dscpy(gUserSettings.BrowseGames_Filter.nameFilter, args[11].GetString());
+	gUserSettings.BrowseGames_Filter.enabled = args[12].GetBool();
+	gUserSettings.BrowseGames_Filter.passworded = args[13].GetBool();
 	gUserSettings.saveSettings();
-}
 
+}
 void FrontendWarZ::eventBrowseGamesJoin(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
 	// gameID:int
@@ -3307,7 +3517,6 @@ void FrontendWarZ::eventBrowseGamesJoin(r3dScaleformMovie* pMovie, const Scalefo
 
 	async_.StartAsyncOperation(this, &FrontendWarZ::as_JoinGameThread);
 }
-
 void FrontendWarZ::eventBrowseGamesOnAddToFavorites(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
 	// gameID:int
@@ -3318,10 +3527,18 @@ void FrontendWarZ::eventBrowseGamesOnAddToFavorites(r3dScaleformMovie* pMovie, c
 	gUserSettings.addGameToFavorite(gameID);
 	gUserSettings.saveSettings();
 }
-
 void FrontendWarZ::eventBrowseGamesRequestList(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
 {
-	// type:String (browse, recent, favorites)
+	// Browse Text Seting
+	gfxMovie.SetVariable("_root.api.Main.BrowseGamesAnim.ServBrowse.Filters.TitleFilters.text", "FILTERS:");
+	gfxMovie.SetVariable("_root.api.Main.BrowseGamesAnim.ServBrowse.Filters.TitleServerOptions.text", "SERVER OPTIONS:");
+	gfxMovie.SetVariable("_root.api.Main.BrowseGamesAnim.ServBrowse.SlotlistTop.BtnSort1.Text.text", "SERVER NAME");
+	gfxMovie.SetVariable("_root.api.Main.BrowseGamesAnim.ServBrowse.SlotlistTop.BtnSort2.Text.text", "MODE");
+	gfxMovie.SetVariable("_root.api.Main.BrowseGamesAnim.ServBrowse.SlotlistTop.BtnSort3.Text.text", "MAP");
+	gfxMovie.SetVariable("_root.api.Main.BrowseGamesAnim.ServBrowse.SlotlistTop.BtnSort4.Text.text", "PING");
+	gfxMovie.SetVariable("_root.api.Main.BrowseGamesAnim.ServBrowse.SlotlistTop.BtnSort5.Text.text", "Player");
+	
+// type:String (browse, recent, favorites)
 	r3d_assert(args);
 	r3d_assert(argCount == 4);
 
@@ -3348,12 +3565,6 @@ void FrontendWarZ::eventBrowseGamesRequestList(r3dScaleformMovie* pMovie, const 
 		processNewGameList();	
 		gfxMovie.Invoke("_root.api.Main.BrowseGamesAnim.showGameList", "");
 	}
-}
-
-void FrontendWarZ::eventMarketplaceActive(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
-{
-	gfxMovie.SetVariable("_root.api.Main.Marketplace.MarketplaceTab7.visible", true);
-	gfxMovie.SetVariable("_root.api.Main.Marketplace.Marketplace.Tutorial.visible", false);
 }
 
 unsigned int WINAPI FrontendWarZ::as_BrowseGamesThread(void* in_data)
@@ -3392,28 +3603,63 @@ void FrontendWarZ::OnGameListReceived()
 	gfxMovie.Invoke("_root.api.Main.BrowseGamesAnim.showGameList", "");
 }
 
-void FrontendWarZ::processNewGameList() //For new server browser
+void FrontendWarZ::processNewGameList()
 {
-    int numGames = (int)gMasterServerLogic.games_.size();
-    int gameCounter = 0;
-    for(int i=0; i<numGames; i++) 
-    {
-        const GBPKT_M2C_GameData_s& gd = gMasterServerLogic.games_[i];
-        const GBGameInfo& ginfo = gd.info;
-        int ping = GetGamePing(gd.superId);
-        if(ping > 0)
-            ping = R3D_CLAMP(ping + random(10)-5, 1, 1000);
-        ping = R3D_CLAMP(ping/10, 1, 100); // UI accepts ping from 0 to 100 and shows bars instead of actual number
+	int numGames = (int)gMasterServerLogic.games_.size();
+
+	int gameCounter = 0;
+	for(int i=0; i<numGames; i++) 
+	{
+		const GBPKT_M2C_GameData_s& gd = gMasterServerLogic.games_[i];
+		const GBGameInfo& ginfo = gd.info;
+
+		// process filters
+		if(m_browseGamesMode == 0)
+		{
+			if(gUserSettings.BrowseGames_Filter.gameworld && !gUserSettings.BrowseGames_Filter.stronghold) // hack. only gameworlds available right now
+				continue; 
+			if(!gUserSettings.BrowseGames_Filter.gameworld && gUserSettings.BrowseGames_Filter.stronghold)
+				continue;
+
+			if(gUserSettings.BrowseGames_Filter.region_us && (gd.info.region != GBNET_REGION_US_East && gd.info.region != GBNET_REGION_US_West))
+				continue;
+			if(gUserSettings.BrowseGames_Filter.region_eu && gd.info.region != GBNET_REGION_Europe)
+				continue;
+
+			if(gUserSettings.BrowseGames_Filter.hideempty && gd.curPlayers == 0)
+				continue;
+			if(gUserSettings.BrowseGames_Filter.hidefull && gd.curPlayers == gd.info.maxPlayers)
+				continue;
+		}
+		else if(m_browseGamesMode == 1) // recent
+		{
+			if(!gUserSettings.isInRecentGamesList(ginfo.gameServerId))
+				continue;
+		}
+		else if(m_browseGamesMode == 2) // favorite
+		{
+			if(!gUserSettings.isInFavoriteGamesList(ginfo.gameServerId))
+				continue;
+		}
+		else
+			r3d_assert(false); // shouldn't happen
+		// finished filters
+
+		int ping = GetGamePing(gd.superId);
+		if(ping > 0)
+			ping = R3D_CLAMP(ping + random(10)-5, 1, 1000);
+		ping = R3D_CLAMP(ping/10, 1, 100); // UI accepts ping from 0 to 100 and shows bars instead of actual number
+
 		std::string gameType;
 
-		switch (ginfo.gameType)
+		switch(ginfo.gameType)
 		{
-		case 1:
-			gameType = "GAMEWORLD"; break;
-		case 2:
-			gameType = "STRONGHOLD"; break;
-		default:
-			gameType = "ERROR"; break;
+			case 1:
+				gameType = "GAMEWORLD"; break;
+			case 2:
+				gameType = "STRONGHOLD"; break;
+			default:
+				gameType = "ERROR"; break;
 		}
 		//1: TrialServer
 		//2: OfficialServers
@@ -3422,107 +3668,31 @@ void FrontendWarZ::processNewGameList() //For new server browser
 		//5: Strongholds
 		//6: PublicTestEnvironment
 
-        //addGameToList(id:Number, name:String, mode:String, map:String, tracers:Boolean, nametags:Boolean, crosshair:Boolean, players:String, ping:int, isFavorite:Boolean, isPassword:Boolean)
-        Scaleform::GFx::Value var[15];
-        r3dOutToLog("GBGameInfo : Name:%s , isPre = %d , isPass = %d\n",ginfo.name,(int)ginfo.ispre,(int)ginfo.ispass);
+		//addGameToList(id:Number, name:String, mode:String, map:String, tracers:Boolean, nametags:Boolean, crosshair:Boolean, players:String, ping:int)
+		Scaleform::GFx::Value var[15];
+		if (CurrentBrowser == 3)
+		{
+			var[0].SetNumber(ginfo.gameServerId);  //"id":param1,
+			var[1].SetString(ginfo.name); // "name" : param2,
+			var[2].SetString(gameType.c_str()); //"mode" : param3,
+			var[3].SetString(ginfo.mapName); // "map" : param4,
+			var[4].SetBoolean(false); // "tracers" : param5,
+			var[5].SetBoolean(false); //"nametags" : param6,
+			var[6].SetBoolean(false); // "crosshair" : param7,
+		char players[22];
+		sprintf(players, "%d/%d", gd.curPlayers, ginfo.maxPlayers);
+			var[7].SetString(players); //"players" : param8,
+			var[8].SetInt(ping); // "ping" : param9,
+			var[9].SetBoolean(gUserSettings.isInFavoriteGamesList(ginfo.gameServerId)); // "favorite" : param10,
+			var[10].SetBoolean(false); // "isPassword":param11,
+			var[11].SetBoolean(true); // "isTimeLimit":param12,
+			var[12].SetBoolean(false); // "trialsAllowed":param13,
+			var[13].SetBoolean(true); //"donate" : param14,
+			var[13].SetBoolean(false);// "disableWeapon" : param15
 
-        if (CurrentBrowse == 2)
-        {
-            if (!ginfo.ispass && !ginfo.ispre && !ginfo.isfarm)
-            {
-                var[0].SetNumber(ginfo.gameServerId);
-                var[1].SetString(ginfo.name);
-				var[2].SetString(gameType.c_str()); //"mode" : param3,
-				var[3].SetString(ginfo.mapName); // "map" : param4,
-                var[4].SetBoolean(true);
-                var[5].SetBoolean(true);
-                var[6].SetBoolean(true);
-                char players[16];
-                sprintf(players, "%d/%d", gd.curPlayers, ginfo.maxPlayers);
-                var[7].SetString(players);
-                var[8].SetInt(ping);
-                var[9].SetBoolean(gUserSettings.isInFavoriteGamesList(ginfo.gameServerId));
-                var[10].SetString(ginfo.pwdchar); // isPassword
-                var[11].SetBoolean(true); // TimeLimit
-                var[12].SetBoolean(false); // TiralAllowJoin
-                var[13].SetBoolean(true);
-                var[14].SetBoolean(false);
-                gfxMovie.Invoke("_root.api.Main.BrowseGamesAnim.addGameToList", var, 15);
-            }
-        }
-            else if (CurrentBrowse == 6)
-            {
-                if (ginfo.ispre)
-                {
-                    var[0].SetNumber(ginfo.gameServerId);
-                    var[1].SetString(ginfo.name);
-                    var[2].SetString("GAMEWORLD");
-					var[3].SetString(ginfo.mapName); // "map" : param4,
-                    var[4].SetBoolean(true);
-                    var[5].SetBoolean(true);
-                    var[6].SetBoolean(true);
-                    char players[16];
-                    sprintf(players, "%d/%d", gd.curPlayers, ginfo.maxPlayers);
-                    var[7].SetString(players);
-                    var[8].SetInt(ping);
-                    var[9].SetBoolean(gUserSettings.isInFavoriteGamesList(ginfo.gameServerId));
-                    var[10].SetString(ginfo.pwdchar); // isPassword
-                    var[11].SetBoolean(true); // TimeLimit
-                    var[12].SetBoolean(false); // TiralAllowJoin
-                    var[13].SetBoolean(true);
-                    var[14].SetBoolean(false);
-                    gfxMovie.Invoke("_root.api.Main.BrowseGamesAnim.addGameToList", var, 15);
-                }
-            }
-        else if (CurrentBrowse == 3)
-        {
-            if (ginfo.ispass)
-            {
-                var[0].SetNumber(ginfo.gameServerId);
-                var[1].SetString(ginfo.name);
-                var[2].SetString("GAMEWORLD");
-				var[3].SetString(ginfo.mapName); // "map" : param4,
-                var[4].SetBoolean(true);
-                var[5].SetBoolean(true);
-                var[6].SetBoolean(true);
-                char players[16];
-                sprintf(players, "%d/%d", gd.curPlayers, ginfo.maxPlayers);
-                var[7].SetString(players);
-                var[8].SetInt(ping);
-                var[9].SetBoolean(gUserSettings.isInFavoriteGamesList(ginfo.gameServerId));
-                var[10].SetString(ginfo.pwdchar); // isPassword
-                var[11].SetBoolean(true); // TimeLimit
-                var[12].SetBoolean(false); // TiralAllowJoin
-                var[13].SetBoolean(true);
-                var[14].SetBoolean(false);
-                gfxMovie.Invoke("_root.api.Main.BrowseGamesAnim.addGameToList", var, 15);
-            }
-        }
-        else if (CurrentBrowse == 4)
-        {
-            if (ginfo.ispre || ginfo.isfarm)
-            {
-                var[0].SetNumber(ginfo.gameServerId);
-                var[1].SetString(ginfo.name);
-                var[2].SetString("GAMEWORLD");
-				var[3].SetString(ginfo.mapName); // "map" : param4,
-                var[4].SetBoolean(true);
-                var[5].SetBoolean(true);
-                var[6].SetBoolean(true);
-                char players[16];
-                sprintf(players, "%d/%d", gd.curPlayers, ginfo.maxPlayers);
-                var[7].SetString(players);
-                var[8].SetInt(ping);
-                var[9].SetBoolean(gUserSettings.isInFavoriteGamesList(ginfo.gameServerId));
-                var[10].SetString(ginfo.pwdchar); // isPassword
-                var[11].SetBoolean(true); // TimeLimit
-                var[12].SetBoolean(false); // TiralAllowJoin
-                var[13].SetBoolean(true);
-                var[14].SetBoolean(false);
-                gfxMovie.Invoke("_root.api.Main.BrowseGamesAnim.addGameToList", var, 15);
-            }
-        }
-    }
+			gfxMovie.Invoke("_root.api.Main.BrowseGamesAnim.addGameToList", var, 15);
+	}
+	}
 }
 
 int FrontendWarZ::GetSupervisorPing(DWORD ip)
@@ -3652,6 +3822,8 @@ void FrontendWarZ::setClanInfo()
 			gfxMovie.Invoke("_root.api.addClanMemberInfo", var, 10);
 		}
 	}
+
+	r3dscpy(slot.ClanTag, clans->clanInfo_.ClanTag);
 	checkForInviteFromClan();
 }
 
@@ -4246,6 +4418,9 @@ void FrontendWarZ::eventClanBuySlots(r3dScaleformMovie* pMovie, const Scaleform:
 		gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
 		return;
 	}
+	Scaleform::GFx::Value var[1];
+	var[0].SetInt(gUserProfile.ProfileData.GameDollars);
+	gfxMovie.Invoke("_root.api.setDollars", var, 1);
 
 	gfxMovie.SetVariable("_root.api.Main.ClansMyClan.MyClan.OptionsBlock2.Slots.text", clans->clanInfo_.MaxClanMembers);
 }
@@ -4380,4 +4555,106 @@ void FrontendWarZ::eventRequestLeaderboardData(r3dScaleformMovie* pMovie, const 
 	}
 
 	gfxMovie.Invoke("_root.api.Main.LeaderboardAnim.populateLeaderboard", 0);
+}
+
+void FrontendWarZ::DelayServerRequest()
+{
+	// allow only one server request per second
+	if(r3dGetTime() < lastServerReqTime_ + 1.0f)
+	{
+		::Sleep(1000);
+	}
+	lastServerReqTime_ = r3dGetTime();
+}
+
+void FrontendWarZ::eventMarketplaceActive(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
+{
+	gfxMovie.SetVariable("_root.api.Main.Marketplace.MarketplaceTab7.visible", true);
+	gfxMovie.SetVariable("_root.api.Main.Marketplace.Marketplace.Tutorial.visible", true);
+}
+
+void FrontendWarZ::eventChangeOutfit(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
+{
+	r3d_assert(argCount == 4);
+	int charIdx = args[0].GetUInt();
+	int headIdx = args[1].GetUInt();
+	int bodyIdx = args[2].GetUInt();
+	int legsIdx = args[3].GetUInt();
+
+
+	gUserProfile.ApiChangeOutfit(headIdx, bodyIdx, legsIdx);
+	
+	m_Player->CurLoadout.HeadIdx = headIdx;
+	m_Player->CurLoadout.BodyIdx = bodyIdx;
+	m_Player->CurLoadout.LegsIdx = legsIdx;
+
+	PlayerCreateLoadout.HeadIdx = headIdx;
+	PlayerCreateLoadout.BodyIdx = bodyIdx;
+	PlayerCreateLoadout.LegsIdx = legsIdx;
+	gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].HeadIdx = headIdx;
+	gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].BodyIdx = bodyIdx;
+	gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].LegsIdx = legsIdx;
+	m_Player->UpdateLoadoutSlot(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID]);
+	gfxMovie.Invoke("_root.api.Main.SurvivorsAnim.updateSurvivors", "");
+}
+
+void FrontendWarZ::eventRenameCharacter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
+{
+	r3d_assert(argCount == 1);
+	std::string newName = args[0].GetString();
+	
+	int result = gUserProfile.ApiRenameChar(newName.c_str());
+
+	if(result == 1) //failed - insufficient funds (costs 10k Dollars)
+	{
+		Scaleform::GFx::Value var[2];
+		var[0].SetStringW(L"You don't have 10,000 DZD!");
+		var[1].SetBoolean(true);
+		gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
+	}
+	else if(result == 2) //failed - invalid/taken name
+	{
+		Scaleform::GFx::Value var[2];
+		var[0].SetStringW(L"Name already taken or is invalid!");
+		var[1].SetBoolean(true);
+		gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
+	}
+	else if(!result) //success
+	{
+		char tmpName[128];
+		if(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanID != 0)
+		sprintf(tmpName, "[%s] %s", gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanTag, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+		else
+		r3dscpy(tmpName, gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag);
+		std::string name = tmpName;
+		if(newName.length() < 64)
+		{
+				char tmpNewName[128];
+				if(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanID != 0)
+				sprintf(tmpNewName, "[%s] %s", gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].ClanTag, newName.c_str());
+				else
+				r3dscpy(tmpNewName, newName.c_str());
+				std::string newClanName = tmpNewName;
+
+				memset(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag, 0, 64); //probably bad but w/e
+				r3dscpy(gUserProfile.ProfileData.ArmorySlots[gUserProfile.SelectedCharID].Gamertag, newName.c_str());
+				Scaleform::GFx::Value var2[2];
+				var2[0].SetString(name.c_str());
+				var2[1].SetString(newClanName.c_str());
+				gfxMovie.Invoke("_root.api.changeSurvivorName", var2, 2);
+		}
+		Scaleform::GFx::Value var[1];
+		var[0].SetInt(gUserProfile.ProfileData.GameDollars);
+		gfxMovie.Invoke("_root.api.setDollars", var, 1);
+		setClanInfo();
+		gfxMovie.Invoke("_root.api.Main.Clans.showClanList", "");
+		gfxMovie.Invoke("_root.api.Main.SurvivorsAnim.updateSurvivors", "");
+	}
+	else
+	{
+		Scaleform::GFx::Value var[2];
+		var[0].SetStringW(L"Unknown Error!");
+		var[1].SetBoolean(true);
+		gfxMovie.Invoke("_root.api.showInfoMsg", var, 2);
+	}
 }

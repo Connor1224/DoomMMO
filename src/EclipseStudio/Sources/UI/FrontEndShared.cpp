@@ -355,7 +355,7 @@ void getWeaponParamForUI(const WeaponConfig* wc, int* damage, int* spread, int* 
 	switch(wc->category)
 	{
 	case storecat_SNP:
-		d1  = 30;  d2  = 250;  
+		d1 = 30;  d2 = 250;
 		fr1 = 10;  fr2 = 200;
 		re1 = 1.0f;  re2 = 13.0f;
 		break;
@@ -478,4 +478,21 @@ void getAdditionalDescForItem(uint32_t itemID, int Var1, int Var2, char* res)
 		else
 			sprintf(res, "%s", "EMPTY CLIP");
 	}
+}
+
+int StoreDetectBuyIdx(const int storeBuyPrice, const int storeBuyPriceGD)
+{
+	// 4 for GamePoints (CASH)
+	// 8 for GameDollars (in-game)
+	return 8;
+	/*int buyIdx = 0;
+	if(storeBuyPrice > 0)
+	{
+		buyIdx = 4;
+	}
+	else if(storeBuyPriceGD > 0)
+	{
+		buyIdx = 8;
+	}
+	return buyIdx;*/
 }

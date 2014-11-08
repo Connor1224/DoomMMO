@@ -24,6 +24,8 @@ public:
 	void eventReturnToGame(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventBuyItem(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 
+	void OnBuyItemAnswer(BYTE result);
+
 private:
 	r3dScaleformMovie gfxMovie_;
 	r3dScaleformMovie* prevKeyboardCaptureMovie_;

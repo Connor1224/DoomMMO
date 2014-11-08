@@ -546,21 +546,6 @@ static void replaceItemNameParams(T* itm, pugi::xml_node& xmlNode)
 	}
 }
 
-int CClientUserProfile::ApiChangeName(const char* Name)
-{
-    wiCharDataFull& w = ProfileData.ArmorySlots[SelectedCharID];
-    CWOBackendReq req(this, "api_ChangeName.aspx");
-    req.AddParam("CustomerID", CustomerID);
-    req.AddParam("Name", Name);
-    req.AddParam("CharID", w.LoadoutID);
-    if(!req.Issue())
-    {
-        return 50;
-    }
-    GetProfile();
-    return 0;
-}
-
 int CClientUserProfile::ApiGetItemsInfo()
 {
 	CWOBackendReq req(this, "api_GetItemsInfo.aspx");
@@ -984,36 +969,6 @@ int CClientUserProfile::ApiChangeBackpack(__int64 InventoryID)
 	return 0;
 }
 
-int CClientUserProfile::ApiChangeOutfit(int headIdx, int bodyIdx, int legsIdx)
-{
-    r3d_assert(SelectedCharID >= 0 && SelectedCharID < wiUserProfile::MAX_LOADOUT_SLOTS);
-    wiCharDataFull& w = ProfileData.ArmorySlots[SelectedCharID];
-    r3d_assert(w.LoadoutID > 0);
-
-    char headStr[128], bodyStr[128], legsStr[128];
-    sprintf(headStr, "%d", headIdx);
-    sprintf(bodyStr, "%d", bodyIdx);
-    sprintf(legsStr, "%d", legsIdx);
-
-    CWOBackendReq req(this, "api_CharOutfit.aspx");
-    req.AddParam("CharID", w.LoadoutID);
-    req.AddParam("HeadIdx",     headStr);
-    req.AddParam("BodyIdx",     bodyStr);
-    req.AddParam("LegsIdx",     legsStr);
-    if(!req.Issue())
-    {
-        r3dOutToLog("ApiChangeOutfit failed: %d", req.resultCode_);
-        return req.resultCode_;
-    }
-
-    GetProfile(w.LoadoutID);
-    // Here needs to be added something that properly updates
-    // your survivors, otherwise when you swap survivor and back
-    // the new outfit is not applied in the menu :S
-    
-    return 0;
-}
-
 int CClientUserProfile::ApiBuyItem(int itemId, int buyIdx, __int64* out_InventoryID)
 {
 	r3d_assert(buyIdx > 0);
@@ -1322,7 +1277,6 @@ int CClientUserProfile::ApiMysteryBoxGetContent(int itemId, const MysteryBox_s**
 	*out_box = &mysteryBoxes_.back();
 	return 0;
 }
-
 int CClientUserProfile::ApiLearnSkill(uint32_t skillid, int CharID)
 {
 	CWOBackendReq req(this, "api_SrvSkills.aspx");
@@ -1335,6 +1289,54 @@ int CClientUserProfile::ApiLearnSkill(uint32_t skillid, int CharID)
 	}
 	GetProfile();
 	return skillid;
+}
+
+
+int CClientUserProfile::ApiChangeOutfit(int headIdx, int bodyIdx, int legsIdx)
+{
+	r3d_assert(SelectedCharID >= 0 && SelectedCharID < wiUserProfile::MAX_LOADOUT_SLOTS);
+	wiCharDataFull& w = ProfileData.ArmorySlots[SelectedCharID];
+	r3d_assert(w.LoadoutID > 0);
+
+	char headStr[128], bodyStr[128], legsStr[128];
+	sprintf(headStr, "%d", headIdx);
+	sprintf(bodyStr, "%d", bodyIdx);
+	sprintf(legsStr, "%d", legsIdx);
+
+	CWOBackendReq req(this, "api_CharSlots.aspx");
+	req.AddParam("func",   "change");
+	req.AddParam("CharID",  w.LoadoutID);
+	req.AddParam("HeadIdx", headStr);
+	req.AddParam("BodyIdx", bodyStr);
+	req.AddParam("LegsIdx", legsStr);
+	if (!req.Issue())
+	{
+		r3dOutToLog("ApiChangeOutfit failed: %d", req.resultCode_);
+		return req.resultCode_;
+	}
+
+	return 0;
+}
+
+int CClientUserProfile::ApiRenameChar(const char* newName)
+{
+	r3d_assert(SelectedCharID >= 0 && SelectedCharID < wiUserProfile::MAX_LOADOUT_SLOTS);
+	wiCharDataFull& w = ProfileData.ArmorySlots[SelectedCharID];
+	r3d_assert(w.LoadoutID > 0);
+
+	CWOBackendReq req(this, "api_CharSlots.aspx");
+	req.AddParam("func",   "name");
+	req.AddParam("CharID",  w.LoadoutID);
+	req.AddParam("NewName", newName);
+	if (!req.Issue())
+	{
+		r3dOutToLog("ApiRenameChar failed: %d", req.resultCode_);
+		return req.resultCode_;
+	}
+	//GetProfile(w.LoadoutID);
+	gUserProfile.ProfileData.GameDollars -= 10000;
+
+	return 0;
 }
 
 #endif // ! WO_SERVER

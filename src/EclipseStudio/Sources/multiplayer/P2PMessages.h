@@ -137,6 +137,9 @@ enum pkttype_e
 
   PKT_S2C_SetPlayerReputation,
 
+  PKT_C2S_MarketBuyItemReq,
+  PKT_S2C_MarketBuyItemAns,
+
   PKT_LAST_PACKET_ID,
 };
 
@@ -781,6 +784,17 @@ struct PKT_C2S_DBG_LogMessage_s : public DefaultPacketMixin<PKT_C2S_DBG_LogMessa
 struct PKT_S2C_SetPlayerReputation_s : public DefaultPacketMixin<PKT_S2C_SetPlayerReputation>
 {
 	int			Reputation;
+};
+
+struct PKT_C2S_MarketBuyItemReq_s : public DefaultPacketMixin<PKT_C2S_MarketBuyItemReq>
+{
+	DWORD itemId;
+	BYTE buyIdx;
+};
+
+struct PKT_S2C_MarketBuyItemAns_s : public DefaultPacketMixin<PKT_S2C_MarketBuyItemAns>
+{
+	BYTE result;
 };
 
 #pragma pack(pop)

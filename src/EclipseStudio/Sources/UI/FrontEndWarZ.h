@@ -20,6 +20,7 @@ private:
 	Scaleform::Render::D3D9::Texture* RTScaleformTexture;
 	bool		needReInitScaleformTexture;
 	int			frontendStage; // 0 - login, 1-frontend
+	int			CurrentBrowser; // current browser ID
 
 	EGameResult	prevGameResult;
 
@@ -34,9 +35,6 @@ public:
 	virtual bool Initialize();
 
 	virtual int Update();
-
-	void InitButtons();
-	void eventSetCurrentBrowseChannel(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 
 	void postLoginStepInit(EGameResult gameResult);
 	void initLoginStep(const wchar_t* loginErrorMsg);
@@ -54,8 +52,6 @@ public:
 		m_Player = plr;
 	}
 
-	int CurrentBrowse;
-
 	// login part of frontend
 private:
 	friend void FrontendWarZ_LoginProcessThread(void* in_data);
@@ -67,9 +63,10 @@ private:
 		ANS_Processing,
 		ANS_Timeout,
 		ANS_Error,
+
 		ANS_Logged,
 		ANS_BadPassword,
-		ANS_Frozen
+		ANS_Frozen,
 	};
 	volatile DWORD loginAnswerCode;
 	bool	DecodeAuthParams();
@@ -96,16 +93,11 @@ private:
 	void eventOptionsControlsReset(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventOptionsControlsApply(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventCreateChangeCharacter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
-	void eventChangeOutfit(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventCreateCancel(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventRequestPlayerRender(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventMsgBoxCallback(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventOpenBackpackSelector(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventChangeBackpack(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
-
-	//skill system
-	void eventLearnSkill(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
-	void OnLearnSkillSuccess();
 
 	void eventBrowseGamesRequestFilterStatus(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventBrowseGamesSetFilter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
@@ -128,21 +120,29 @@ private:
 	void eventClanApplyToJoin(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 
 	void eventRequestLeaderboardData(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
-
-	void eventRenameCharacter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
-	void FrontendWarZ::eventMarketplaceActive(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	
 	void eventRequestMyServerList(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventRequestGCTransactionData(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventRentServerUpdatePrice(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 	void eventRentServer(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
+	void eventMarketplaceActive(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
+	void eventLearnSkill(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
+	void OnLearnSkillSuccess();
+	static unsigned int WINAPI as_LearnSkilLThread(void* in_data);
+
+	void eventChangeOutfit(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
+	void eventRenameCharacter(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
+	static unsigned int WINAPI as_ChangeOutfit(void* in_data);
+	void		OnChangeOutfitSuccess();
+	void eventSetCurrentBrowseChannel(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
+//	void eventShowSurvivorsMap(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
+
 
 	void checkForInviteFromClan();
 	void setClanInfo();
 	CUserClans::CreateParams_s clanCreateParams;
 	std::string					   clanCreateParam_Desc;
 	static unsigned int WINAPI as_CreateClanThread(void* in_data);
-	static unsigned int WINAPI as_LearnSkillThread(void* in_data);
 	void		OnCreateClanSuccess();
 	void		refreshClanUIMemberList();
 
@@ -161,6 +161,7 @@ private:
 
 	void addClientSurvivor(const wiCharDataFull& slot, int slotIndex);
 	void addBackpackItems(const wiCharDataFull& slot, int slotIndex);
+	void InitButtons();
 
 	bool		exitRequested_;
 	bool		needExitByGameJoin_;
@@ -170,11 +171,23 @@ private:
 	// Async Function Calls
 	//
 	UIAsync<FrontendWarZ> async_;
+	typedef void (FrontendWarZ::*fn_finish)();
+	typedef unsigned int (WINAPI *fn_thread)(void*);
 
+	float		lastServerReqTime_;
+	void		DelayServerRequest();
 	float		masterConnectTime_;
 	bool		ConnectToMasterServer();
 	bool		ParseGameJoinAnswer();
 	volatile bool CancelQuickJoinRequest;
+
+	fn_finish	asyncFinish_;
+	HANDLE		asyncThread_;
+	wchar_t		asyncErr_[512];
+
+	void		StartAsyncOperation(fn_thread threadFn, fn_finish finishFn = NULL);
+	void		SetAsyncError(int apiCode, const wchar_t* msg);
+	void		ProcessAsyncOperation();
 
 	static unsigned int WINAPI as_CreateCharThread(void* in_data);
 	void		OnCreateCharSuccess();
@@ -200,6 +213,15 @@ private:
 	void	SetNeedUpdateSettings();
 	void	UpdateSettings();
 	void	updateSurvivorTotalWeight(int survivor);
+
+	static unsigned int WINAPI as_BuyItemThread(void* in_data);
+	void OnBuyItemSuccess();
+
+	bool UpdateInventoryWithBoughtItem();
+	void updateDefaultAttachments(bool isNewItem, uint32_t itemID);
+
+	/*****/
+	void		parseTransactions(pugi::xml_node xmlNote);
 
 // char create
 	uint32_t		m_itemID;
@@ -233,11 +255,19 @@ private:
 	int m_needPlayerRenderingRequest;
 
 	int m_browseGamesMode; // 0 - browse, 1-recent, 2-favorites
-	uint32_t skillid;
-	int	CharID;
 
 	int m_leaderboardPage;
 	int m_leaderboardPageCount;
+
+	uint32_t storeBuyItemID_;
+	int	storeBuyPrice_;
+	int	storeBuyPriceGD_;
+	__int64	inventoryID_;
+	uint32_t skillid;
+	int	CharID;
+	uint32_t HeadIdx;
+	uint32_t BodyIdx;
+	uint32_t LegsIdx;
 
 	UIMarket market_;
 };

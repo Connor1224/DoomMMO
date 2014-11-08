@@ -11,7 +11,7 @@ public:
 	UIMarket();
 
 	void initialize(r3dScaleformMovie* gfxMovie);
-
+	void setCurrency();
 	void eventBuyItem(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 
 	void update();
@@ -20,7 +20,6 @@ public:
 
 private:
 	void addTabTypes();
-	void setCurrency();
 	void addItems();
 	void addCategories();
 	void addStore();
