@@ -82,7 +82,12 @@ HUDDisplay :: ~HUDDisplay()
 
 bool HUDDisplay::Init()
 {
-	if(!gfxHUD.Load("Data\\Menu\\WarZ_HUD.swf", true)) 
+	isGroupLeaderActive = false;
+	strcpy(GametagName,"");
+	TimeToWaitGroup=0.0f;
+	TimeLeaveGroup=1.0f; // Seconds for show Leave Button, 300 = 5 Minutes
+
+	if(!gfxHUD.Load("Data\\Menu\\WarZ_HUD.swf", true))
 		return false;
 	if(!gfxBloodStreak.Load("Data\\Menu\\WarZ_BloodStreak.swf", false))
 		return false;
@@ -167,6 +172,41 @@ bool HUDDisplay::Unload()
 	return true;
 }
 
+void HUDDisplay::setCarInfo(int var1 , int var2 , int var3 ,int var4, int var5,int var6 , bool show)
+{
+	if(!Inited) return;
+	Scaleform::GFx::Value var[5];
+	var[0].SetInt(var1); // Damage
+	var[1].SetInt(100-var2); // RPM
+	var[2].SetInt(var3); // SPEED
+	var[3].SetInt(var4); // Gasoline
+	var[4].SetInt(100-var5); // RotationSpeed
+	Scaleform::GFx::Value seat[2];
+	if (gClientLogic().localPlayer_->isInVehicle())
+		seat[0].SetInt(0); // position where you feel
+	else
+		seat[0].SetInt(1); // position where you feel
+	seat[1].SetString("");
+	Scaleform::GFx::Value car[1];
+	switch(var6)
+	{
+	case 1: 	
+		  car[0].SetString("BUGGY");
+		  break;
+	case 2:
+		  car[0].SetString("TRUCK");
+		  break;
+	case 3:
+		  car[0].SetString("STRYKER");
+		  break;
+
+	}
+	gfxHUD.Invoke("_root.api.setCarInfo", var , 5);
+	gfxHUD.Invoke("_root.api.setCarTypeInfo",car,1);
+	gfxHUD.Invoke("_root.api.setCarSeatInfo",seat,2);
+	gfxHUD.Invoke("_root.api.setCarInfoVisibility", show);
+}
+
 void HUDDisplay::enableClanChannel()
 {
 	Scaleform::GFx::Value var[4];
@@ -175,6 +215,71 @@ void HUDDisplay::enableClanChannel()
 	var[2].SetBoolean(false);
 	var[3].SetBoolean(true);
 	gfxHUD.Invoke("_root.api.setChatTab", var, 4);
+}
+
+void HUDDisplay::enableGroupChannel()
+{
+	Scaleform::GFx::Value var[4];
+	var[0].SetInt(3);
+	var[1].SetString("GROUP");
+	var[2].SetBoolean(false);
+	var[3].SetBoolean(true);
+	gfxHUD.Invoke("_root.api.setChatTab", var, 4);
+}
+
+void HUDDisplay::removePlayerFromGroup(const char* gamertag,bool legend)
+{
+		gClientLogic().localPlayer_->MaxGroupPlayers--;
+		if (gClientLogic().localPlayer_->MaxGroupPlayers<1)
+			gClientLogic().localPlayer_->MaxGroupPlayers=0;
+
+		Scaleform::GFx::Value var[2];
+		var[0].SetString(gamertag);
+		gfxHUD.Invoke("_root.api.removePlayerFromGroup", var , 1);
+}
+
+void HUDDisplay::aboutToLeavePlayerFromGroup(const char* gamertag)
+{
+		Scaleform::GFx::Value var[2];
+		var[0].SetString(gamertag);
+		gfxHUD.Invoke("_root.api.aboutToLeavePlayerFromGroup", var , 1);
+}
+
+void HUDDisplay::updateLeaderGroup(const char* gamertag)
+{
+		Scaleform::GFx::Value var[2];
+		var[0].SetString(gamertag);
+		gfxHUD.Invoke("_root.api.updateLeaderGroup", var , 1);
+}
+
+void HUDDisplay::WantLeaveFromGroup()
+{
+	PKT_S2C_GroupData_s Groups;
+	Groups.State = 9;
+	strcpy(Groups.fromgamertag,gClientLogic().localPlayer_->CurLoadout.Gamertag);
+	Groups.MyID = gClientLogic().localPlayer_->CurLoadout.GroupID;
+	Groups.IDPlayerOutGroup = gClientLogic().localPlayer_->GetNetworkID();
+	p2pSendToHost(gClientLogic().localPlayer_, &Groups, sizeof(Groups));
+}
+
+void HUDDisplay::LeaveFromGroup()
+{
+	obj_Player* plr = gClientLogic().localPlayer_;
+	PKT_S2C_GroupData_s n2;
+	n2.State = 6;
+	strcpy(n2.MyNickName,gClientLogic().localPlayer_->CurLoadout.Gamertag);
+	n2.MyID=gClientLogic().localPlayer_->CurLoadout.GroupID;
+	n2.IDPlayerOutGroup=gClientLogic().localPlayer_->GetNetworkID();
+	p2pSendToHost(plr, &n2, sizeof(n2));
+}
+
+void HUDDisplay::addPlayerToGroup(const char* gamertag,bool isLeader)
+{
+		Scaleform::GFx::Value var[3];
+		var[0].SetString(gamertag);
+		var[1].SetBoolean(isLeader); // Group Leader Active=true, Disable=false
+		var[2].SetBoolean(false);
+		gfxHUD.Invoke("_root.api.addPlayerToGroup", var , 3);
 }
 
 int HUDDisplay::Update()
@@ -275,17 +380,14 @@ void HUDDisplay::setBloodAlpha(float alpha)
 
 void HUDDisplay::eventShowPlayerListContextMenu(r3dScaleformMovie* pMove, const Scaleform::GFx::Value* args, unsigned argCount)
 {
-	/*gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", 2, "");
-	gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", 3, "");
-	gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", 4, "$HUD_PlayerAction_Kick");
-	gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", 5, "$HUD_PlayerAction_Ban");*/
 
 	const char* pName = args[0].GetString(); // Player Selected Gametag
 
 	Scaleform::GFx::Value var[3];
 
-	if(gUserProfile.ProfileData.isDevAccount)
+	if (gUserProfile.ProfileData.isDevAccount)// || gClientLogic().localPlayer_->OwnerOfMap == gClientLogic().localPlayer_->CustomerID)
 	{
+
 		var[0].SetInt(1);
 		var[1].SetString("$HUD_TELEPORT_TO");
 		var[2].SetInt(1);
@@ -306,61 +408,511 @@ void HUDDisplay::eventShowPlayerListContextMenu(r3dScaleformMovie* pMove, const 
 		var[2].SetInt(4);
 		gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
 
-		var[0].SetInt(5);
-		var[1].SetString("");
-		var[2].SetInt(5);
-		gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+		if (gClientLogic().localPlayer_)
+		{
+			int NumPlayer = 0;
+			for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+			{
+				if (gClientLogic().playerNames[i].isInvitePending && strcmp(gClientLogic().playerNames[i].Gamertag, pName) == 0)
+				{
+					NumPlayer = i;
+					break;
+				}
+			}
+			if (!gClientLogic().playerNames[NumPlayer].isInvitePending)
+			{
+				if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) != 0 && !gClientLogic().localPlayer_->CheckNameOnGroup(pName))
+				{
+					if (gClientLogic().localPlayer_->MaxGroupPlayers < 11)
+					{
+						if (strcmp(GametagName, "") == 0)
+						{
+							var[0].SetInt(5);
+							var[1].SetString("$HUD_PlayerAction_InviteGroup");
+							var[2].SetInt(5);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
 
-		var[0].SetInt(6);
-		var[1].SetString("");
-		var[2].SetInt(6);
-		gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							if (gClientLogic().localPlayer_->imOnGruop)
+							{
+								if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+								{
+									var[0].SetInt(6);
+									var[1].SetString("");
+									var[2].SetInt(6);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+								else {
+									if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+									{
+										var[0].SetInt(6);
+										var[1].SetString("$InfoMsg_LeaveGroup");
+										var[2].SetInt(6);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+									else {
+										var[0].SetInt(6);
+										var[1].SetString("");
+										var[2].SetInt(6);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+								}
+							}
+							else {
+								var[0].SetInt(6);
+								var[1].SetString("");
+								var[2].SetInt(6);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+						}
+						else {
+							if (gClientLogic().localPlayer_->imOnGruop)
+							{
+								if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+								{
+									var[0].SetInt(5);
+									var[1].SetString("");
+									var[2].SetInt(5);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+								else  {
+									if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+									{
+										var[0].SetInt(5);
+										var[1].SetString("$InfoMsg_LeaveGroup");
+										var[2].SetInt(5);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+									else {
+										var[0].SetInt(5);
+										var[1].SetString("");
+										var[2].SetInt(5);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+								}
+							}
+							else {
+								var[0].SetInt(5);
+								var[1].SetString("");
+								var[2].SetInt(5);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
 
+							var[0].SetInt(6);
+							var[1].SetString("");
+							var[2].SetInt(6);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+						}
+					}
+					else {
+						if (gClientLogic().localPlayer_->imOnGruop)
+						{
+							if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+							{
+								var[0].SetInt(5);
+								var[1].SetString("");
+								var[2].SetInt(5);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+							else {
+								if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+								{
+									var[0].SetInt(5);
+									var[1].SetString("$InfoMsg_LeaveGroup");
+									var[2].SetInt(5);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+								else {
+									var[0].SetInt(5);
+									var[1].SetString("");
+									var[2].SetInt(5);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+							}
+						}
+						else {
+							var[0].SetInt(5);
+							var[1].SetString("");
+							var[2].SetInt(5);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+						}
+
+						var[0].SetInt(6);
+						var[1].SetString("");
+						var[2].SetInt(6);
+						gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+					}
+				}
+				else {
+					if (gClientLogic().localPlayer_->imOnGruop)
+					{
+						if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+						{
+							var[0].SetInt(5);
+							var[1].SetString("");
+							var[2].SetInt(5);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+						}
+						else {
+							if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+							{
+								var[0].SetInt(5);
+								var[1].SetString("$InfoMsg_LeaveGroup");
+								var[2].SetInt(5);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+							else {
+								if (strcmp(GametagName, "") == 0)
+								{
+									if (gClientLogic().localPlayer_->KickGroupRemove(pName) && gClientLogic().localPlayer_->CheckNameOnGroup(pName) && strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) != 0)
+									{
+										var[0].SetInt(5);
+										var[1].SetString("$HUD_PlayerAction_KickFromGroup");
+										var[2].SetInt(5);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+									else {
+										var[0].SetInt(5);
+										var[1].SetString("");
+										var[2].SetInt(5);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+								}
+								else {
+									var[0].SetInt(5);
+									var[1].SetString("");
+									var[2].SetInt(5);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+							}
+						}
+					}
+					else {
+						var[0].SetInt(5);
+						var[1].SetString("");
+						var[2].SetInt(5);
+						gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+					}
+
+					var[0].SetInt(6);
+					var[1].SetString("");
+					var[2].SetInt(6);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+				}
+			}
+			else {
+				if (strcmp(gClientLogic().playerNames[NumPlayer].Gamertag, pName) == 0)
+				{
+					var[0].SetInt(5);
+					var[1].SetString("$HUD_PlayerAction_AcceptGroupInvite");
+					var[2].SetInt(5);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+					var[0].SetInt(6);
+					var[1].SetString("$HUD_PlayerAction_DeclineGroup");
+					var[2].SetInt(6);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+				}
+				else {
+					var[0].SetInt(5);
+					var[1].SetString("");
+					var[2].SetInt(5);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+					if (gClientLogic().localPlayer_->imOnGruop)
+					{
+						if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+						{
+							var[0].SetInt(6);
+							var[1].SetString("");
+							var[2].SetInt(6);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+						}
+						else {
+							if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+							{
+								var[0].SetInt(6);
+								var[1].SetString("$InfoMsg_LeaveGroup");
+								var[2].SetInt(6);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+							else {
+								var[0].SetInt(6);
+								var[1].SetString("");
+								var[2].SetInt(6);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+						}
+					}
+					else {
+						var[0].SetInt(6);
+						var[1].SetString("");
+						var[2].SetInt(6);
+						gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+					}
+				}
+			}
+		}
 		var[0].SetInt(7);
 		var[1].SetString("");
 		var[2].SetInt(7);
 		gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-	}else{
-		if(gClientLogic().localPlayer_)
-		{
-			var[0].SetInt(1);
-			var[1].SetString("$HUD_PlayerAction_Report");
-			var[2].SetInt(1);
-			gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-
-			var[0].SetInt(2);
-			var[1].SetString("");
-			var[2].SetInt(2);
-			gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-
-			var[0].SetInt(3);
-			var[1].SetString("");
-			var[2].SetInt(3);
-			gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-
-			var[0].SetInt(4);
-			var[1].SetString("");
-			var[2].SetInt(4);
-			gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-
-			var[0].SetInt(5);
-			var[1].SetString("");
-			var[2].SetInt(5);
-			gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-
-			var[0].SetInt(6);
-			var[1].SetString("");
-			var[2].SetInt(6);
-			gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-
-			var[0].SetInt(7);
-			var[1].SetString("");
-			var[2].SetInt(7);
-			gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
-		}
 	}
+	else {
 
-	gfxHUD.Invoke("_root.api.showPlayerListContextMenu", "");
+		var[0].SetInt(1);
+		var[1].SetString("$HUD_PlayerAction_Report");
+		var[2].SetInt(1);
+		gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+		if (gClientLogic().localPlayer_)
+		{
+			int NumPlayer = 0;
+			for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+			{
+				if (gClientLogic().playerNames[i].isInvitePending && strcmp(gClientLogic().playerNames[i].Gamertag, pName) == 0)
+				{
+					NumPlayer = i;
+					break;
+				}
+			}
+			if (!gClientLogic().playerNames[NumPlayer].isInvitePending)
+			{
+				if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) != 0 && !gClientLogic().localPlayer_->CheckNameOnGroup(pName))
+				{
+					if (gClientLogic().localPlayer_->MaxGroupPlayers < 11)
+					{
+						if (strcmp(GametagName, "") == 0)
+						{
+							var[0].SetInt(2);
+							var[1].SetString("$HUD_PlayerAction_InviteGroup");
+							var[2].SetInt(2);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+							if (gClientLogic().localPlayer_->imOnGruop)
+							{
+								if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+								{
+									var[0].SetInt(3);
+									var[1].SetString("");
+									var[2].SetInt(3);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+								else {
+									if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+									{
+										var[0].SetInt(3);
+										var[1].SetString("$InfoMsg_LeaveGroup");
+										var[2].SetInt(3);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+									else {
+										var[0].SetInt(3);
+										var[1].SetString("");
+										var[2].SetInt(3);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+								}
+							}
+							else {
+								var[0].SetInt(3);
+								var[1].SetString("");
+								var[2].SetInt(3);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+						}
+						else {
+							if (gClientLogic().localPlayer_->imOnGruop)
+							{
+								if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+								{
+									var[0].SetInt(2);
+									var[1].SetString("");
+									var[2].SetInt(2);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+								else {
+									if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+									{
+										var[0].SetInt(2);
+										var[1].SetString("$InfoMsg_LeaveGroup");
+										var[2].SetInt(2);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+									else {
+										var[0].SetInt(2);
+										var[1].SetString("");
+										var[2].SetInt(2);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+								}
+							}
+							else {
+								var[0].SetInt(2);
+								var[1].SetString("");
+								var[2].SetInt(2);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+
+							var[0].SetInt(3);
+							var[1].SetString("");
+							var[2].SetInt(3);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+						}
+					}
+					else {
+						if (gClientLogic().localPlayer_->imOnGruop)
+						{
+							if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+							{
+								var[0].SetInt(2);
+								var[1].SetString("");
+								var[2].SetInt(2);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+							else {
+								if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+								{
+									var[0].SetInt(2);
+									var[1].SetString("$InfoMsg_LeaveGroup");
+									var[2].SetInt(2);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+								else {
+									var[0].SetInt(2);
+									var[1].SetString("");
+									var[2].SetInt(2);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+							}
+						}
+						else {
+							var[0].SetInt(2);
+							var[1].SetString("");
+							var[2].SetInt(2);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+						}
+
+						var[0].SetInt(3);
+						var[1].SetString("");
+						var[2].SetInt(3);
+						gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+					}
+				}
+				else {
+					if (gClientLogic().localPlayer_->imOnGruop)
+					{
+						if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+						{
+							var[0].SetInt(2);
+							var[1].SetString("");
+							var[2].SetInt(2);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+						}
+						else {
+							if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+							{
+								var[0].SetInt(2);
+								var[1].SetString("$InfoMsg_LeaveGroup");
+								var[2].SetInt(2);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+							else {
+								if (strcmp(GametagName, "") == 0)
+								{
+									if (gClientLogic().localPlayer_->KickGroupRemove(pName) && gClientLogic().localPlayer_->CheckNameOnGroup(pName) && strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) != 0)
+									{
+										var[0].SetInt(2);
+										var[1].SetString("$HUD_PlayerAction_KickFromGroup");
+										var[2].SetInt(2);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+									else {
+										var[0].SetInt(2);
+										var[1].SetString("");
+										var[2].SetInt(2);
+										gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+									}
+								}
+								else {
+									var[0].SetInt(2);
+									var[1].SetString("");
+									var[2].SetInt(2);
+									gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+								}
+							}
+						}
+					}
+					else {
+						var[0].SetInt(2);
+						var[1].SetString("");
+						var[2].SetInt(2);
+						gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+					}
+
+					var[0].SetInt(3);
+					var[1].SetString("");
+					var[2].SetInt(3);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+				}
+			}
+			else {
+				if (strcmp(gClientLogic().playerNames[NumPlayer].Gamertag, pName) == 0)
+				{
+					var[0].SetInt(2);
+					var[1].SetString("$HUD_PlayerAction_AcceptGroupInvite");
+					var[2].SetInt(2);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+
+					var[0].SetInt(3);
+					var[1].SetString("$HUD_PlayerAction_DeclineGroup");
+					var[2].SetInt(3);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+				}
+				else {
+					if (gClientLogic().localPlayer_->imOnGruop)
+					{
+						if ((r3dGetTime() - TimeToWaitGroup) < TimeLeaveGroup && TimeToWaitGroup != 0)
+						{
+							var[0].SetInt(2);
+							var[1].SetString("");
+							var[2].SetInt(2);
+							gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+						}
+						else {
+							if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0)
+							{
+								var[0].SetInt(2);
+								var[1].SetString("$InfoMsg_LeaveGroup");
+								var[2].SetInt(2);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+							else {
+								var[0].SetInt(2);
+								var[1].SetString("");
+								var[2].SetInt(2);
+								gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+							}
+						}
+					}
+					else {
+						var[0].SetInt(2);
+						var[1].SetString("");
+						var[2].SetInt(2);
+						gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+					}
+
+					var[0].SetInt(3);
+					var[1].SetString("");
+					var[2].SetInt(3);
+					gfxHUD.Invoke("_root.api.setPlayerListContextMenuButton", var, 3);
+				}
+			}
+		}
+		gfxHUD.Invoke("_root.api.showPlayerListContextMenu", "");
+	}
 }
 
 void HUDDisplay::eventPlayerListAction(r3dScaleformMovie* pMove, const Scaleform::GFx::Value* args, unsigned argCount)
@@ -372,118 +924,436 @@ void HUDDisplay::eventPlayerListAction(r3dScaleformMovie* pMove, const Scaleform
 	// BAN
 	int action = args[0].GetInt();
 	const char* pName = args[1].GetString();
-
-if(gUserProfile.ProfileData.isDevAccount)
-{
-	if(action == 1)  // Teleport to player
+	if (gUserProfile.ProfileData.isDevAccount)
 	{
-		showChatInput();
-		hudMain->showPlayersList(0);
-
-		const ClientGameLogic& CGL = gClientLogic();
-		obj_Player* plr = CGL.localPlayer_;
-
-		if (plr)
+		if (action == 1)  // Teleport to player
 		{
-			PKT_C2C_ChatMessage_s n;
+			showChatInput();
+			hudMain->showPlayersList(0);
+
+			const ClientGameLogic& CGL = gClientLogic();
+			obj_Player* plr = CGL.localPlayer_;
+
+			if (plr)
+			{
+				PKT_C2C_ChatMessage_s n;
+				char tpt[128];
+				sprintf(tpt, "/goto %s", pName);
+
+				r3dscpy(n.gamertag, "system");
+				r3dscpy(n.msg, tpt);
+				n.msgChannel = 1;
+				n.userFlag = 0;
+				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+				return;
+			}
+		}
+
+		if (action == 2)  // Teleport a player to you
+		{
+			showChatInput();
+			hudMain->showPlayersList(0);
+
+			const ClientGameLogic& CGL = gClientLogic();
+			obj_Player* plr = CGL.localPlayer_;
+
+			if (plr)
+			{
+				PKT_C2C_ChatMessage_s n;
+				char tptm[128];
+				sprintf(tptm, "/gome %s", pName);
+
+				r3dscpy(n.gamertag, "system");
+				r3dscpy(n.msg, tptm);
+				n.msgChannel = 1;
+				n.userFlag = 0;
+				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+				return;
+			}
+		}
+
+		if (action == 3)
+		{
+			showChatInput();
+			hudMain->showPlayersList(0);
+
+			const ClientGameLogic& CGL = gClientLogic();
+			obj_Player* plr = CGL.localPlayer_;
+
+			if (plr)
+			{
+				PKT_C2C_ChatMessage_s n;
+				char ffkick[128];
+				sprintf(ffkick, "/kick %s", pName);
+
+				r3dscpy(n.gamertag, "system");
+				r3dscpy(n.msg, ffkick);
+				n.msgChannel = 1;
+				n.userFlag = 0;
+				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+				return;
+			}
+		}
+
+		if (action == 4)
+		{
+			showChatInput();
+			hudMain->showPlayersList(0);
+
+			char ffBan[128];
+			sprintf(ffBan, "/ban %s You.are.banned.from.the.server", pName);
+			gfxHUD.Invoke("_root.api.setChatActive", pName);
+
+			chatVisible = true;
+			Scaleform::GFx::Value var[3];
+			var[0].SetBoolean(true);
+			var[1].SetBoolean(true);
+			var[2].SetString(ffBan);
+			gfxHUD.Invoke("_root.api.showChat", var, 3);
+			chatVisibleUntilTime = r3dGetTime() + 20.0f;
+		}
+		if (action == 5)  // Group invite sent
+		{
+			hudMain->showPlayersList(0);
+
+			if (gClientLogic().localPlayer_->CheckNameOnGroup(pName) && strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) != 0)
+			{
+				for (int i = 0; i < 11; i++)
+				{
+					if (strcmp(gClientLogic().localPlayer_->PlayersNames[i], pName) == 0) // Check if player is on Group table
+					{
+						gClientLogic().localPlayer_->PlayersOnGroup[i] = false;
+						break;
+					}
+				}
+				PKT_S2C_GroupData_s Groups;
+				Groups.State = 10;
+				strcpy(Groups.fromgamertag, pName);
+				strcpy(Groups.intogamertag, gClientLogic().localPlayer_->CurLoadout.Gamertag);
+				Groups.MyID = gClientLogic().localPlayer_->CurLoadout.GroupID;
+				p2pSendToHost(gClientLogic().localPlayer_, &Groups, sizeof(Groups));
+				return;
+			}
+			if (gClientLogic().localPlayer_->imOnGruop && strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0) // LEAVE GROUP
+			{
+				if (gClientLogic().localPlayer_->StartToLeaveGroup == true)
+					return;
+				WantLeaveFromGroup();
+				return;
+			}
+
+			int NumPlayers = 0;
+			for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+			{
+				if (gClientLogic().playerNames[i].isInvitePending && strcmp(gClientLogic().playerNames[i].Gamertag, pName) == 0)
+				{
+					NumPlayers = i;
+					break;
+				}
+			}
+
+			if (gClientLogic().playerNames[NumPlayers].isInvitePending) // ACCEPT INVITE
+			{
+				for (int i = 0; i < 10; i++)
+				{
+					strcpy(gClientLogic().localPlayer_->PlayersNames[i], "");
+					gClientLogic().localPlayer_->IDSPlayers[i] = 0;
+				}
+				obj_Player* plr = gClientLogic().localPlayer_;
+				PKT_S2C_GroupData_s n1;
+				n1.State = 2;
+				n1.FromCustomerID = plr->CustomerID;
+				r3dscpy(n1.fromgamertag, plr->CurLoadout.Gamertag); // YO
+				r3dscpy(n1.intogamertag, pName); // EL
+				strcpy(GametagName, pName);
+				p2pSendToHost(plr, &n1, sizeof(n1));
+				gClientLogic().playerNames[NumPlayers].isInvitePending = false;
+				plr->imOnGruop = true;
+				TimeToWaitGroup = r3dGetTime();
+				for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+				{
+					gClientLogic().playerNames[i].isInvitePending = false;
+				}
+				return;
+			}
+			else // SEND INVITES
+			{
+				obj_Player* plr = gClientLogic().localPlayer_;
+
+				if (gClientLogic().localPlayer_)
+				{
+					if (strcmp(plr->CurLoadout.Gamertag, pName) == 0)
+					{
+						hudMain->showMessage(gLangMngr.getString("$InfoMsg_CannotInviteYourself"));
+						return;
+					}
+				}
+
+				for (int i = 0; i < 10; i++)
+				{
+					if (strcmp(gClientLogic().localPlayer_->PlayersNames[i], pName) == 0)
+					{
+						hudMain->showMessage(gLangMngr.getString("GroupPlayerAlreadyInGroup"));
+						return;
+					}
+				}
+
+				if (gClientLogic().localPlayer_->imOnGruop == false)
+				{
+					for (int i = 0; i < 10; i++)
+					{
+						strcpy(gClientLogic().localPlayer_->PlayersNames[i], "");
+						gClientLogic().localPlayer_->IDSPlayers[i] = 0;
+					}
+				}
+
+				PKT_S2C_GroupData_s n;
+				n.State = 1;
+				n.FromCustomerID = plr->CustomerID;
+				r3dscpy(n.fromgamertag, plr->CurLoadout.Gamertag);
+				r3dscpy(n.intogamertag, pName);
+				strcpy(n.GametagLeader, gClientLogic().localPlayer_->CurLoadout.Gamertag);
+				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+				strcpy(GametagName, "");
+				return;
+			}
+		}
+		if (action == 6) // Decline Invites
+		{
+			hudMain->showPlayersList(0);
+
+			if (gClientLogic().localPlayer_->imOnGruop) // LEAVE GROUP
+			{
+				if (gClientLogic().localPlayer_->StartToLeaveGroup == true)
+					return;
+				WantLeaveFromGroup();
+				return;
+			}
+
+			if (gClientLogic().localPlayer_)
+			{
+				int NumPlayer = 0;
+				for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+				{
+					if (gClientLogic().playerNames[i].isInvitePending && strcmp(gClientLogic().playerNames[i].Gamertag, pName) == 0)
+					{
+						NumPlayer = i;
+						break;
+					}
+				}
+
+				if (gClientLogic().playerNames[NumPlayer].isInvitePending)
+				{
+					for (int i = 0; i < 10; i++)
+					{
+						strcpy(gClientLogic().localPlayer_->PlayersNames[i], "");
+						gClientLogic().localPlayer_->IDSPlayers[i] = 0;
+					}
+					obj_Player* plr = gClientLogic().localPlayer_;
+					PKT_S2C_GroupData_s n1;
+					n1.State = 3;
+					n1.FromCustomerID = plr->CustomerID;
+					r3dscpy(n1.fromgamertag, plr->CurLoadout.Gamertag);
+					r3dscpy(n1.intogamertag, pName);
+					p2pSendToHost(plr, &n1, sizeof(n1));
+					gClientLogic().playerNames[NumPlayer].isInvitePending = false;
+					plr->imOnGruop = false;
+					TimeToWaitGroup = r3dGetTime();
+					gClientLogic().localPlayer_->MaxGroupPlayers = 0;
+					return;
+				}
+			}
+
+		}
+		if (action == 7)
+		{
+		}
+	}
+	else {
+
+		if (action == 1)  // Report to player
+		{
+			showChatInput();
+			hudMain->showPlayersList(0);
+
 			char tpt[128];
-			sprintf(tpt, "/goto %s", pName);
+			sprintf(tpt, "/report %s", pName);
+			//gfxHUD.Invoke("_root.api.setChatActive", ffReport);
 
-			r3dscpy(n.gamertag, "system");
-			r3dscpy(n.msg, tpt);
-			n.msgChannel = 1;
-			n.userFlag = 0;
-			p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
-			return;
+			chatVisible = true;
+			Scaleform::GFx::Value var[3];
+			var[0].SetBoolean(true);
+			var[1].SetBoolean(true);
+			var[2].SetString(tpt);
+			gfxHUD.Invoke("_root.api.showChat", var, 3);
+			chatVisibleUntilTime = r3dGetTime() + 20.0f;
 		}
-	}
 
-	if(action == 2)  // Teleport a player to you
-	{
-		showChatInput();
-		hudMain->showPlayersList(0);
-
-		const ClientGameLogic& CGL = gClientLogic();
-		obj_Player* plr = CGL.localPlayer_;
-
-		if (plr)
+		if (action == 2)  // Group invite sent
 		{
-			PKT_C2C_ChatMessage_s n;
-			char tptm[128];
-			sprintf(tptm, "/gome %s", pName);
+			hudMain->showPlayersList(0);
 
-			r3dscpy(n.gamertag, "system");
-			r3dscpy(n.msg, tptm);
-			n.msgChannel = 1;
-			n.userFlag = 0;
-			p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
-			return;
+			if (gClientLogic().localPlayer_->CheckNameOnGroup(pName) && strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) != 0)
+			{
+				for (int i = 0; i < 11; i++)
+				{
+					if (strcmp(gClientLogic().localPlayer_->PlayersNames[i], pName) == 0) // Check if player is on Group table
+					{
+						gClientLogic().localPlayer_->PlayersOnGroup[i] = false;
+						break;
+					}
+				}
+				PKT_S2C_GroupData_s Groups;
+				Groups.State = 10;
+				strcpy(Groups.fromgamertag, pName);
+				strcpy(Groups.intogamertag, gClientLogic().localPlayer_->CurLoadout.Gamertag);
+				Groups.MyID = gClientLogic().localPlayer_->CurLoadout.GroupID;
+				p2pSendToHost(gClientLogic().localPlayer_, &Groups, sizeof(Groups));
+				return;
+			}
+
+			if (gClientLogic().localPlayer_->imOnGruop && strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag, pName) == 0) // LEAVE GROUP
+			{
+				if (gClientLogic().localPlayer_->StartToLeaveGroup == true)
+					return;
+				WantLeaveFromGroup();
+				return;
+			}
+
+			int NumPlayers = 0;
+			for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+			{
+				if (gClientLogic().playerNames[i].isInvitePending && strcmp(gClientLogic().playerNames[i].Gamertag, pName) == 0)
+				{
+					NumPlayers = i;
+					break;
+				}
+			}
+
+			if (gClientLogic().playerNames[NumPlayers].isInvitePending) // ACCEPT INVITE
+			{
+				for (int i = 0; i < 10; i++)
+				{
+					strcpy(gClientLogic().localPlayer_->PlayersNames[i], "");
+					gClientLogic().localPlayer_->IDSPlayers[i] = 0;
+				}
+
+				obj_Player* plr = gClientLogic().localPlayer_;
+				PKT_S2C_GroupData_s n1;
+				n1.State = 2;
+				n1.FromCustomerID = plr->CustomerID;
+				r3dscpy(n1.fromgamertag, plr->CurLoadout.Gamertag); // YO
+				r3dscpy(n1.intogamertag, pName); // EL
+				strcpy(GametagName, pName);
+				p2pSendToHost(plr, &n1, sizeof(n1));
+				gClientLogic().playerNames[NumPlayers].isInvitePending = false;
+				TimeToWaitGroup = r3dGetTime();
+				plr->imOnGruop = true;
+				for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+				{
+					gClientLogic().playerNames[i].isInvitePending = false;
+				}
+				return;
+			}
+			else // SEND INVITES
+			{
+				obj_Player* plr = gClientLogic().localPlayer_;
+
+				if (gClientLogic().localPlayer_)
+				{
+					if (strcmp(plr->CurLoadout.Gamertag, pName) == 0)
+					{
+						hudMain->showMessage(gLangMngr.getString("$InfoMsg_CannotInviteYourself"));
+						return;
+					}
+				}
+				for (int i = 0; i < 10; i++)
+				{
+					if (strcmp(gClientLogic().localPlayer_->PlayersNames[i], pName) == 0)
+					{
+						hudMain->showMessage(gLangMngr.getString("GroupPlayerAlreadyInGroup"));
+						return;
+					}
+				}
+				if (gClientLogic().localPlayer_->imOnGruop == false)
+				{
+					for (int i = 0; i < 10; i++)
+					{
+						strcpy(gClientLogic().localPlayer_->PlayersNames[i], "");
+						gClientLogic().localPlayer_->IDSPlayers[i] = 0;
+					}
+				}
+				PKT_S2C_GroupData_s n;
+				n.State = 1;
+				n.FromCustomerID = plr->CustomerID;
+				r3dscpy(n.fromgamertag, plr->CurLoadout.Gamertag);
+				r3dscpy(n.intogamertag, pName);
+				strcpy(n.GametagLeader, gClientLogic().localPlayer_->CurLoadout.Gamertag);
+				p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
+				strcpy(GametagName, "");
+				return;
+			}
 		}
-	}
-
-	if(action == 3)
-	{
-		showChatInput();
-		hudMain->showPlayersList(0);
-
-		const ClientGameLogic& CGL = gClientLogic();
-		obj_Player* plr = CGL.localPlayer_;
-
-		if (plr)
+		if (action == 3) // Decline Invites
 		{
-			PKT_C2C_ChatMessage_s n;
-			char ffkick[128];
-			sprintf(ffkick, "/kick %s", pName);
+			hudMain->showPlayersList(0);
 
-			r3dscpy(n.gamertag, "system");
-			r3dscpy(n.msg, ffkick);
-			n.msgChannel = 1;
-			n.userFlag = 0;
-			p2pSendToHost(gClientLogic().localPlayer_, &n, sizeof(n));
-			return;
+			if (gClientLogic().localPlayer_->imOnGruop) // LEAVE GROUP
+			{
+				if (gClientLogic().localPlayer_->StartToLeaveGroup == true)
+					return;
+				WantLeaveFromGroup();
+				return;
+			}
+
+			if (gClientLogic().localPlayer_)
+			{
+				int NumPlayer = 0;
+				for (int i = 0; i < R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+				{
+					if (gClientLogic().playerNames[i].isInvitePending && strcmp(gClientLogic().playerNames[i].Gamertag, pName) == 0)
+					{
+						NumPlayer = i;
+						break;
+					}
+				}
+
+				if (gClientLogic().playerNames[NumPlayer].isInvitePending)
+				{
+					for (int i = 0; i < 10; i++)
+					{
+						strcpy(gClientLogic().localPlayer_->PlayersNames[i], "");
+						gClientLogic().localPlayer_->IDSPlayers[i] = 0;
+					}
+					obj_Player* plr = gClientLogic().localPlayer_;
+					PKT_S2C_GroupData_s n1;
+					n1.State = 3;
+					n1.FromCustomerID = plr->CustomerID;
+					r3dscpy(n1.fromgamertag, plr->CurLoadout.Gamertag);
+					r3dscpy(n1.intogamertag, pName);
+					p2pSendToHost(plr, &n1, sizeof(n1));
+					gClientLogic().playerNames[NumPlayer].isInvitePending = false;
+					plr->imOnGruop = false;
+					TimeToWaitGroup = r3dGetTime();
+					gClientLogic().localPlayer_->MaxGroupPlayers = 0;
+					return;
+				}
+			}
+
+		}
+		if (action == 4)// Admin rent Server TELEPORT_TO
+		{
+			hudMain->showPlayersList(0);
+		}
+		if (action == 5)// Admin rent Server TELEPORT_TO_ME
+		{
+			hudMain->showPlayersList(0);
+		}
+		if (action == 6)// Admin rent Server PlayerAction_Kick
+		{
+			hudMain->showPlayersList(0);
 		}
 	}
-
-	if(action == 4)
-	{
-		showChatInput();
-		hudMain->showPlayersList(0);
-
-		char ffBan[128];
-		sprintf(ffBan, "/ban %s You.are.banned.from.the.server", pName);
-		gfxHUD.Invoke("_root.api.setChatActive", pName);
-
-		chatVisible = true;
-		Scaleform::GFx::Value var[3];
-		var[0].SetBoolean(true);
-		var[1].SetBoolean(true);
-		var[2].SetString(ffBan);
-		gfxHUD.Invoke("_root.api.showChat", var, 3);
-		chatVisibleUntilTime = r3dGetTime() + 20.0f;
-	}
-}
-else {
-
-	if(action == 1)  // Report to player
-	{
-		showChatInput();
-		hudMain->showPlayersList(0);
-
-		char tpt[128];
-		sprintf(tpt, "/report %s", pName);
-		//gfxHUD.Invoke("_root.api.setChatActive", ffReport);
-
-		chatVisible = true;
-		Scaleform::GFx::Value var[3];
-		var[0].SetBoolean(true);
-		var[1].SetBoolean(true);
-		var[2].SetString(tpt);
-		gfxHUD.Invoke("_root.api.showChat", var, 3);
-		chatVisibleUntilTime = r3dGetTime() + 20.0f;
-	}
-
-}
-
 }
 
 void HUDDisplay::eventChatMessage(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount)
@@ -555,8 +1425,8 @@ void HUDDisplay::addChatMessage(int tabIndex, const char* user, const char* text
 	Scaleform::GFx::Value var[3];
 
 	char tmpMsg[1024];
-	const char* tabNames[] = {"[PROXIMITY]", "[GLOBAL]", "[CLAN]"};
-	const char* tabNamesColor[] = {"#00A000", "#13bbeb", "#de13eb"};
+	const char* tabNames[] = {"[PROXIMITY]", "[GLOBAL]", "[CLAN]", "[GROUP]"};
+	const char* tabNamesColor[] = {"#00A000", "#13bbeb", "#de13eb", "#ffa900"};
 	const char* userNameColor[] = {"#ffffff", "#ffa800"};
 
 	bool isUserLegend = (flags&1)?true:false;
@@ -758,7 +1628,7 @@ void HUDDisplay::setChatTransparency(float alpha)
 void HUDDisplay::setChatChannel(int index)
 {
 	if(!Inited) return;
-	if(index <0 || index > 2) return;
+	if(index <0 || index > 3) return;
 
 	if(currentChatChannel != index)
 	{
@@ -778,7 +1648,7 @@ void HUDDisplay::clearPlayersList()
 }
 
 extern const wchar_t* getReputationString(int Reputation);
-void HUDDisplay::addPlayerToList(int num, const char* name, int Reputation, bool isLegend, bool isDev, bool local)
+void HUDDisplay::addPlayerToList(int num, const char* name, int Reputation, bool isLegend, bool isDev, bool isPunisher, bool isInvitePending, bool IsPremium, bool local)
 {
  if(!Inited) return;
  Scaleform::GFx::Value var[11];
@@ -801,10 +1671,10 @@ void HUDDisplay::addPlayerToList(int num, const char* name, int Reputation, bool
  var[3].SetStringW(algnmt);
  var[4].SetBoolean(isLegend);
  var[5].SetBoolean(isDev);
- var[6].SetBoolean(false);
- var[7].SetBoolean(false);
+ var[6].SetBoolean(isPunisher);
+ var[7].SetBoolean(isInvitePending);
  var[8].SetBoolean(false);
- var[9].SetBoolean(false);
+ var[9].SetBoolean(IsPremium);
  var[10].SetBoolean(local);
  gfxHUD.Invoke("_root.api.addPlayerToList", var, 11);
 }
@@ -821,7 +1691,7 @@ void HUDDisplay::showWriteNote(int slotIDFrom)
 	if(!Inited) return;
 
 	r3dMouse::Show();
-	
+
 	writeNoteSavedSlotIDFrom = slotIDFrom;
 
 	Scaleform::GFx::Value var[1];
@@ -872,6 +1742,61 @@ void HUDDisplay::eventNoteClosed(r3dScaleformMovie* pMovie, const Scaleform::GFx
 	timeoutForNotes = r3dGetTime() + .5f;
 }
 
+void HUDDisplay::showCarFull(const char* msg) // Server Vehicles
+{
+if(!Inited) return;
+
+	r3dMouse::Show();
+	writeNoteSavedSlotIDFrom = 1; // temp, to prevent mouse from hiding
+	Scaleform::GFx::Value var[4];
+	var[0].SetBoolean(true);
+	var[1].SetStringW(gLangMngr.getString("$Vehicle"));
+	var[2].SetStringW(gLangMngr.getString("$Vehicle_tittle"));
+	var[3].SetString(msg);
+	gfxHUD.Invoke("_root.api.showGraveNote", var, 4);
+}
+
+void HUDDisplay::StatusVehicle(const wchar_t* plr,const wchar_t* plr2) // Server Vehicles
+{
+if(!Inited) return;
+
+	r3dMouse::Show();
+	writeNoteSavedSlotIDFrom = 1; // temp, to prevent mouse from hiding
+	Scaleform::GFx::Value var[4];
+	var[0].SetBoolean(true);
+	var[1].SetStringW(gLangMngr.getString("$Vehicle"));
+	var[2].SetStringW(plr);
+	var[3].SetStringW(plr2);
+	gfxHUD.Invoke("_root.api.showGraveNote", var, 4);
+}
+
+void HUDDisplay::VehicleWithoutGasoline() // Server Vehicles
+{
+if(!Inited) return;
+
+	r3dMouse::Show();
+	writeNoteSavedSlotIDFrom = 1; // temp, to prevent mouse from hiding
+	Scaleform::GFx::Value var[4];
+	var[0].SetBoolean(true);
+	var[1].SetStringW(gLangMngr.getString("$Vehicle"));
+	var[2].SetStringW(gLangMngr.getString("$NoGasoline1"));
+	var[3].SetString("$NoGasoline2");
+	gfxHUD.Invoke("_root.api.showGraveNote", var, 4);
+}
+
+void HUDDisplay::VehicleDamaged() // Server Vehicles
+{
+if(!Inited) return;
+
+	r3dMouse::Show();
+	writeNoteSavedSlotIDFrom = 1; // temp, to prevent mouse from hiding
+	Scaleform::GFx::Value var[4];
+	var[0].SetBoolean(true);
+	var[1].SetStringW(gLangMngr.getString("$Vehicle"));
+	var[2].SetStringW(gLangMngr.getString("$VehicleDamage1"));
+	var[3].SetString("$VehicleDamage2");
+	gfxHUD.Invoke("_root.api.showGraveNote", var, 4);
+}
 void HUDDisplay::showReadNote(const char* msg)
 {
 	if(!Inited) return;
@@ -1013,11 +1938,12 @@ void HUDDisplay::setCharTagTextVisible(Scaleform::GFx::Value& icon, bool isShowN
 	if(!Inited) return;
 	r3d_assert(!icon.IsUndefined());
 
-	Scaleform::GFx::Value var[3];
+	Scaleform::GFx::Value var[4]; // change 3 to 4
 	var[0] = icon;
 	var[1].SetBoolean(isShowName);
 	var[2].SetBoolean(isSameGroup);
-	gfxHUD.Invoke("_root.api.setCharTagTextVisible", var, 3);
+	var[3].SetBoolean(true);
+	gfxHUD.Invoke("_root.api.setCharTagTextVisible", var, 4); // change 3 to 4
 }
 
 void HUDDisplay::showReloading(bool set)
@@ -1042,4 +1968,13 @@ void HUDDisplay::setFireMode(WeaponFiremodeEnum firemode)
 	if(!Inited)
 		return;
 	gfxHUD.Invoke("_global.setFireMode", convertFireModeIntoInt(firemode));
+}
+
+void HUDDisplay::setCooldown(int slot,int CoolSecond,int value)
+{
+	Scaleform::GFx::Value vars[3];
+	vars[0].SetInt(slot);
+	vars[1].SetInt(CoolSecond);
+	vars[2].SetInt(value);
+	gfxHUD.Invoke("_root.api.setSlotCooldown", vars, 3);
 }

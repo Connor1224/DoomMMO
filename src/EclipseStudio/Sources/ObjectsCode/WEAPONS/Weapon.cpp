@@ -36,7 +36,7 @@ r3dMesh* WeaponAttachmentConfig::getMesh( bool allow_async_loading, bool aim_mod
 	{
 		if(m_Model_AIM == 0)
 		{
-			char aim_model[512]; 
+			char aim_model[512];
 			r3dscpy(aim_model, m_ModelPath);
 			int len = strlen(aim_model);
 			r3dscpy(&aim_model[len-4], "_AIM.sco");
@@ -205,7 +205,7 @@ void WeaponConfig::aquireMesh( bool allow_async_loading ) const
 			r3d_assert( !r_allow_ingame_unloading->GetInt() || m_ModelRefCount ) ;
 			m_ModelRefCount ++ ;
 		}
-	}	
+	}
 }
 
 void WeaponConfig::releaseMesh() const
@@ -237,6 +237,7 @@ Weapon::Weapon(obj_Player* owner, int backpackIdx, const WeaponConfig* conf, boo
 ,m_lastReloadingTime(0)
 ,m_State(WPN_EMPTY)
 ,m_triggerPressed(0)
+,m_flashlightToggle(false)
 ,m_needDelayedAction(0)
 ,m_needDelayedAction_startTime(0)
 ,m_firemode(WPN_FRM_AUTO)
@@ -266,7 +267,7 @@ Weapon::Weapon(obj_Player* owner, int backpackIdx, const WeaponConfig* conf, boo
 	for(int i=0; i<WPN_ATTM_MAX; ++i)
 		m_Attachments[i] = NULL;
 	memset(m_WeaponAttachmentStats, 0, sizeof(m_WeaponAttachmentStats));
-	
+
 	if(attm) {
 		setWeaponAttachmentsByIDs(attm->attachments);
 	}
@@ -274,11 +275,11 @@ Weapon::Weapon(obj_Player* owner, int backpackIdx, const WeaponConfig* conf, boo
 	wiInventoryItem& wi = getPlayerItem();
 
 	// check if we need to modify starting ammo (SERVER CODE SYNC POINT)
-	// set only for actual weapons, not ones in quick slot. 
+	// set only for actual weapons, not ones in quick slot.
 	if(backpackIdx == wiCharDataFull::CHAR_LOADOUT_WEAPON1 || backpackIdx == wiCharDataFull::CHAR_LOADOUT_WEAPON2)
 	{
 		const WeaponAttachmentConfig* clipCfg = getClipConfig();
-		if(wi.Var1 < 0) 
+		if(wi.Var1 < 0)
 		{
 			if(clipCfg)
 				wi.Var1 = clipCfg->m_Clipsize;
@@ -291,11 +292,11 @@ Weapon::Weapon(obj_Player* owner, int backpackIdx, const WeaponConfig* conf, boo
 			wi.Var2 = clipCfg->m_itemID;
 		}
 	}
-	
+
 	// melee always have one bullet left
 	if(m_pConfig->category == storecat_MELEE)
 		wi.Var1 = 1;
-	
+
 	Reset();
 
 	reloadMuzzleParticle();
@@ -330,7 +331,7 @@ Weapon::~Weapon()
 	if(m_ShellExtractParticle)
 		m_ShellExtractParticle->bKeepAlive = false;
 	if(m_MuzzleLight.pLightSystem)
-		WorldLightSystem.Remove(&m_MuzzleLight); 
+		WorldLightSystem.Remove(&m_MuzzleLight);
 	if(m_Flashlight.pLightSystem)
 		WorldLightSystem.Remove(&m_Flashlight);
 	if(m_sndNewFire)
@@ -373,7 +374,7 @@ void Weapon::reloadMuzzleParticle()
 			m_MuzzleLight.bCastShadows = true;
 			m_MuzzleLight.Intensity = 0.42f;
 			m_MuzzleLight.TurnOff();
-			WorldLightSystem.Add(&m_MuzzleLight); 
+			WorldLightSystem.Add(&m_MuzzleLight);
 		}
 		else
 			m_MuzzleParticle = 0; // it failed to load, object manager will delete it
@@ -388,10 +389,11 @@ void Weapon::checkForSkeleton()
 	if(!g_bEditMode)
 		if(!m_pConfig->IsFPS)
 			return;
-
+	
 	// should be called for FPS mode only
 	if(!m_pConfig->hasFPSModel())
 		return;
+
 	if(!m_pConfig->isFPSModelSkeletal())
 		return;
 
@@ -489,18 +491,18 @@ void Weapon::Reset()
 		m_Flashlight.SpotAngleInner = 4.41f;
 		m_Flashlight.SpotAngleOuter = 16.21f;
 		m_Flashlight.bCastShadows = r_lighting_quality->GetInt() == 3 && r_shadows_quality->GetInt() >= 3;
-		m_Flashlight.Intensity = 6.98f;
+		m_Flashlight.Intensity = 8.98f;
 		m_Flashlight.SpotAngleFalloffPow = 1.23f;
 		m_Flashlight.bSSShadowBlur = 1;
 		m_Flashlight.bUseGlobalSSSBParams = 0;
 		m_Flashlight.SSSBParams.Bias = 0.1f;
 		m_Flashlight.SSSBParams.PhysRange = 43.12f;
-		m_Flashlight.SSSBParams.Radius = 10.0f;
+		m_Flashlight.SSSBParams.Radius = 35.0f;
 		m_Flashlight.SSSBParams.Sense = 635.18f;
 		m_Flashlight.ProjectMap = r3dRenderer->LoadTexture("data\\ProjectionTextures\\flashlight_01.dds");
 
 		m_Flashlight.TurnOff();
-		WorldLightSystem.Add(&m_Flashlight); 
+		WorldLightSystem.Add(&m_Flashlight);
 	}
 
 }
@@ -508,17 +510,17 @@ void Weapon::Reset()
 float Weapon::getRateOfFire() const
 {
 	float fireDelay = m_pConfig->m_fireDelay;
-	
+
 	{
 		int firerate = (int)ceilf(60.0f / fireDelay); // convert back to rate of fire
 		firerate = (int)ceilf(float(firerate) * (1.0f+m_WeaponAttachmentStats[WPN_ATTM_STAT_FIRERATE])); // add bonus
 		fireDelay = 60.0f / firerate; // convert back to fire delay
 	}
 	obj_Player* plr = (obj_Player*)m_Owner;
-	
+
 	// accumulated adjustment in percents for fire rate
 	float fireRatePerc = 0.0f;
-	
+
 	// assault skill
 	/*if(getCategory() == storecat_ASR)
 	{
@@ -563,7 +565,7 @@ bool Weapon::isReadyToFire(bool triggerPressed, bool scopeMode)
 		if(m_firemode == WPN_FRM_AUTO && triggerPressed)
 			return weaponReady;
 	}
-	
+
 	// reset counter only if we released fire button
 	if(!triggerPressed)
 	{
@@ -666,26 +668,48 @@ void Weapon::switchFiremode()
 	}
 }
 
+void Weapon::toggleFlashlight()
+{
+    m_flashlightToggle = !m_flashlightToggle;
+}
+
 void Weapon::Update(const D3DXMATRIX& weaponBone)
 {
-	R3DPROFILE_FUNCTION("Weapon::Update");
-	
-	obj_Player* player = (obj_Player*)m_Owner;
-	if(!m_isMeshLoaded)
-	{
-		m_isMeshLoaded = isLoaded();
-		if(m_isMeshLoaded)
+    R3DPROFILE_FUNCTION("Weapon::Update");
+
+    obj_Player* player = (obj_Player*)m_Owner;
+    if(!m_isMeshLoaded)
+    {
+        m_isMeshLoaded = isLoaded();
+        if(m_isMeshLoaded)
+        {
+            m_pConfig->updateMuzzleOffset(g_camera_mode->GetInt()==2 && player->NetworkLocal);
+            if(g_camera_mode->GetInt()==2 && player->NetworkLocal)
+                checkForSkeleton();
+        }
+    }
+
+
+     if (m_flashlightToggle && !m_Flashlight.IsOn())	{
+		if( m_FlashlightParticle )
 		{
-			m_pConfig->updateMuzzleOffset(g_camera_mode->GetInt()==2 && player->NetworkLocal);
-			if(g_camera_mode->GetInt()==2 && player->NetworkLocal)
-				checkForSkeleton();
+			m_FlashlightParticle->ObjFlags &= ~OBJFLAG_SkipDraw;
+			m_Flashlight.TurnOn();
+		}
+	}
+	else if (!m_flashlightToggle && m_Flashlight.IsOn())
+	{
+		if( m_FlashlightParticle )
+		{
+			m_FlashlightParticle->ObjFlags |= OBJFLAG_SkipDraw;
+			m_Flashlight.TurnOff();
 		}
 	}
 
-	r3dPoint3D muzzlerPoint = getMuzzlePos(weaponBone);
+    r3dPoint3D muzzlerPoint = getMuzzlePos(weaponBone);
 
 	bool stoppedFiring = (m_firemode == WPN_FRM_SINGLE && m_triggerPressed >= 1) || (m_firemode == WPN_FRM_TRIPLE && m_triggerPressed > 3) || m_triggerPressed==0 || m_State!=WPN_READY;
-	
+
 	if(m_WeaponAnim_FPS)
 	{
 		if(stoppedFiring && m_State!=WPN_RELOADING)
@@ -713,7 +737,7 @@ void Weapon::Update(const D3DXMATRIX& weaponBone)
 		}
 		else
 			m_Owner->uberAnim_->updateShootAnim(false);
-			
+
 		// special hack for stopping weapon fire animation when zooming in/out
 		// otherwise shoot animation interfere with blending between weapon idle/aim animations
 		if(m_Owner->NetworkLocal && m_Owner->m_isChangedAiming1)
@@ -777,13 +801,16 @@ void Weapon::Update(const D3DXMATRIX& weaponBone)
 			{
 				m_pConfig->m_PrimaryAmmo->Fire(m_needDelayedAction_pos, muzzlerPoint, weaponBone, m_Owner, m_pConfig, m_needDelayedAction_delay);
 				{
-					PKT_C2C_PlayerThrewGrenade_s n; 
-					n.fire_from = muzzlerPoint;
-					n.fire_to = m_needDelayedAction_pos;
-					n.holding_delay = m_needDelayedAction_delay + launchDelay;
-					n.debug_wid = player->m_SelectedWeapon;
-					n.slotFrom = m_BackpackIdx;
-					p2pSendToHost(m_Owner, &n, sizeof(n), true);
+					if (getItemID() != WeaponConfig::ITEMID_EXP_M26)
+					{
+						PKT_C2C_PlayerThrewGrenade_s n;
+						n.fire_from = muzzlerPoint;
+						n.fire_to = m_needDelayedAction_pos;
+						n.holding_delay = m_needDelayedAction_delay + launchDelay;
+						n.debug_wid = player->m_SelectedWeapon;
+						n.slotFrom = m_BackpackIdx;
+						p2pSendToHost(m_Owner, &n, sizeof(n), true);
+					}
 
 					// grenades are treated as items
 					wiInventoryItem& wi = getPlayerItem();
@@ -1094,12 +1121,17 @@ int Weapon::getWeaponFireSound()
 	return -1;
 }
 
+void Weapon::StopSND()
+{
+   SoundSys.Stop(m_sndNewFire);
+}
+
 void Weapon::Fire(const r3dPoint3D& hitPos, const D3DXMATRIX& weaponBone, bool executeWeaponFireCode, float cookingTime, const r3dPoint3D& grenadeFireFrom )
 {
 	if(isUsableItem())
 	{
 		m_lastTimeFired = r3dGetTime() - m_fractionTimeLeftFromPreviousShot;
-		if(m_Owner->NetworkLocal && m_pConfig->m_isConsumable) 
+		if(m_Owner->NetworkLocal && m_pConfig->m_isConsumable)
 		{
 			wiInventoryItem& wi = getPlayerItem();
 			r3d_assert(wi.quantity > 0);
@@ -1144,20 +1176,20 @@ void Weapon::Fire(const r3dPoint3D& hitPos, const D3DXMATRIX& weaponBone, bool e
 		}
 	}
 
-	if(getCategory() == storecat_GRENADE) 
+	if(getCategory() == storecat_GRENADE)
 	{
-		if( m_Owner->NetworkLocal ) 
+		if( m_Owner->NetworkLocal )
 		{
 			m_needDelayedAction = true;
 			m_needDelayedAction_pos = hitPos;
 			m_needDelayedAction_delay = cookingTime;
 			m_needDelayedAction_startTime = r3dGetTime();
-		} 
-		else 
+		}
+		else
 		{
 			r3d_assert(m_pConfig->m_PrimaryAmmo);
 			obj_Player* player = (obj_Player*)m_Owner;
-			if ( player->bDead == false ) 
+			if ( player->bDead == false )
 			{
 				m_pConfig->m_PrimaryAmmo->Fire(hitPos, grenadeFireFrom, weaponBone, m_Owner, m_pConfig, cookingTime);
 			}
@@ -1197,7 +1229,7 @@ void Weapon::Fire(const r3dPoint3D& hitPos, const D3DXMATRIX& weaponBone, bool e
 		r3d_assert(m_pConfig->m_PrimaryAmmo);
 		r3dPoint3D muzzlerPoint = getMuzzlePos(weaponBone);
 		m_pConfig->m_PrimaryAmmo->Fire(hitPos, muzzlerPoint, weaponBone, m_Owner, m_pConfig);
-		
+
 		const obj_Player* localPlayer = gClientLogic().localPlayer_;
 		float distToLocalPlayer = 0.0f;
 		bool playerVisible = r3dRenderer->IsSphereInsideFrustum(m_Owner->GetPosition()+r3dPoint3D(0,1,0), 1.0f)>0 || (m_Owner->NetworkLocal && g_camera_mode->GetInt()==2);
@@ -1212,13 +1244,13 @@ void Weapon::Fire(const r3dPoint3D& hitPos, const D3DXMATRIX& weaponBone, bool e
 		extern bool	g_CameraInsidePlayer;
 		if(((m_Owner == localPlayer) || g_bEditMode) && g_CameraInsidePlayer)
 			localPlayerInSniperMode = true;
-		
+
 		// add shell
 		r3dPoint3D shellPos = getShellPos(weaponBone);
 		r3dPoint3D shellDir = getShellDir(weaponBone);
 		if(m_pConfig->category != storecat_MELEE && m_pConfig->category != storecat_GRENADE && distToLocalPlayer < 30.0f && executeWeaponFireCode)
 		{
-			if(!localPlayerInSniperMode) 
+			if(!localPlayerInSniperMode)
 			{
 				BulletShellType shellType = BST_Pistol;
 				if(m_pConfig->category == storecat_ASR || m_pConfig->category == storecat_SNP || m_pConfig->category == storecat_MG)
@@ -1303,16 +1335,16 @@ void Weapon::Fire(const r3dPoint3D& hitPos, const D3DXMATRIX& weaponBone, bool e
 	}
 }
 
-float Weapon::getSpread() const 
-{ 
+float Weapon::getSpread() const
+{
 	float spread = m_pConfig->m_spread;
 	spread = spread * (1.0f+m_WeaponAttachmentStats[WPN_ATTM_STAT_SPREAD]);
 
 	return spread;
-} 
+}
 
-float Weapon::getRecoil() const 
-{ 
+float Weapon::getRecoil() const
+{
 	float recoil = m_pConfig->m_recoil;
 	recoil = recoil * (1.0f+m_WeaponAttachmentStats[WPN_ATTM_STAT_RECOIL]);
 
@@ -1347,8 +1379,11 @@ void Weapon::StartReloadSequence()
 
 void Weapon::Reload()
 {
-	r3d_assert(m_Owner->NetworkLocal && "Weapon::Reload() only for local players");
+	if (isReloading()) // new fixed
+		return;
 
+	r3d_assert(m_Owner->NetworkLocal && "Weapon::Reload() only for local players");
+	
 	const WeaponAttachmentConfig* clipCfg = getClipConfig();
 	if(!clipCfg)
 	{
@@ -1357,7 +1392,7 @@ void Weapon::Reload()
 	}
 
 	r3d_assert(m_State != WPN_RELOADING);
-	
+
 #ifndef FINAL_BUILD
 	extern bool g_bEditMode;
 	if(g_bEditMode)
@@ -1370,8 +1405,8 @@ void Weapon::Reload()
 
 #ifndef FINAL_BUILD
 	r3dOutToLog("reloading %s, need clip %d\n", m_pConfig->m_StoreName, clipCfg->m_itemID);
-#endif	
-	
+#endif
+
 	// search for same clip
 	int ammoSlot = -1;
 	for(int i=0; i<m_Owner->CurLoadout.BackpackSize; i++)
@@ -1385,20 +1420,20 @@ void Weapon::Reload()
 	if(ammoSlot == -1) {
 		return;
 	}
-	
+
 	// calc reloaded amount and update weapon item ammo (SERVER CODE SYNC POINT)
 	wiInventoryItem& ammoItm = m_Owner->CurLoadout.Items[ammoSlot];
 	int amount = ammoItm.Var1 < 0 ? clipCfg->m_Clipsize : ammoItm.Var1;
 	getPlayerItem().Var1 = amount;
 	getPlayerItem().Var2 = clipCfg->m_itemID;
-	
+
 	m_Owner->ReloadWeaponFromSlot(m_BackpackIdx, ammoSlot, amount);
-	
+
 	StartReloadSequence();
 }
 
-bool Weapon::isImmediateShooting() const 
-{ 
+bool Weapon::isImmediateShooting() const
+{
 	return m_pConfig->m_AmmoImmediate;
 }
 
@@ -1409,19 +1444,19 @@ float Weapon::calcDamage(float dist) const
 	return m_pConfig->m_AmmoDamage;
 }
 
-float Weapon::getAmmoSpeed() const 
+float Weapon::getAmmoSpeed() const
 {
 	return m_pConfig->m_AmmoSpeed;
 }
 
-float Weapon::getAmmoMass() const 
-{ 
+float Weapon::getAmmoMass() const
+{
 	return m_pConfig->m_AmmoMass;
 }
 
-const char* Weapon::getDecalSource() const 
-{ 
-	return m_pConfig->m_PrimaryAmmo->m_DecalSource; 
+const char* Weapon::getDecalSource() const
+{
+	return m_pConfig->m_PrimaryAmmo->m_DecalSource;
 }
 
 bool Weapon::isLoaded() const
@@ -1559,18 +1594,18 @@ void Weapon::setWeaponAttachments(const WeaponAttachmentConfig** wpnAttmConfigs)
 					m_Flashlight.SpotAngleInner = 4.41f;
 					m_Flashlight.SpotAngleOuter = 16.21f;
 					m_Flashlight.bCastShadows = r_lighting_quality->GetInt() == 3 && r_shadows_quality->GetInt() >= 3;
-					m_Flashlight.Intensity = 6.98f;
+					m_Flashlight.Intensity = 8.98f;
 					m_Flashlight.SpotAngleFalloffPow = 1.23f;
 					m_Flashlight.bSSShadowBlur = 1;
 					m_Flashlight.bUseGlobalSSSBParams = 0;
 					m_Flashlight.SSSBParams.Bias = 0.1f;
 					m_Flashlight.SSSBParams.PhysRange = 43.12f;
-					m_Flashlight.SSSBParams.Radius = 10.0f;
+					m_Flashlight.SSSBParams.Radius = 20.0f;
 					m_Flashlight.SSSBParams.Sense = 635.18f;
 					m_Flashlight.ProjectMap = r3dRenderer->LoadTexture("data\\ProjectionTextures\\flashlight_01.dds");
 
 					m_Flashlight.TurnOff();
-					WorldLightSystem.Add(&m_Flashlight); 
+					WorldLightSystem.Add(&m_Flashlight);
 				}
 			}
 		}
@@ -1751,10 +1786,10 @@ void Weapon::setWeaponAttachments(const WeaponAttachmentConfig** wpnAttmConfigs)
 		}
 	}
 	// convert stats to percents (from -100..100 range to -1..1)
-	m_WeaponAttachmentStats[WPN_ATTM_STAT_DAMAGE] *= 0.01f; 
-	m_WeaponAttachmentStats[WPN_ATTM_STAT_RANGE] *= 0.01f; 
-	m_WeaponAttachmentStats[WPN_ATTM_STAT_FIRERATE] *= 0.01f; 
-	m_WeaponAttachmentStats[WPN_ATTM_STAT_RECOIL] *= 0.01f; 
+	m_WeaponAttachmentStats[WPN_ATTM_STAT_DAMAGE] *= 0.01f;
+	m_WeaponAttachmentStats[WPN_ATTM_STAT_RANGE] *= 0.01f;
+	m_WeaponAttachmentStats[WPN_ATTM_STAT_FIRERATE] *= 0.01f;
+	m_WeaponAttachmentStats[WPN_ATTM_STAT_RECOIL] *= 0.01f;
 	m_WeaponAttachmentStats[WPN_ATTM_STAT_SPREAD] *= 0.01f;
 }
 

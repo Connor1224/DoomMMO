@@ -88,9 +88,12 @@ void UserSettings::saveXML(const char* file)
 	xmlBrowseFilters.set_name("BrowseGamesFilter");
 
 	xmlBrowseFilters.append_attribute("gameworld") = BrowseGames_Filter.gameworld;
+	xmlBrowseFilters.append_attribute("enabled") = BrowseGames_Filter.enabled;
 	xmlBrowseFilters.append_attribute("stronghold") = BrowseGames_Filter.stronghold;
+	xmlBrowseFilters.append_attribute("privateservers") = BrowseGames_Filter.privateservers;
 	xmlBrowseFilters.append_attribute("hideempty") = BrowseGames_Filter.hideempty;
 	xmlBrowseFilters.append_attribute("hidefull") = BrowseGames_Filter.hidefull;
+	xmlBrowseFilters.append_attribute("passworded") = BrowseGames_Filter.passworded;
 
 	xmlBrowseFilters.append_attribute("tracers") = BrowseGames_Filter.tracers;
 	xmlBrowseFilters.append_attribute("nameplates") = BrowseGames_Filter.nameplates;
@@ -98,6 +101,8 @@ void UserSettings::saveXML(const char* file)
 
 	xmlBrowseFilters.append_attribute("region_us") = BrowseGames_Filter.region_us;
 	xmlBrowseFilters.append_attribute("region_eu") = BrowseGames_Filter.region_eu;
+	xmlBrowseFilters.append_attribute("region_ru") = BrowseGames_Filter.region_ru;
+	xmlBrowseFilters.append_attribute("region_sa") = BrowseGames_Filter.region_sa;
 
 	pugi::xml_node xmlRecentGames = xmlFile.append_child();
 	xmlRecentGames.set_name("RecentGames");
@@ -156,9 +161,12 @@ void UserSettings::loadXML(const char* file)
 	pugi::xml_node xmlBrowseFilters = xmlFile.child("BrowseGamesFilter");
 
 	BrowseGames_Filter.gameworld = xmlBrowseFilters.attribute("gameworld").as_bool();
+	BrowseGames_Filter.enabled = xmlBrowseFilters.attribute("enabled").as_bool();
 	BrowseGames_Filter.stronghold = xmlBrowseFilters.attribute("stronghold").as_bool();
+	BrowseGames_Filter.privateservers = xmlBrowseFilters.attribute("privateservers").as_bool();
 	BrowseGames_Filter.hideempty = xmlBrowseFilters.attribute("hideempty").as_bool();
 	BrowseGames_Filter.hidefull = xmlBrowseFilters.attribute("hidefull").as_bool();
+	BrowseGames_Filter.passworded = xmlBrowseFilters.attribute("passworded").as_bool();
 
 	BrowseGames_Filter.tracers = xmlBrowseFilters.attribute("tracers").as_bool();
 	BrowseGames_Filter.nameplates = xmlBrowseFilters.attribute("nameplates").as_bool();
@@ -166,6 +174,8 @@ void UserSettings::loadXML(const char* file)
 
 	BrowseGames_Filter.region_us = xmlBrowseFilters.attribute("region_us").as_bool();
 	BrowseGames_Filter.region_eu = xmlBrowseFilters.attribute("region_eu").as_bool();
+	BrowseGames_Filter.region_ru = xmlBrowseFilters.attribute("region_ru").as_bool();
+	BrowseGames_Filter.region_sa = xmlBrowseFilters.attribute("region_sa").as_bool();
 
 	pugi::xml_node xmlRecentGames = xmlFile.child("RecentGames");
 	uint32_t count = xmlRecentGames.attribute("count").as_uint();
@@ -191,9 +201,12 @@ void UserSettings::addGameToRecent(DWORD gameID)
 	std::list<DWORD>::iterator it = std::find(RecentGames.begin(), RecentGames.end(), gameID);
 	if(it != RecentGames.end())
 	{
+		RecentGames.erase(it);
+	}
+	else {
 		RecentGames.push_front(gameID);
 		while(RecentGames.size() > 13) // limit to one screen in UI
-			RecentGames.pop_back();
+		RecentGames.pop_back();
 	}
 }
 void UserSettings::addGameToFavorite(DWORD gameID)

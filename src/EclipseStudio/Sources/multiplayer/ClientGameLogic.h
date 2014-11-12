@@ -38,9 +38,24 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 		char	Gamertag[32*2];
 		int		plrRep;
 		bool	isLegend;
+		bool	isPunisher;
+		bool	isInvitePending;
+		bool	IsPremium;
+		int		ShowCustomerID;
+		int		MeCustomerID;
 		bool	isDev;
 	};
 	PlayerName_s	playerNames[256]; // playername by server peer index
+	PlayerName_s	PlayersOnGroup[256];
+
+	struct HelpCalls_s
+		{
+			char		rewardText[128*2];
+		    char		DistressText[128*2];
+			gp2pnetid_t netID;
+			r3dPoint3D pos;
+		};
+	HelpCalls_s HelpCalls[256];
 
 	void *footStepsSnd;
 	DWORD		net_lastFreeId; // !!!ONLY use it for assigning networkID during loading map!!!
@@ -73,7 +88,9 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 
 	int		disconnectStatus_;	// 0 - playing, 1 - requested, 2 - acked
 	float		disconnectReqTime_;	// time when disconnect was requested
-	
+	int      ShowCustomerID;
+	char     GroupGamertag[512];
+
 	bool		gameShuttedDown_;
 	
 	// cheat things
@@ -111,8 +128,14 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 	 DEFINE_PACKET_FUNC(PKT_S2C_CreateDroppedItem);
 	 DEFINE_PACKET_FUNC(PKT_S2C_CreateNote);
 	 DEFINE_PACKET_FUNC(PKT_S2C_SetNoteData);
+	 DEFINE_PACKET_FUNC(PKT_S2C_CreateVehicle);
 	 DEFINE_PACKET_FUNC(PKT_S2C_CreateZombie);
 	 DEFINE_PACKET_FUNC(PKT_S2C_CheatWarning);
+	 DEFINE_PACKET_FUNC(PKT_S2C_SendHelpCallData);
+	 DEFINE_PACKET_FUNC(PKT_C2S_SendHelpCall);
+	 DEFINE_PACKET_FUNC(PKT_S2C_PositionVehicle);
+	 DEFINE_PACKET_FUNC(PKT_C2S_DamageCar);
+	 DEFINE_PACKET_FUNC(PKT_S2C_GroupData);
 
 	r3dPoint3D	AdjustSpawnPositionToGround(const r3dPoint3D& pos);
 
@@ -132,7 +155,7 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 	}
 	bool		wait_GameStart();
 
-  private:	
+  private:
 	// make copy constructor and assignment operator inaccessible
 	ClientGameLogic(const ClientGameLogic& rhs);
 	ClientGameLogic& operator=(const ClientGameLogic& rhs);
@@ -140,7 +163,7 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
   private: // this is singleton, can't create directly.
 	ClientGameLogic();
 	virtual ~ClientGameLogic();
-	
+
   public:
 	static void CreateInstance();
 	static void DeleteInstance();
@@ -155,7 +178,7 @@ virtual	void		OnNetData(DWORD peerId, const r3dNetPacketHeader* packetData, int 
 
 	int		RequestToStartGame();
 	int		ValidateServerVersion(__int64 sessionId);
-	
+
 	void		RequestToDisconnect();
 
 	void		ApplyExplosionDamage(const r3dVector& pos, float radius, int wpnIdx, const r3dVector& forwVector = R3D_ZERO_VECTOR, float direction = FULL_AREA_EXPLOSION );

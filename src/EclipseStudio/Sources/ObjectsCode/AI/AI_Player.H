@@ -15,7 +15,9 @@ class Weapon;
 class Gear;
 class CUberEquip;
 class CUberAnim;
+#if VEHICLES_ENABLED
 class obj_Vehicle;
+#endif
 
 class obj_Player : public GameObject
 {
@@ -23,6 +25,32 @@ public:
 	DECLARE_CLASS(obj_Player, GameObject)
 
 	obj_Player();
+#if VEHICLES_ENABLED
+	obj_Vehicle* ActualVehicle; // Server Vehicles
+    bool StrykerSound;
+	float GearsSounds;
+	bool IsOnVehicle; // Server Vehicles
+	int VehicleID;
+#endif
+	Weapon* weapn;
+	int MaxGroupPlayers;
+	bool imOnGruop;
+	char PlayersNames[11][512];
+	int IDSPlayers[11];
+	bool PlayersOnGroup[11];
+	r3dPoint3D PositionGroups[11];
+	int PlayerIDGroupLeave;
+	float TimeToWaitGroup;
+	float punchtime;
+	void*	SoundPunch;
+	char StatePlayerVehicle[256];
+	float RepairTime;
+	bool StartToLeaveGroup;
+	float LeavingGroup;
+	float Cooldown;
+	
+	int		   m_ExtraGrid;
+	int		   m_ExtraAmount;
 
 	enum AuraType
 	{
@@ -32,11 +60,12 @@ public:
 		AT_MORHINE,
 		AT_SPAWNPROTECTION,
 		AT_COUNT
-	} m_AuraType ;
+	} m_AuraType, m_LastAuraType ;
 
 	char				m_MinimapTagIconName[64]; // temp, to be optimized soon
 
 	float   CurrentSpread;
+	bool		inCombat;
 
 	int	PhysXObstacleIndex;
 
@@ -72,6 +101,7 @@ public:
 			return GetUserName(out);
 	}
 	int		ClanID;
+	int		GroupID;
 	int		ClanTagColor;
 	char		ClanTag[5*2];
 
@@ -79,6 +109,7 @@ public:
 
 	wiCharDataFull	CurLoadout;
 	float		m_GearWeight;
+	bool		isGroupLeaderActive;
 	void		OnBackpackChanged(int idx);
 
 	bool	m_enableRendering;
@@ -325,10 +356,10 @@ public:
 public:
 
 	virtual	BOOL		Load(const char *name);
-	virtual	BOOL		OnCreate();			
-	virtual	BOOL		OnDestroy();		
+	virtual	BOOL		OnCreate();
+	virtual	BOOL		OnDestroy();
 
-	virtual	BOOL		Update();			
+	virtual	BOOL		Update();
 
 	void				UpdateLocalPlayerMovement();
 
@@ -360,12 +391,22 @@ public:
 	void			 OnNetPacket(const PKT_S2C_BackpackAddNew_s& n);
 	void			 OnNetPacket(const PKT_S2C_BackpackModify_s& n);
 	void			 OnNetPacket(const PKT_S2C_SetPlayerReputation_s& n);
+	void			 OnNetPacket(const PKT_C2C_PlayerOnVehicle_s& n);	
+	void			 OnNetPacket(const PKT_C2C_Auratype_s& n);
+	void			 OnNetPacket(const PKT_C2C_UnarmedCombat_s& n);
+	void			 OnNetPacket(const PKT_C2C_flashlightToggle_s& n);
+	void			 OnNetPacket(const PKT_C2S_VehicleSet_s& n);	
+	void			 OnNetPacket(const PKT_S2C_inCombat_s& n);
 
 	virtual void		UpdateTransform();
 
 	void		stopFootstepsSound();
 
 	bool		bAllowToUseWeapons;
+	BOOL		KickGroupRemove(const char* pName);
+	BOOL		CheckNameOnGroup(const char* pName);
+	BOOL		CheckGruoupPlayer(int IDPlayer,r3dPoint3D pos);
+	bool		CheckVehicle();
 	void		CheckFireWeapon();
 	float		GetGrenadeLaunchDelay();
 	void		GrenadeCallbackFromWeapon(const wiInventoryItem& wi);
@@ -387,13 +428,16 @@ public:
 	
 
 	obj_Vehicle* canEnterVehicle();
+	void EnterVehicleHowPassenger( obj_Vehicle* target_Vehicle );
 	void enterVehicle( obj_Vehicle* target_Vehicle );
 	bool isDriving();
+	bool isPassenger();
+	void exitVehicleHowPassenger();
 	void exitVehicle();
 	bool isInVehicle();
 	bool TestExitPosition( r3dVector &exitPosition, bool ignoreGround = false );
-
-#endif 
+    bool exitsound;
+#endif
 
 
 private:
@@ -429,6 +473,7 @@ private:
 	void		UpdateActionUI();
 public:
 	CamoTimeLine camoTimeLine;
+	void*   m_sndVehicleDrive;
 };
 
 struct TCamoSettings

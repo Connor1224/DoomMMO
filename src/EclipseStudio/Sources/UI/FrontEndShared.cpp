@@ -116,16 +116,16 @@ void FillDefaultSettings( GraphicSettings& settings, r3dDevStrength strength )
 	switch( strength )
 	{
 	case S_WEAK:
-		settings.mesh_quality			= 2;
-		settings.texture_quality		= 2;
+		settings.mesh_quality			= 1;
+		settings.texture_quality		= 1;
 		settings.terrain_quality		= 1;
 		settings.water_quality			= 1;
 		settings.shadows_quality		= 1;
-		settings.lighting_quality		= 1;
+		settings.lighting_quality		= 2;
 		settings.particles_quality		= 1;
 		settings.decoration_quality		= 1;
-		//settings.antialiasing_quality	= 1;
-		settings.anisotropy_quality		= 2;
+		settings.antialiasing_quality	= 0;
+		settings.anisotropy_quality		= 1;
 		settings.postprocess_quality	= 1;
 		settings.ssao_quality			= 1;
 		break;
@@ -139,7 +139,7 @@ void FillDefaultSettings( GraphicSettings& settings, r3dDevStrength strength )
 		settings.lighting_quality		= 2;
 		settings.particles_quality		= 2;
 		settings.decoration_quality		= 2;
-		//settings.antialiasing_quality	= 1;
+		settings.antialiasing_quality	= 0;
 		settings.anisotropy_quality		= 2;
 		settings.postprocess_quality	= 1;
 		settings.ssao_quality			= 2;
@@ -154,7 +154,7 @@ void FillDefaultSettings( GraphicSettings& settings, r3dDevStrength strength )
 		settings.lighting_quality		= 3;
 		settings.particles_quality		= 3;
 		settings.decoration_quality		= 3;
-		//settings.antialiasing_quality	= 1;
+		settings.antialiasing_quality	= 0;
 		settings.anisotropy_quality		= 3;
 		settings.postprocess_quality	= 2;
 		settings.ssao_quality			= 3;
@@ -169,7 +169,7 @@ void FillDefaultSettings( GraphicSettings& settings, r3dDevStrength strength )
 		settings.lighting_quality		= 3;
 		settings.particles_quality		= 4;
 		settings.decoration_quality		= 3;
-		//settings.antialiasing_quality	= 1;
+		settings.antialiasing_quality	= 3;
 		settings.anisotropy_quality		= 4;
 		settings.postprocess_quality	= 3;
 		settings.ssao_quality			= 4;

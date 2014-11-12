@@ -30,7 +30,7 @@ CClientUserProfile	gUserProfile;
 bool storecat_IsItemStackable(uint32_t ItemID)
 {
 	const BaseItemConfig* itm = g_pWeaponArmory->getConfig(ItemID);
-	if(!itm) 
+	if(!itm)
 		return true;
 
 	switch(itm->category)
@@ -42,7 +42,7 @@ bool storecat_IsItemStackable(uint32_t ItemID)
 		case storecat_GRENADE:
 			return true;
 	}
-	
+
 	return false;
 }
 
@@ -97,13 +97,13 @@ int CUserProfile::GetProfile(int CharID)
 	CWOBackendReq req(this, "api_GetProfile1.aspx");
 	if(CharID)
 		req.AddParam("CharID", CharID);
-		
+
 	if(!req.Issue())
 	{
 		r3dOutToLog("GetProfile FAILED, code: %d\n", req.resultCode_);
 		return req.resultCode_;
 	}
-	
+
 	pugi::xml_document xmlFile;
 	req.ParseXML(xmlFile);
 	pugi::xml_node xmlAccount = xmlFile.child("account");
@@ -120,6 +120,7 @@ int CUserProfile::GetProfile(int CharID)
 	ProfileData.GamePoints        = xmlAccount.attribute("GamePoints").as_int();
 	ProfileData.GameDollars       = xmlAccount.attribute("GameDollars").as_int();
 	ProfileData.isDevAccount      = xmlAccount.attribute("IsDeveloper").as_int();
+	ProfileData.IsPremium		  = xmlAccount.attribute("IsPremium").as_int();
 
 	const char* curTime = xmlAccount.attribute("time").value();
 	memset(&ServerTime, 0, sizeof(ServerTime));
@@ -134,6 +135,7 @@ int CUserProfile::GetProfile(int CharID)
 	ParseLoadouts(xmlAccount.child("chars"));
 	ParseInventory(xmlAccount.child("inventory"));
 	ParseBackpacks(xmlAccount.child("backpacks"));
+	ParseEmails(xmlAccount.child("emails"));
 
 	return 0;
 }
@@ -148,21 +150,21 @@ static void parseCharAttachments(const char* slotData, wiWeaponAttachment& attm)
 	}
 
 	// should match arguments of ApiCharModifyAttachments
-	int nargs = sscanf(slotData, "%d %d %d %d %d %d %d %d", 
-		&attm.attachments[0], 
-		&attm.attachments[1], 
-		&attm.attachments[2], 
-		&attm.attachments[3], 
-		&attm.attachments[4], 
-		&attm.attachments[5], 
-		&attm.attachments[6], 
+	int nargs = sscanf(slotData, "%d %d %d %d %d %d %d %d",
+		&attm.attachments[0],
+		&attm.attachments[1],
+		&attm.attachments[2],
+		&attm.attachments[3],
+		&attm.attachments[4],
+		&attm.attachments[5],
+		&attm.attachments[6],
 		&attm.attachments[7]);
 	if(nargs != 8)
 	{
 		r3dOutToLog("Incorrect number of args in attachments %d\n", nargs);
 		memset(&attm, 0, sizeof(attm));
 	}
-	
+
 	return;
 }
 
@@ -254,6 +256,7 @@ void CUserProfile::ParseLoadouts(pugi::xml_node& xmlItem)
 		w.LegsIdx     = xmlItem.attribute("LegsIdx").as_int();
 
 		w.ClanID      = xmlItem.attribute("ClanID").as_int();
+		w.GroupID      = xmlItem.attribute("GroupID").as_int();
 		w.ClanRank    = xmlItem.attribute("ClanRank").as_int();
 		r3dscpy(w.ClanTag, xmlItem.attribute("ClanTag").value());
 		w.ClanTagColor= xmlItem.attribute("ClanTagColor").as_int();
@@ -331,6 +334,17 @@ void CUserProfile::ParseInventory(pugi::xml_node& xmlItem)
 	}
 }
 
+void CUserProfile::ParseEmails(pugi::xml_node& xmlItem)
+{
+	// enter into items list
+	xmlItem = xmlItem.first_child();
+	while(!xmlItem.empty())
+	{
+		strcpy(email,xmlItem.attribute("email").value());
+		xmlItem = xmlItem.next_sibling();
+	}
+}
+
 void CUserProfile::ParseBackpacks(pugi::xml_node& xmlItem)
 {
 	// enter into items list
@@ -339,18 +353,18 @@ void CUserProfile::ParseBackpacks(pugi::xml_node& xmlItem)
 	{
 		uint32_t CharID  = xmlItem.attribute("CharID").as_uint();
 		r3d_assert(CharID);
-		
+
 		bool found = true;
-		for(int i=0; i<ProfileData.NumSlots; i++) 
+		for(int i=0; i<ProfileData.NumSlots; i++)
 		{
-			if(ProfileData.ArmorySlots[i].LoadoutID == CharID) 
+			if(ProfileData.ArmorySlots[i].LoadoutID == CharID)
 			{
 				parseCharBackpack(xmlItem, ProfileData.ArmorySlots[i]);
 				found = true;
 				break;
 			}
 		}
-		
+
 		if(!found)
 			r3dError("bad backpack data for charid %d", CharID);
 
@@ -358,10 +372,10 @@ void CUserProfile::ParseBackpacks(pugi::xml_node& xmlItem)
 	}
 }
 
-wiStoreItem g_StoreItems[MAX_NUM_STORE_ITEMS] = {0}; 
+wiStoreItem g_StoreItems[MAX_NUM_STORE_ITEMS] = {0};
 uint32_t g_NumStoreItems = 0;
 
-const char* STORE_CATEGORIES_NAMES[storecat_NUM_ITEMS] = 
+const char* STORE_CATEGORIES_NAMES[storecat_NUM_ITEMS] =
 {
 	"$CatInvalid", // 0
 	"$CatAccount", //1
@@ -415,7 +429,7 @@ int CUserProfile::ApiGetShopData()
 	p += 4;
 
 	// shop items
-	while(1) 
+	while(1)
 	{
 		if((p - d) >= req.bodyLen_) {
 			r3dOutToLog("GetShopData: bad answer #2\n");
@@ -447,15 +461,15 @@ int CUserProfile::ApiGetShopData()
 
 void CUserProfile::DeriveGamePricesFromItems()
 {
-	for(uint32_t i = 0; i<g_NumStoreItems; i++) 
+	for(uint32_t i = 0; i<g_NumStoreItems; i++)
 	{
 		const wiStoreItem& itm = g_StoreItems[i];
 
-		switch(itm.itemID) 
+		switch(itm.itemID)
 		{
 			case 301151: ShopClanCreate = itm.pricePerm; break;
 		}
-		
+
 		// clan add members items
 		if(itm.itemID >= 301152 && itm.itemID <= 301157)
 		{
@@ -477,7 +491,7 @@ CClientUserProfile::CClientUserProfile()
 
 	for(int i=0; i<wiUserProfile::MAX_LOADOUT_SLOTS; i++)
 		clans[i] = new CUserClans();
-	
+
 	SelectedCharID = 0;
 
 	ShopClanCreate = 0;
@@ -499,11 +513,11 @@ void CClientUserProfile::GenerateSessionKey(char* outKey)
 	sprintf(sessionInfo, "%d:%d", CustomerID, SessionID);
 	for(size_t i=0; i<strlen(sessionInfo); ++i)
 		sessionInfo[i] = sessionInfo[i]^0x64;
-	
+
 	CkString str;
 	str = sessionInfo;
 	str.base64Encode("utf-8");
-	
+
 	strcpy(outKey, str.getUtf8());
 	return;
 }
@@ -515,7 +529,7 @@ static void replaceItemNameParams(T* itm, pugi::xml_node& xmlNode)
 	const char* name = xmlNode.attribute("name").value();
 	const char* desc = xmlNode.attribute("desc").value();
 	const char* fname = xmlNode.attribute("fname").value();
-	
+
 	// replace description
 	if(strcmp(desc, itm->m_Description) != 0)
 	{
@@ -525,7 +539,7 @@ static void replaceItemNameParams(T* itm, pugi::xml_node& xmlNode)
 		itm->m_Description = strdup(desc);
 		itm->m_DescriptionW = wcsdup(utf8ToWide(itm->m_Description));
 	}
-	
+
 	// replace name
 	if(strcmp(name, itm->m_StoreName) != 0)
 	{
@@ -535,7 +549,7 @@ static void replaceItemNameParams(T* itm, pugi::xml_node& xmlNode)
 		itm->m_StoreName = strdup(name);
 		itm->m_StoreNameW = wcsdup(utf8ToWide(itm->m_StoreName));
 	}
-	
+
 	// replace store icon (FNAME)
 	char storeIcon[256];
 	sprintf(storeIcon, "$Data/Weapons/StoreIcons/%s.dds", fname);
@@ -557,7 +571,7 @@ int CClientUserProfile::ApiGetItemsInfo()
 
 	pugi::xml_document xmlFile;
 	req.ParseXML(xmlFile);
-	
+
 	pugi::xml_node xmlItems = xmlFile.child("items");
 
 	// read gears (in <gears><g>...)
@@ -702,7 +716,7 @@ int CClientUserProfile::ApiCharRevive()
 
 	// reread profile
 	GetProfile();
-	
+
 	return 0;
 }
 
@@ -716,7 +730,7 @@ int CClientUserProfile::ApiBackpackToInventory(int GridFrom, int amount)
 	wiInventoryItem* wi1 = &w.Items[GridFrom];
 	r3d_assert(wi1->InventoryID > 0);
 	r3d_assert(wi1->quantity >= amount);
-	
+
 	// scan for inventory and see if we can stack item there
 	__int64 InvInventoryID = 0;
 	bool isStackable = storecat_IsItemStackable(wi1->itemID);
@@ -744,7 +758,7 @@ int CClientUserProfile::ApiBackpackToInventory(int GridFrom, int amount)
 		r3dOutToLog("ApiBackpackToInventory failed: %d", req.resultCode_);
 		return req.resultCode_;
 	}
-	
+
 	__int64 InventoryID = 0;
 	int nargs = sscanf(req.bodyStr_, "%I64d", &InventoryID);
 	r3d_assert(nargs == 1);
@@ -752,12 +766,12 @@ int CClientUserProfile::ApiBackpackToInventory(int GridFrom, int amount)
 
 	// add one item to inventory
 	wiInventoryItem* wi2 = getInventorySlot(InventoryID);
-	if(wi2 == NULL) 
+	if(wi2 == NULL)
 	{
 		// add new inventory slot with same vars
 		wi2 = &ProfileData.Inventory[ProfileData.NumItems++];
 		r3d_assert(ProfileData.NumItems < wiUserProfile::MAX_INVENTORY_SIZE);
-		
+
 		*wi2 = *wi1;
 		wi2->InventoryID = InventoryID;
 		wi2->quantity    = amount;
@@ -766,12 +780,12 @@ int CClientUserProfile::ApiBackpackToInventory(int GridFrom, int amount)
 	{
 		wi2->quantity += amount;
 	}
-	
+
 	// remove item
 	wi1->quantity -= amount;
 	if(wi1->quantity <= 0)
 		wi1->Reset();
-	
+
 	return 0;
 }
 
@@ -806,7 +820,18 @@ int CClientUserProfile::ApiBackpackFromInventory(__int64 InventoryID, int GridTo
 		}
 		else
 		{
+			int var = -1;
+			for(int i=0;i<w.BackpackSize;i++)
+			{
+				if (w.Items[i].InventoryID == 0 && i!=0 && i!=1 && i!=6 && i!=7)
+				{
+					idx_free = i;
+					var=i;
+					break;
+				}
+			}
 			// trying to stack not stackable item
+			if (var==-1)
 			return 9;
 		}
 	}
@@ -821,7 +846,7 @@ int CClientUserProfile::ApiBackpackFromInventory(__int64 InventoryID, int GridTo
 				idx_exists = i;
 				break;
 			}
-			if(w.Items[i].itemID == 0 && idx_free == -1) 
+			if(w.Items[i].itemID == 0 && idx_free == -1)
 			{
 				idx_free = i;
 			}
@@ -834,7 +859,7 @@ int CClientUserProfile::ApiBackpackFromInventory(__int64 InventoryID, int GridTo
 	}
 	GridTo = idx_exists != -1 ? idx_exists : idx_free;
 	r3d_assert(GridTo != -1);
-	
+
 	char strInventoryID[128];
 	sprintf(strInventoryID, "%I64d", InventoryID);
 

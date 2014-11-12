@@ -13,6 +13,9 @@
 #include "../../../ServerNetPackets/NetPacketsWeaponInfo.h"
 #include "Gameplay_Params.h"
 #include "../../../EclipseStudio/Sources/ObjectsCode/WEAPONS/WeaponArmory.h"
+#include "../../../GameEngine/gameobjects/VehicleDescriptor.h"
+#include "vehicle/PxVehicleDrive.h"
+
 class GameObject;
 
 // all data packets should be as minimal as possible - so, no data aligning
@@ -42,6 +45,8 @@ enum pkttype_e
   PKT_C2S_StackClip,
   PKT_C2S_UnloadClipReq,
   PKT_C2S_DisconnectReq,		// server<-> client disconnect request
+  PKT_C2S_SendHelpCall,
+  PKT_S2C_SendHelpCallData,
 
   PKT_S2C_PlayerNameJoined,
   PKT_S2C_PlayerNameLeft,
@@ -61,6 +66,12 @@ enum pkttype_e
   PKT_C2C_PlayerHitStaticPierced, // hit static geometry and pierced through it, will be followed up by another HIT event
   PKT_C2C_PlayerHitDynamic, // hit something that can be damaged (player, UAV, etc)
 
+  PKT_C2C_PlayerOnVehicle, // Server Vehicles
+  PKT_C2S_VehicleSet,
+  PKT_C2S_StatusPlayerVehicle,
+  PKT_C2C_flashlightToggle, // flashlight
+  PKT_C2C_UnarmedCombat,  // Unarmed Combat
+  PKT_C2C_Auratype,
   PKT_S2C_SetPlayerVitals,
   PKT_S2C_SetPlayerLoadout,	// indicate loadout change for not local players
   PKT_S2C_SetPlayerAttachments,
@@ -87,7 +98,12 @@ enum pkttype_e
   PKT_C2S_CreateNote,
   PKT_S2C_CreateNote,
   PKT_S2C_SetNoteData,
-  
+
+  // Server vehicles
+  PKT_S2C_CreateVehicle,
+  PKT_S2C_VehicleDirPos,
+  PKT_S2C_PositionVehicle,
+
   // server zombies
   PKT_S2C_CreateZombie,
   PKT_S2C_ZombieSetState,
@@ -139,7 +155,15 @@ enum pkttype_e
 
   PKT_C2S_MarketBuyItemReq,
   PKT_S2C_MarketBuyItemAns,
+  // Server Vehicles
+  PKT_C2S_CarKill,
+  PKT_C2S_DamageCar,
 
+  // Group System
+  PKT_S2C_GroupData,
+
+  //in combat
+  PKT_S2C_inCombat,
   PKT_LAST_PACKET_ID,
 };
 
@@ -234,8 +258,27 @@ struct PKT_C2S_StackClip_s : public DefaultPacketMixin<PKT_C2S_StackClip>
 	int slotId;
 };
 
+struct PKT_S2C_SendHelpCallData_s : public DefaultPacketMixin<PKT_S2C_SendHelpCallData>
+{
+char		rewardText[128*2];
+	char		DistressText[128*2];
+	const char* pName;
+	r3dPoint3D pos;
+	int peerid;
+};
+struct PKT_C2S_SendHelpCall_s : public DefaultPacketMixin<PKT_C2S_SendHelpCall>
+{
+	char		rewardText[128*2];
+	char		DistressText[128*2];
+	//const char* DistressText;
+	//const char* rewardText;
+	const char* pName;
+	int CustomerID;
+	r3dPoint3D pos;
+};
 struct PKT_S2C_PlayerNameJoined_s : public DefaultPacketMixin<PKT_S2C_PlayerNameJoined>
 {
+	bool		IsPremium;
 	BYTE		peerId;
 	char		gamertag[32*2];
 	BYTE		flags; // 1=isLegend
@@ -293,6 +336,7 @@ struct PKT_S2C_CreatePlayer_s : public DefaultPacketMixin<PKT_S2C_CreatePlayer>
 	DWORD		CustomerID;	// for our in-game admin purposes
 
 	int		ClanID;
+	int		GroupID;
 	char		ClanTag[5*2]; // utf8
 	int		ClanTagColor;
 
@@ -344,6 +388,39 @@ struct PKT_C2C_PlayerHitStatic_s : public DefaultPacketMixin<PKT_C2C_PlayerHitSt
 	BYTE		particleIdx;
 };
 
+struct PKT_C2C_PlayerOnVehicle_s : public DefaultPacketMixin<PKT_C2C_PlayerOnVehicle> // Server Vehicles
+{
+	bool PlayerOnVehicle;
+	int VehicleID;
+};
+
+struct PKT_C2S_VehicleSet_s : public DefaultPacketMixin<PKT_C2S_VehicleSet> // Server Vehicles
+{
+	int VehicleID;
+	int PlayerSet;
+};
+
+struct PKT_C2S_StatusPlayerVehicle_s : public DefaultPacketMixin<PKT_C2S_StatusPlayerVehicle> // Server Vehicles
+{
+	int MyID;
+	int PlayerID;
+};
+
+struct PKT_C2C_Auratype_s : public DefaultPacketMixin<PKT_C2C_Auratype> // Server Vehicles
+{
+	int MyID;
+	int m_AuraType;
+};
+
+struct PKT_C2C_flashlightToggle_s : public DefaultPacketMixin<PKT_C2C_flashlightToggle> // flashlight
+{
+  bool Flashlight;
+};
+
+struct PKT_C2C_UnarmedCombat_s : public DefaultPacketMixin<PKT_C2C_UnarmedCombat> // Unarmed Combat
+{
+  BYTE UnarmedCombat;
+};
 //IMPORTANT: This packet should be equal to PKT_C2C_PlayerHitStatic_s!!!
 struct PKT_C2C_PlayerHitStaticPierced_s : public DefaultPacketMixin<PKT_C2C_PlayerHitStaticPierced>
 {
@@ -404,7 +481,8 @@ struct PKT_S2C_SetPlayerVitals_s : public DefaultPacketMixin<PKT_S2C_SetPlayerVi
 	BYTE		Thirst;
 	BYTE		Hunger;
 	BYTE		Toxic;
-	
+	int        GroupID;
+
 	void FromChar(const wiCharDataFull* slot)
 	{
 		Health = (BYTE)slot->Health;
@@ -593,6 +671,36 @@ struct PKT_S2C_SetNoteData_s : public DefaultPacketMixin<PKT_S2C_SetNoteData>
 {
 	char		TextFrom[128];
 	char		TextSubj[1024];
+};
+
+struct PKT_S2C_CreateVehicle_s : public DefaultPacketMixin<PKT_S2C_CreateVehicle>
+{
+	gp2pnetid_t	spawnID;
+	r3dPoint3D	spawnPos;
+	r3dVector   spawnDir;
+	r3dPoint3D	moveCell;	// cell position from PKT_C2C_MoveSetCell
+	char    	vehicle[64];	// ItemID of base vehicle
+	int			Ocuppants;
+	float	    Gasolinecar;
+	float		DamageCar;
+	r3dVector	FirstRotationVector;
+	r3dPoint3D	FirstPosition;
+};
+
+struct PKT_S2C_PositionVehicle_s : public DefaultPacketMixin<PKT_S2C_PositionVehicle> // Server Vehicles
+{
+   DWORD	    spawnID;
+  r3dPoint3D	spawnPos;
+  r3dPoint3D    RotationPos;
+  int			OccupantsVehicle;
+  float			GasolineCar;
+  float			DamageCar;
+  float			RPMPlayer;
+  float			RotationSpeed;
+  PxVehicleDrive4WRawInputData controlData;
+  float timeStep;
+  bool			bOn;
+  bool			RespawnCar;
 };
 
 struct PKT_S2C_CreateZombie_s : public DefaultPacketMixin<PKT_S2C_CreateZombie>
@@ -795,6 +903,50 @@ struct PKT_C2S_MarketBuyItemReq_s : public DefaultPacketMixin<PKT_C2S_MarketBuyI
 struct PKT_S2C_MarketBuyItemAns_s : public DefaultPacketMixin<PKT_S2C_MarketBuyItemAns>
 {
 	BYTE result;
+};
+
+struct PKT_C2S_CarKill_s : public DefaultPacketMixin<PKT_C2S_CarKill> // Server vehicles
+{
+	DWORD targetId;
+	bool DieForExplosion;
+	int weaponID;
+	BYTE extra_info;
+};
+
+struct PKT_C2S_DamageCar_s : public DefaultPacketMixin<PKT_C2S_DamageCar> // Server vehicles
+{
+	int WeaponID;
+	int CarID;
+};
+
+struct PKT_S2C_GroupData_s : public DefaultPacketMixin<PKT_S2C_GroupData>
+{
+	int			State;
+    DWORD		FromCustomerID;
+	char		intogamertag[128];
+	char		fromgamertag[128];
+	char		GametagLeader[128];
+	BYTE        status;
+	int		    peerId;
+	char        text[128];
+    char		MyNickName[128];
+	int			MyID;
+	int			IDPlayerOutGroup;
+	int			IDPlayer;
+	r3dVector   Position;
+	char		pName[512];
+	int GroupID;
+	char	gametag[11][128];
+	bool GameLeader[11];
+	int NetworkIDPlayer[11];
+	r3dVector PlayerPosition[11];
+	int PlayersOnGroup;
+	
+};
+
+struct PKT_S2C_inCombat_s : public DefaultPacketMixin<PKT_S2C_inCombat>
+{
+	bool inCombat;
 };
 
 #pragma pack(pop)

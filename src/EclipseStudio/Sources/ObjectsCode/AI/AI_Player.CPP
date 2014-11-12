@@ -7,6 +7,7 @@
 
 #include "r3dPhysSkeleton.h"
 #include "r3dAtmosphere.h"
+#include "multiplayer/MasterServerLogic.h"
 #include "ObjectsCode\Effects\obj_ParticleSystem.h"
 
 #include "Particle.h"
@@ -30,7 +31,7 @@
 #include "../Gameplay/obj_Zombie.h"
 #include "../Gameplay/obj_ZombieDummy.h"
 #include "ObjectsCode/Gameplay/NPCObject.h"
-
+#include "../EclipseStudio/Sources/backend/WOBackendAPI.h"
 #include "ObjectsCode/WORLD/obj_LightMesh.h"
 
 #include "multiplayer/ClientGameLogic.h"
@@ -101,7 +102,7 @@ gobjid_t m_LocalPlayer_CurrentAimAt;
 
 #define TIME_FOR_SECOND_WIND 5.0f
 #define KILLSTREAK_FOR_SECOND_WIND 3
-static const float gDist_To_Allow_Vehicle_Entry = 5;
+static const float gDist_To_Allow_Vehicle_Entry = 3;
 bool gDisableShortcuts = false;
 struct PhysSkeletonCacheEntry
 {
@@ -115,7 +116,7 @@ int g_bPhysSkeletonCacheInitialized ;
 PhysSkeletonCache g_PhysSkeletonCache ;
 
 // per shot
-float SpreadIncrease[] = 
+float SpreadIncrease[] =
 {
 	0.15f, // ASR
 	1.0f, // SNP
@@ -127,7 +128,7 @@ float SpreadIncrease[] =
 	0.0f, // GRENADES
 };
 // per second
-float SpreadDecrease[] = 
+float SpreadDecrease[] =
 {
 	4.0f, // ASR
 	1.0f, // SNP
@@ -139,7 +140,7 @@ float SpreadDecrease[] =
 	4.0f, // GRENADES
 };
 // percentage of weapon's spread
-float SpreadMin[] = 
+float SpreadMin[] =
 {
 	.2f, // ASR
 	1.0f, // SNP
@@ -570,6 +571,9 @@ void obj_Player::DropItem(int slotFrom)
 
 	int itemID = CurLoadout.Items[slotFrom].itemID;
 
+    if(itemID == 20188 || itemID == 20187 || itemID == 20067)
+            r_hud_filter_mode->SetInt(HUDFilter_Default);
+	
 	//local logic
 	CurLoadout.Items[slotFrom].quantity--;
 	if(CurLoadout.Items[slotFrom].quantity <= 0) {
@@ -884,6 +888,7 @@ obj_Player::obj_Player()
 , boneId_Bip01_R_Hand(-1)
 , boneId_Bip01_L_Hand(-1)
 , m_AuraType(AT_NONE)
+, m_LastAuraType(AT_NONE)
 , netMover(this, _ai_NetPosUpdateDelta, (float)PKT_C2C_MoveSetCell_s::PLAYER_CELL_RADIUS)
 , m_enableRendering(true)
 , lifeProperties(this)
@@ -917,13 +922,17 @@ obj_Player::obj_Player()
 	TimeOfDeath = 0;
 	PosOfDeath.Assign(0,0,0);
 	DisableKillerView = false;
+    bSwim = false;
+    bSwimShift = false;
 	Dead_KillerID = 0;
 	m_BloodTimer = 0;
 	m_GearWeight = 0;
 	CustomerID     = 0;
 	ClanID         = 0;
+	GroupID         = 0;
 	ClanTagColor   = 0xFFFFFFFF;
 	r3dscpy(ClanTag, "CLAN");
+	inCombat = false;
 
 	viewTargetPos		= r3dPoint3D(0, 0, 0);
 	viewTargetNorm		= r3dPoint3D(0, 1, 0);
@@ -938,7 +947,7 @@ obj_Player::obj_Player()
 
 
 #if VEHICLES_ENABLED
-	vehicleViewActive_ = VehicleView_None; 
+	vehicleViewActive_ = VehicleView_None;
 #endif
 
 #ifndef FINAL_BUILD
@@ -1067,6 +1076,47 @@ BOOL obj_Player::OnCreate()
 	R3D_LOG_TIMESPAN_START(Ai_Player_OnCreate);
 
 	parent::OnCreate();
+		MaxGroupPlayers=0;
+		PlayerIDGroupLeave=0;
+		imOnGruop=false;
+		TimeToWaitGroup=0.0f;
+		strcpy(StatePlayerVehicle,"");
+		punchtime=0;
+		//RepairTime=0.0f;
+		StartToLeaveGroup = false;
+		LeavingGroup=0;
+		SoundPunch=NULL;
+		//durabilityAction=0;
+		Cooldown=0.0f;
+
+		int numGames = (int)gMasterServerLogic.games_.size();
+		int gameCounter = 0;
+		for(int i=0; i<numGames; i++) 
+		{
+			const GBPKT_M2C_GameData_s& gd = gMasterServerLogic.games_[i];
+			const GBGameInfo& ginfo = gd.info;
+			if (ginfo.gameServerId == gClientLogic().m_gameInfo.gameServerId)
+			{
+				//r3dOutToLog("######## ginfo.ownercustomerid %i\n",ginfo.ownercustomerid);
+				break;
+			}
+		}
+		
+		for (int i=0;i<11;i++)
+		{
+			strcpy(PlayersNames[i],"");
+			IDSPlayers[i]=0;
+			PlayersOnGroup[i]=false;
+		}
+#if VEHICLES_ENABLED
+	vehicleViewActive_ = VehicleView_None;
+    IsOnVehicle = false; // Server Vehicles
+	StrykerSound = false;
+	GearsSounds=1.0f;
+	ActualVehicle=NULL;
+	VehicleID=0;
+#endif
+	weapn = NULL; // flashlight
 
 	r3d_assert(PhysXObstacleIndex == -1);
 	if(!NetworkLocal)
@@ -1080,6 +1130,7 @@ BOOL obj_Player::OnCreate()
 	lastTimeWeaponSwitch = 0;
 	TimeOfLastRespawn = r3dGetTime();
 	m_AuraType = AT_NONE;
+	m_LastAuraType = AT_NONE;
 	footsteps_timeSinceLastMissingHitResult = 0;
 
 	m_needToDrawBarricadePlacement = 0;
@@ -1097,7 +1148,7 @@ BOOL obj_Player::OnCreate()
 	{
 		// otherwise when you are in scope mode you might not see your own player, and so scope will not render. Anyway, we should see our player always
 		setSkipOcclusionCheck(true);
-		ObjFlags |=	OBJFLAG_ForceSceneBoxBBox | OBJFLAG_AlwaysDraw; 
+		ObjFlags |=	OBJFLAG_ForceSceneBoxBBox | OBJFLAG_AlwaysDraw;
 		PhysicsConfig.group = PHYSCOLL_CHARACTERCONTROLLER;
 		PhysicsConfig.type = PHYSICS_TYPE_CONTROLLER;
 		PhysicsConfig.mass = 100.0f;
@@ -1221,13 +1272,22 @@ BOOL obj_Player::OnCreate()
 	{
 		r3d_assert(!NetworkLocal);
 
+	if(NetworkLocal)
+	{
+		#if VEHICLES_ENABLED // Server Vehicles
+			if ( isPassenger() )
+					exitVehicleHowPassenger();
+			else if( isInVehicle() )
+					exitVehicle();
+		#endif
+	}
 		PlayerState = PLAYER_DIE;
 		uberAnim_->AnimPlayerState = PLAYER_DIE;
 		uberAnim_->StartDeathAnim();
 		DoRagdoll(true);
 
 		// fucking physx
-		SetPosition(GetPosition());
+		    SetPosition(GetPosition());
 	}
 
 	// load local player sounds
@@ -1285,6 +1345,11 @@ BOOL obj_Player::OnDestroy()
 
 	if(NetworkLocal)
 	{
+		if (SoundSys.isPlaying(SoundPunch))
+		{
+			SoundSys.Stop(SoundPunch);
+			SoundSys.Release(SoundPunch);
+		}
 		if(gClientLogic().localPlayer_ == this)
 			gClientLogic().localPlayer_ = 0;
 
@@ -1306,8 +1371,8 @@ BOOL obj_Player::OnDestroy()
 
 	ReleaseCachedPhysSkeleton( m_PhysSkeleton ) ;
 	m_PhysSkeleton = 0 ;
-	
-	for(uint32_t i=0; i<footStepsArr.Count(); ++i) 
+
+	for(uint32_t i=0; i<footStepsArr.Count(); ++i)
 	{
 		SoundSys.Stop(footStepsArr[i].snd);
 		SoundSys.Release(footStepsArr[i].snd);
@@ -1372,12 +1437,12 @@ void obj_Player::UpdateRotationToTarget(float fY, float fTurnSpeed)
 	float step = fTurnSpeed * fTimePassed;
 
 	m_fPlayerRotation += fY < 0.0f ? -step : +step;
-		
+
 	// check if we finished rotation, overrotated
 	float fY2 = getMinimumAngleDistance(m_fPlayerRotation, m_fPlayerRotationTarget);
-	if((fY > 0 && fY2 <= 0) || (fY < 0 && fY2 >= 0) 
-		
-		|| 
+	if((fY > 0 && fY2 <= 0) || (fY < 0 && fY2 >= 0)
+
+		||
 		// don't overreact - can get to any angle with this sort of step anyway (happens on low fps)
 		step >= 180.f )
 	{
@@ -1409,6 +1474,7 @@ R3D_FORCEINLINE void UpdateBodyAdjustX( float* ioAdjust, float newadjust, float 
 
 void obj_Player::UpdateUpperBodyAngLegs()
 {
+
 	float fTimePassed = r3dGetFrameTime();
 	const float fMaxBodyAngle = R3D_DEG2RAD(45.0f);
 
@@ -1458,13 +1524,13 @@ void obj_Player::UpdateRotation()
 	else
 	{
 		uberAnim_->StopTurnInPlaceAnim();
-		
+
 		UpdateBodyAdjustX(&bodyAdjust_x, 0.f, fTimePassed * 4.0f);
 
 		float fY = getMinimumAngleDistance(m_fPlayerRotation, m_fPlayerRotationTarget);
 		UpdateRotationToTarget(fY, _ai_fTurnSpeedWalk);
 	}
-	
+
 	// lerp body bending to target
 	if(bodyAdjust_y[0] < bodyAdjust_y[1]) {
 		bodyAdjust_y[0] = R3D_MIN(bodyAdjust_y[0] + fTimePassed * 3.2f, bodyAdjust_y[1]);
@@ -1499,7 +1565,7 @@ void obj_Player::UpdateRotation()
 			limit = 0.0f;
 		float fRot = -R3D_CLAMP(getMinimumAngleDistance(fPrevRotation, m_fPlayerRotation)*10.0f, -limit, limit);
 		static float EMAPrev = 0.0f;
-		
+
 		float EMACur = EMAPrev + 0.20f * (fRot - EMAPrev); // exponential moving average of about 15 prev.values
 		EMAPrev = EMACur;
 
@@ -1507,8 +1573,8 @@ void obj_Player::UpdateRotation()
 
 		D3DXMatrixTranslation(&m4, 0, -hands_height, 0.1f);
 		D3DXMatrixMultiply(&DrawFullMatrix, &m3, &m4);
-		
-		D3DXMatrixMultiply(&DrawFullMatrix_Localized, &DrawFullMatrix, &r3dRenderer->InvViewMatrix_Localized);		
+
+		D3DXMatrixMultiply(&DrawFullMatrix_Localized, &DrawFullMatrix, &r3dRenderer->InvViewMatrix_Localized);
 
 		D3DXMatrixMultiply(&DrawFullMatrix, &DrawFullMatrix, &r3dRenderer->InvViewMatrix);
 	}
@@ -1551,7 +1617,7 @@ static bool updateShootingTarget(obj_Player* pl, const r3dPoint3D& shootFrom, co
 	spread = (spread*0.5f)/50.0f; // 0.5 - because spread initially set as diameter, and we need radius. 50-because spread is set at 50 meter range. formula is: tanA=opp/adj = so that is angle that we need to feed into raycast
 
 	// limit spread to prevent ppl shooting behind, etc.
-	spread = R3D_CLAMP(spread, -0.5f, 0.5f); 
+	spread = R3D_CLAMP(spread, -0.5f, 0.5f);
 	D3DXMATRIX rotMat;
 	D3DXMatrixRotationYawPitchRoll(&rotMat, u_GetRandom(-spread, spread), u_GetRandom(-spread, spread), u_GetRandom(-spread, spread));
 	r3dPoint3D dirWithSpread;
@@ -1561,7 +1627,7 @@ static bool updateShootingTarget(obj_Player* pl, const r3dPoint3D& shootFrom, co
 		PxRaycastHit hit;
 		PhysicsCallbackObject* target = NULL;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK|(1<<PHYSCOLL_NETWORKPLAYER), 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC);
-		g_pPhysicsWorld->raycastSingle(PxVec3(shootFrom.x, shootFrom.y, shootFrom.z), PxVec3(dirWithSpread.x, dirWithSpread.y, dirWithSpread.z), MAX_CASTING_DISTANCE, 
+		g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(shootFrom.x, shootFrom.y, shootFrom.z), PxVec3(dirWithSpread.x, dirWithSpread.y, dirWithSpread.z), MAX_CASTING_DISTANCE, 
 													PxSceneQueryFlag::eIMPACT|PxSceneQueryFlag::eNORMAL, hit, filter);
 		// check if target position is still visible from muzzler (prevent against shooting from wall edges
 		if( recheckCollisionAgainsMuzzler && hit.shape )
@@ -1656,12 +1722,17 @@ static bool updateMeleeTarget(obj_Player* pl, const r3dPoint3D& shootFrom, const
 			if( hit.shape && (target = static_cast<PhysicsCallbackObject*>(hit.shape->getActor().userData)))
 			{
 				*gameObj = target->isGameObject();
-				if(!*gameObj)
-					continue;
-				if(!((*gameObj)->isObjType(OBJTYPE_Human) || (*gameObj)->isObjType(OBJTYPE_Zombie) || (*gameObj)->Class->Name == "obj_ZombieDummy"))
-					continue;
-
-				*sMat = NULL;
+				if(*gameObj)
+				{
+					if( (*gameObj)->isObjType( OBJTYPE_Mesh ) )
+						*sMat = static_cast< MeshGameObject* > ( target )->MeshLOD[ 0 ]->GetFaceMaterial( hit.faceIndex );
+				}
+				else if(target->hasMesh())
+				{
+					*sMat = target->hasMesh()->GetFaceMaterial( hit.faceIndex );
+				}
+				if (!*sMat)
+					*sMat = target->GetMaterial(hit.faceIndex);
 
 				if(actorName)
 					*actorName = hit.shape->getActor().getName();
@@ -1873,16 +1944,75 @@ BYTE obj_Player::getBodyNameFromBoneName(const char* boneName)
 	return 0;
 }
 
+BOOL obj_Player::KickGroupRemove(const char* pName)
+{
+
+	for (int i=0;i<11;i++) 
+	{
+		if (strcmp(gClientLogic().localPlayer_->PlayersNames[i],pName) == 0) // Check if player is on Group table
+		{
+			return gClientLogic().localPlayer_->PlayersOnGroup[i];
+		}
+	}
+	return false;
+
+}
+
+BOOL obj_Player::CheckNameOnGroup(const char* pName)
+{
+	for (int i=0;i<11;i++) 
+	{
+		if (strcmp(gClientLogic().localPlayer_->PlayersNames[i],pName) == 0) // Check if player is on Group table
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+BOOL obj_Player::CheckGruoupPlayer(int IDPlayer,r3dPoint3D pos)
+{
+
+	for (int i=0;i<11;i++) 
+	{
+		if (IDSPlayers[i] == IDPlayer) // Check if player is on Group table
+		{
+			gClientLogic().localPlayer_->PositionGroups[i]=pos;
+			return true;
+		}
+	}
+
+	return false;
+}
 void obj_Player::CheckFireWeapon()
 {
+#if VEHICLES_ENABLED
+if (isInVehicle() || isPassenger())
+{
+       switchToEmptyHands();
+	   PKT_C2C_PlayerSwitchWeapon_s n;
+	   n.wid = 255;
+	   p2pSendToHost(this, &n, sizeof(n), true);
+	   return;
+}
+#endif
+	if (bSwim || bSwimShift)
+	{
+       switchToEmptyHands();
+	   PKT_C2C_PlayerSwitchWeapon_s n;
+	   n.wid = 255;
+	   p2pSendToHost(this, &n, sizeof(n), true);
+	   return;
+	}
+
 	r3d_assert(NetworkLocal);
 
 	VMPROTECT_BeginMutation("obj_Player::CheckFireWeapon");
 
 	bool needExit = false;
 #ifndef FINAL_BUILD
-	if (d_video_spectator_mode->GetBool()) needExit = true;
-	if (d_observer_mode->GetBool()) needExit = true;
+	if(d_video_spectator_mode->GetBool()) needExit = true;
+	if(d_observer_mode->GetBool()) needExit = true;
 #endif
 	if (hudPause && hudPause->isActive()) needExit = true;
 	if (hudAttm && hudAttm->isActive()) needExit = true;
@@ -1896,13 +2026,42 @@ void obj_Player::CheckFireWeapon()
 	lifeProperties.weaponFired = false;
 
 	Weapon* wpn = m_Weapons[m_SelectedWeapon];
-	if ((wpn == NULL || forcedEmptyHands))
+
+	if((wpn == NULL || forcedEmptyHands))
 	{
 		if (!needExit)
 		{
-			if (g_toggle_aim->GetBool())
+			if (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_PRIMARY_FIRE) || InputMappingMngr->isPressed(r3dInputMappingMngr::KS_PRIMARY_FIRE) && bAllowToUseWeapons && !bProne)  // Unarmed Combat
 			{
-				if (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
+					if ((r3dGetTime() - punchtime) > 0.4 && NetworkLocal)
+					{
+						if (hudMain)
+						{
+							SoundPunch = SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/NewWeapons/Melee/Melee_Whoosh_auto"), GetPosition());
+							SoundSys.Stop(SoundPunch);
+							SoundSys.Start(SoundPunch);
+							float volume=1.0f;
+							SoundSys.SetProperty(SoundPunch, FMOD_EVENTPROPERTY_VOLUME, &volume);
+						}
+						punchtime=r3dGetTime();
+
+						int LasSelectWeapon=m_SelectedWeapon;
+						m_SelectedWeapon=7;
+
+						executeWeaponFireLocalPlayer(gCam, 0, 0, 0, 0, true, 0, 0);
+                          
+						m_SelectedWeapon=LasSelectWeapon;				
+						uberAnim_->UnarmedCombat(false,PlayerState);
+						PKT_C2C_UnarmedCombat_s n;
+						n.UnarmedCombat=PlayerState;
+						p2pSendToHost(this, &n, sizeof(n));
+						
+					}
+			}
+
+			if(g_toggle_aim->GetBool())
+			{
+				if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_AIM))
 					m_isAiming = !m_isAiming;
 			}
 			else
@@ -2015,8 +2174,130 @@ void obj_Player::CheckFireWeapon()
 								return;
 						}
 					}
-
-					if ((wpn->getItemID() == WeaponConfig::ITEMID_Bandages || wpn->getItemID() == WeaponConfig::ITEMID_Bandages2 || wpn->getItemID() == WeaponConfig::ITEMID_Antibiotics ||
+				/*	if (wpn->getItemID() == WeaponConfig::ITEMID_Repairkit)
+					{
+						if ((r3dGetTime() - RepairTime) > 1)
+							hudRepair->Activate();
+						else
+							return;
+					}*/
+					if(wpn->getItemID() == 101398) // Repair system car
+					{
+						obj_Vehicle* target_Vehicle = canEnterVehicle();
+						if ( target_Vehicle )
+						{
+							if( target_Vehicle->DamageCar<=0)
+							{
+								if (hudActionUI->isActive())
+										hudActionUI->Deactivate();
+								const wchar_t* Gasolinetext1=gLangMngr.getString("$CantRepairCar1");
+								const wchar_t* Gasolinetext2=gLangMngr.getString("$CantRepairCar2");
+								hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+								return;
+							}
+							if ( target_Vehicle->Occupants<=0 )
+							{
+								if (target_Vehicle->DamageCar<5.0f)
+								{
+									if ((target_Vehicle->DamageCar+2.0f)>5)
+										target_Vehicle->DamageCar=5.0f;
+									else
+										target_Vehicle->DamageCar+=2.0f;
+									
+									target_Vehicle->ExitVehicle=true;
+									if (hudActionUI->isActive())
+										 hudActionUI->Deactivate();
+										 const wchar_t* Gasolinetext1=gLangMngr.getString("$RepairDone1");
+										 const wchar_t* Gasolinetext2=gLangMngr.getString("$RepairDone2");
+										 hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+								}
+								else {
+									if (hudActionUI->isActive())
+										hudActionUI->Deactivate();
+									const wchar_t* Gasolinetext1=gLangMngr.getString("$NoneedRepairCar1");
+									const wchar_t* Gasolinetext2=gLangMngr.getString("$NoneedRepairCar2");
+									hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+									return;
+								}
+							}
+							else {
+								if (hudActionUI->isActive())
+									hudActionUI->Deactivate();
+								const wchar_t* Gasolinetext1=gLangMngr.getString("$PropietaryCar1");
+								const wchar_t* Gasolinetext2=gLangMngr.getString("$PropietaryCar2");
+								hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+								return;
+							}
+						}
+						else {
+								if (hudActionUI->isActive())
+									hudActionUI->Deactivate();
+								const wchar_t* Gasolinetext1=gLangMngr.getString("$SearchCar1");
+								const wchar_t* Gasolinetext2=gLangMngr.getString("$SearchCar2");
+								hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+								return;
+						}
+					}
+					if(wpn->getItemID() == 301321) // Server Vehicles
+					{
+							obj_Vehicle* target_Vehicle = canEnterVehicle();
+							if ( target_Vehicle )
+							{
+									if ( target_Vehicle->Occupants<=0 )
+									{
+											if (target_Vehicle->DamageCar>=0.9)
+											{
+													if (target_Vehicle->GasolineCar<100)
+													{
+														float maxGas=25.0f;
+														if ((target_Vehicle->GasolineCar+maxGas)>100)
+															target_Vehicle->GasolineCar=100.0f;
+														else
+															target_Vehicle->GasolineCar=target_Vehicle->GasolineCar+maxGas;
+														target_Vehicle->ExitVehicle=true;
+														if (hudActionUI->isActive())
+														    hudActionUI->Deactivate();
+														const wchar_t* Gasolinetext1=gLangMngr.getString("$GassFullOK1");
+														const wchar_t* Gasolinetext2=gLangMngr.getString("$GassFullOK2");
+														hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+											}
+											else {
+														if (hudActionUI->isActive())
+																hudActionUI->Deactivate();
+														const wchar_t* Gasolinetext1=gLangMngr.getString("$GassFull1");
+														const wchar_t* Gasolinetext2=gLangMngr.getString("$GassFull2");
+														hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+														return;
+											}
+									}
+									else {
+												if (hudActionUI->isActive())
+														hudActionUI->Deactivate();
+												const wchar_t* Gasolinetext1=gLangMngr.getString("$NoGassVehDestroy1");
+												const wchar_t* Gasolinetext2=gLangMngr.getString("$NoGassVehDestroy2");
+												hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+												return;
+									}
+						}
+						else {
+									if (hudActionUI->isActive())
+											hudActionUI->Deactivate();
+									const wchar_t* Gasolinetext1=gLangMngr.getString("$NoGassVehDestroy1");
+									const wchar_t* Gasolinetext2=gLangMngr.getString("$NoGassVehDestroy2");
+									hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+									return;
+							}
+					}
+					else {
+						if (hudActionUI->isActive())
+							hudActionUI->Deactivate();
+							const wchar_t* Gasolinetext1=gLangMngr.getString("$Not_in_Vehicle");
+							const wchar_t* Gasolinetext2=gLangMngr.getString("");
+							hudMain->StatusVehicle(Gasolinetext1,Gasolinetext2);
+				            return;
+						}
+					}
+					if((wpn->getItemID() == WeaponConfig::ITEMID_Bandages || wpn->getItemID() == WeaponConfig::ITEMID_Bandages2 || wpn->getItemID() == WeaponConfig::ITEMID_Antibiotics ||
 						wpn->getItemID() == WeaponConfig::ITEMID_Painkillers || wpn->getItemID() == WeaponConfig::ITEMID_Medkit)
 						&& CurLoadout.Health > 99)
 					{
@@ -2026,7 +2307,13 @@ void obj_Player::CheckFireWeapon()
 					if ((wpn->getItemID() == WeaponConfig::ITEMID_C01Vaccine || wpn->getItemID() == WeaponConfig::ITEMID_C04Vaccine)
 						&& CurLoadout.Toxic < 1.0f)
 					{
-						if (hudMain) hudMain->showMessage(gLangMngr.getString("InfoMsg_NoTocixInBlood"));
+						if(hudMain) hudMain->showMessage(gLangMngr.getString("$InfoMsg_NoTocixInBlood"));
+						return;
+					}
+
+					if(Cooldown > 0 )
+					{
+						if(hudMain) hudMain->showMessage(gLangMngr.getString("$InfoMsg_CooldownActive"));
 						return;
 					}
 
@@ -2093,6 +2380,21 @@ void obj_Player::CheckFireWeapon()
 		return;
 	}
 
+	if(wpn->getItemID() == WeaponConfig::ITEMID_Flashlight)
+	    {
+	        if (InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_TOGGLE_FLASHLIGHT) )
+	        {
+				if(NetworkLocal)
+				{
+				   wpn->toggleFlashlight();
+		           PKT_C2C_flashlightToggle_s n;
+		           n.Flashlight=wpn->m_flashlightToggle;
+	               p2pSendToHost(this, &n, sizeof(n));
+				   SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/NewWeapons/Melee/flashlight"), r3dPoint3D(0,0,0));
+				}
+	        }
+    }
+
 	m_isPressedFireTrigger = InputMappingMngr->isPressed(r3dInputMappingMngr::KS_PRIMARY_FIRE) || gamepadRightTrigger > 0;
 	// check muzzle block except when using scope
 	if (!m_isInScope && wpn->getCategory() != storecat_MELEE && isMuzzlerBlocked(this, GetMuzzlerPosition()))
@@ -2119,20 +2421,20 @@ void obj_Player::CheckFireWeapon()
 	extern 	PlayerStateVars_s CurrentRig;
 	m_isInScope = hasScopeMode() && CurrentRig.allowScope;
 
-	if (wpn->isReloading())
+	if(wpn->isReloading())
 		m_isAiming = false;
 
 	//if(wpn->getAnimType()== WPN_ANIM_MELEE) // no aiming in melee
 	//	m_isAiming = false;
 
 	// remember that aiming was changed
-	if (m_isAiming != oldAiming)
+	if(m_isAiming != oldAiming)
 		m_isChangedAiming1 = true;
 
 	extern float LerpValue;
 	if (wpn->getCategory() != storecat_SNP)
 	{
-		m_isFinishedAiming = m_isAiming && LerpValue == 1.0f;
+		m_isFinishedAiming = m_isAiming && LerpValue==1.0f;
 	}
 	else
 	{
@@ -2450,20 +2752,30 @@ void obj_Player::executeWeaponFireLocalPlayer(const r3dPoint3D& from, float reco
 	r3d_assert(wpn);
 	r3d_assert(!wpn->isUsableItem());
 
+	if (wpn->getItemID() == WeaponConfig::ITEMID_EXP_M26)
+		return;
+	if (forcedEmptyHands)
+	{
+		bool isFirstPerson = g_camera_mode->GetInt() == 2 && NetworkLocal;
+		const WeaponConfig* wcfg2 = g_pWeaponArmory->getWeaponConfig(101399); // Temporal
+		m_Weapons[7] = new Weapon(this, 7, wcfg2, isFirstPerson, true, NULL); // Temporal
+		wpn = m_Weapons[7];
+	}
+
 	r3dPoint3D	shootTargetPos;
 	r3dPoint3D	shootTargetNorm;
-	GameObject*	shootTarget    = NULL;
-	r3dMaterial*	shootMaterial  = NULL;
+	GameObject*	shootTarget = NULL;
+	r3dMaterial*	shootMaterial = NULL;
 	const char*	shootActorName = "";
 
 	// reset rotation if we're firing from idle mode
-	if(PlayerState == PLAYER_IDLE)
+	if (PlayerState == PLAYER_IDLE)
 	{
 		bodyAdjust_x = 0;
 		m_fPlayerRotation = m_fPlayerRotationTarget;
 	}
 
-	if(wpn->getCategory() == storecat_SNP)
+	if (wpn->getCategory() == storecat_SNP)
 	{
 		// increase recoil for sniper rifle artificially
 		recoil *= 10.0f;
@@ -2473,34 +2785,34 @@ void obj_Player::executeWeaponFireLocalPlayer(const r3dPoint3D& from, float reco
 
 	r3dPoint3D muzzlerPos = GetMuzzlerPosition();
 	{
-		if(wpn->getCategory() == storecat_MELEE)
-			updateMeleeTarget(this, GetPosition()+r3dPoint3D(0, bProne?0.2f:(bCrouch?0.6f:1.5f), 0.0f), muzzlerPos, shootTargetPos, shootTargetNorm, &shootMaterial, &shootTarget, &shootActorName, spread, checkAgainsMuzzler);
+		if (wpn->getCategory() == storecat_MELEE)
+			updateMeleeTarget(this, GetPosition() + r3dPoint3D(0, bProne ? 0.2f : (bCrouch ? 0.6f : 1.5f), 0.0f), muzzlerPos, shootTargetPos, shootTargetNorm, &shootMaterial, &shootTarget, &shootActorName, spread, checkAgainsMuzzler);
 		else
 			updateShootingTarget(this, from, muzzlerPos, shootTargetPos, shootTargetNorm, &shootMaterial, &shootTarget, &shootActorName, spread, checkAgainsMuzzler);
 	}
 
 	RecoilViewModTarget.y += recoil * u_GetRandom(0.85f, 1.75f);
-	if(RecoilViewModTarget.y > GPP->c_MaxVerticalRecoil) // limit how much gun goes up
+	if (RecoilViewModTarget.y > GPP->c_MaxVerticalRecoil) // limit how much gun goes up
 	{
 		RecoilViewModTarget.y = u_GetRandom(GPP->c_MaxVerticalRecoil*0.95f, GPP->c_MaxVerticalRecoil*1.1f);
 	}
 	RecoilViewModTarget.x += recoil*u_GetRandom(-0.15f, 0.3f); // + to a side
 
-	if(executeWeaponFireCode) // set cooldown only for actual fire
+	if (executeWeaponFireCode) // set cooldown only for actual fire
 	{
 		RecoilCooldown = R3D_MAX(wpn->getRateOfFire()*recoilCoolDownMod, r3dGetFrameTime()*2.50f);
 	}
 
-	if(wpn->getCategory()==storecat_SNP || wpn->getCategory()==storecat_SHTG)
-		if(RecoilCooldown > r3dGetFrameTime()*8.0f)
-			RecoilCooldown = r3dGetFrameTime()*8.0f;
+	if (wpn->getCategory() == storecat_SNP || wpn->getCategory() == storecat_SHTG)
+	if (RecoilCooldown > r3dGetFrameTime()*8.0f)
+		RecoilCooldown = r3dGetFrameTime()*8.0f;
 
 
 
 	// send weapon fired event
-	if(wpn->getCategory() != storecat_GRENADE)
+	if (wpn->getCategory() != storecat_GRENADE)
 	{
-		PKT_C2C_PlayerFired_s n; 
+		PKT_C2C_PlayerFired_s n;
 		n.fire_from = GetPosition();
 		n.fire_to = shootTargetPos;
 		n.holding_delay = holdingDelay;
@@ -2510,10 +2822,10 @@ void obj_Player::executeWeaponFireLocalPlayer(const r3dPoint3D& from, float reco
 		p2pSendToHost(this, &n, sizeof(n), true);
 	}
 
-	if(wpn->isImmediateShooting())
+	if (wpn->isImmediateShooting())
 	{
-		if ( ProcessBulletHit(damagePercFromPiercing, this, shootTargetPos, shootTargetNorm, shootTarget, shootMaterial, shootActorName,  wpn->getConfig(), GetMuzzlerPosition() )  == false ) 
-		{	
+		if (ProcessBulletHit(damagePercFromPiercing, this, shootTargetPos, shootTargetNorm, shootTarget, shootMaterial, shootActorName, wpn->getConfig(), GetMuzzlerPosition()) == false)
+		{
 			r3dPoint3D dir = shootTargetPos - from;
 			dir.Normalize();
 			executeWeaponFireLocalPlayer(shootTargetPos + dir*0.1f, 0.0f, 0.0f, 0.0f, holdingDelay, false, false, damagePercFromPiercing);
@@ -2521,12 +2833,12 @@ void obj_Player::executeWeaponFireLocalPlayer(const r3dPoint3D& from, float reco
 	}
 
 	wpn->Fire(shootTargetPos, uberEquip_->getWeaponBone(GetSkeleton(), DrawFullMatrix), executeWeaponFireCode, holdingDelay);
-		
-	if(executeWeaponFireCode)
+
+	if (executeWeaponFireCode)
 	{
 		extern float g_shootCameraShakeTimer;
 		g_shootCameraShakeTimer = 1.0f;
-		if(m_isAiming && hasScopeMode())
+		if (m_isAiming && hasScopeMode())
 		{
 			g_ScopeFeedbackTimer = 1.0f;
 		}
@@ -2573,6 +2885,15 @@ r3dPoint3D obj_Player::GetHeadPosition()
 void obj_Player::DoDeath(int networdIDKiller, bool forced_by_server, STORE_CATEGORIES damageSource)
 {
 	//r3dOutToLog("%s: DoDeath\n", Name.c_str());
+	if(NetworkLocal)
+	{
+		#if VEHICLES_ENABLED // Server Vehicles
+			if ( isPassenger() )
+					exitVehicleHowPassenger();
+			else if( isInVehicle() )
+					exitVehicle();
+		#endif
+	}
 	r3d_assert(!bDead);
 
 	if(NetworkLocal)
@@ -2580,7 +2901,7 @@ void obj_Player::DoDeath(int networdIDKiller, bool forced_by_server, STORE_CATEG
 		CurLoadout.Health = 0; // to make sure that UI will show zero health
 	}
 
-	SoundSys.PlayAndForget(SoundSys.GetEventIDByPath("Sounds/BulletHits/Hit_Death"), GetPosition());		
+	SoundSys.PlayAndForget(SoundSys.GetEventIDByPath("Sounds/BulletHits/Hit_Death"), GetPosition());
 
 	CurrentSpread = 0;
 
@@ -2611,6 +2932,7 @@ void obj_Player::DoDeath(int networdIDKiller, bool forced_by_server, STORE_CATEG
 	DisableKillerView = false;
 
 	m_AuraType = AT_NONE;
+	m_LastAuraType = AT_NONE;
 	grenadeReadyTime = 0;
 
 	// if we have not default backpack - remove it as it will be dropped as item on server
@@ -2671,17 +2993,25 @@ void obj_Player::DoDeath(int networdIDKiller, bool forced_by_server, STORE_CATEG
 			{
 				if(killedByObj == this)
 				{
-					r3dscpy(deadMsg, "KILLED BY ENVIRONMENT");
+					r3dscpy(deadMsg, "$KILLED_BY_ENVIRONMENT");
 				}
 				else if(killedByObj->isObjType(OBJTYPE_Human))
 				{
 					obj_Player* killedByPlr = (obj_Player*)killedByObj;
-					char tmpName[64] = {0};
-					killedByPlr->GetUserName(tmpName);
-					sprintf(deadMsg, "KILLED BY %s", tmpName);
+					if (killedByPlr->IsOnVehicle==true)
+					{
+						char tmpName[64] = {0};
+						killedByPlr->GetUserName(tmpName);
+						sprintf(deadMsg, "$HAS_OVER_RUN %s", tmpName);
+					}
+					else {
+						char tmpName[64] = {0};
+						killedByPlr->GetUserName(tmpName);
+						sprintf(deadMsg, "$KILLED_BY %s", tmpName);
+					}
 				}
 				else if(killedByObj->isObjType(OBJTYPE_Zombie))
-					r3dscpy(deadMsg, "EATEN BY ZOMBIE");
+					r3dscpy(deadMsg, "$EATEN_BY_ZOMBIE");
 			}
 			hudMain->showYouAreDead(deadMsg);
 		}
@@ -2705,6 +3035,8 @@ void obj_Player::Undie()
 
 	PlayerState = PLAYER_IDLE;
 	SyncAnimation(true);
+	this->CurLoadout.Alive=1;
+
 
 }
 
@@ -2755,12 +3087,15 @@ void obj_Player::SyncAnimation(bool force)
 static float accumLastDamageRcvd = 0;
 void obj_Player::ApplyDamage(const r3dPoint3D& dmgPos, float damage, GameObject* fromObj, int bodyBone, int dmgType)
 {
+    if (isInVehicle() || isPassenger())
+		return;
+
 	lastTimeHit = r3dGetTime();
 	lastTimeHitBone = bodyBone;
 	lastDamageRcvd = damage;
 	accumLastDamageRcvd += damage;
 
-	/*if (fromObj == gClientLogic().localPlayer_)
+	if (fromObj == gClientLogic().localPlayer_)
 	{
 		if(bodyBone == uberAnim_->GetBoneID("Bip01_Head"))
 			SoundSys.PlayAndForget(SoundSys.GetEventIDByPath("Sounds/BulletHits/Hit_Headshot"), GetPosition());
@@ -2768,7 +3103,7 @@ void obj_Player::ApplyDamage(const r3dPoint3D& dmgPos, float damage, GameObject*
 			SoundSys.PlayAndForget(SoundSys.GetEventIDByPath("Sounds/WarZ/Impacts/Impacts-KnifeStab"), GetPosition());		
 		else
 			SoundSys.PlayAndForget(SoundSys.GetEventIDByPath("Sounds/WarZ/Impacts/Impacts-Body"), GetPosition());		
-	}*/
+	}
 
 	// apply ragdoll force from object position, or up if too close
 	r3dPoint3D ragHitPos = GetPosition();
@@ -2817,6 +3152,18 @@ void obj_Player::ApplyDamage(const r3dPoint3D& dmgPos, float damage, GameObject*
 
 bool obj_Player::ChangeWeaponByIndex(int index)
 {
+
+	if (m_Weapons[index] != NULL)
+	{
+		if (m_Weapons[index]->getItemID()== 101306 && !NetworkLocal) // flashlight
+		{
+			weapn = m_Weapons[index];
+		}
+		else {
+			  weapn=NULL;
+		}
+	}
+
 	r3d_assert(index>=0 && index < NUM_WEAPONS_ON_PLAYER);
 	if(m_SelectedWeapon == index && !forcedEmptyHands)
 		return false;
@@ -6355,69 +6702,154 @@ void obj_Player::TogglePhysicsSimulation(bool on)
 
 //////////////////////////////////////////////////////////////////////////
 
-void obj_Player::enterVehicle( obj_Vehicle* target_Vehicle )
+void obj_Player::EnterVehicleHowPassenger( obj_Vehicle* target_Vehicle )
 {
-	// Fast version from Frank
-	target_Vehicle->SwitchToDrivable( true );
-	vehicleViewActive_ = VehicleView_Driver; 
-	d_drive_vehicles->SetBool( true ); // to gain control currently. 
-	// HACK: bash this currently. 
-	target_Vehicle->NetworkLocal = true;
-
-	//	Exclude player physics shapes from simulation
+	switchToEmptyHands();
+	r3dOutToLog("#### Entrando como pasajero en %s\n",target_Vehicle->FileName);
+	SetPosition(GetPosition()+r3dPoint3D(0,8,0));
+	vehicleViewActive_ = VehicleView_Passenger;
+	ActualVehicle=target_Vehicle;
 	TogglePhysicsSimulation(false);
+	d_drive_vehicles->SetBool( true );
+
+	PKT_C2C_PlayerOnVehicle_s n;
+	n.PlayerOnVehicle=true;
+	n.VehicleID=toP2pNetId(ActualVehicle->GetNetworkID());
+	p2pSendToHost(this, &n, sizeof(n));
+	VehicleID=n.VehicleID;
 }
 
-void obj_Player::exitVehicle()
+void obj_Player::exitVehicleHowPassenger()
 {
-
-	// first let's look for a good location
-	obj_Vehicle* currentCar = g_pPhysicsWorld->m_VehicleManager->getRealDrivenVehicle();
-	r3d_assert(currentCar);
-
-
-	r3dVector rotationVector = currentCar->GetRotationVector();
-	r3dMatrix Matrix;
-	// NOTE: We might want to take out rotation in the x or z direction and only focus on the Y direction... 
-	r3dBuildRotationMatrix(Matrix, rotationVector );
-
-	bool success = false;
-	for ( int exitIndex = 0; exitIndex < 4; exitIndex++  )
+	hudMain->setCarInfo(0,0,0,0,0,0,false);
+	r3dOutToLog("#### Saliendo como pasajero en %s\n",ActualVehicle->FileName);
+	float pos1=4.0f;
+	float pos2=-4.0f;
+	switch((int)u_GetRandom(0,5))
 	{
-		r3dVector exitPosition;
-		bool returnValue = currentCar->getExitSpace( exitPosition, exitIndex );
-		r3d_assert( returnValue );
+	case 0:
+		pos1=4.0f;
+		pos2=-4.0f;
+		break;
+	case 1:
+		pos1=4.0f;
+		pos2=4.0f;
+		break;
+	case 2:
+		pos1=-4.0f;
+		pos2=4.0f;
+		break;
+	case 3:
+		pos1=-4.0f;
+		pos2=-4.0f;
+		break;
+	case 4:
+		pos1=4.0f;
+		pos2=-4.0f;
+		break;
+	case 5:
+		pos1=4.0f;
+		pos2=4.0f;
+		break;
+	}
 
-		exitPosition *= Matrix;
-		r3dVector targetPosition = currentCar->GetPosition() + exitPosition; 
+	PKT_C2C_PlayerOnVehicle_s n;
+	n.PlayerOnVehicle=false;
+	n.VehicleID=toP2pNetId(ActualVehicle->GetNetworkID());
+	p2pSendToHost(this, &n, sizeof(n));
+	VehicleID=n.VehicleID;
 
-		if ( TestExitPosition( targetPosition) )
+	r3dVector targetPosition = ActualVehicle->GetPosition() + r3dPoint3D( pos1, 3, pos2); // Server Vehicles
+	TeleportPlayer( targetPosition, "Exiting vehicle");
+
+	TogglePhysicsSimulation(true);
+	d_drive_vehicles->SetBool( false );
+	vehicleViewActive_ = VehicleView_None;
+	ActualVehicle=NULL;
+}
+
+void obj_Player::enterVehicle( obj_Vehicle* target_Vehicle ) // Server Vehicles
+{
+    switchToEmptyHands();
+	if (target_Vehicle->GasolineCar>0)
+	{
+		if (target_Vehicle->FileName == "data/objectsdepot/vehicles/drivable_buggy_02.sco")
 		{
-			TeleportPlayer( targetPosition, "Exiting vehicle");
-			success = true;
-			break;
+			SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/Vehicles/DuneBuggyEngine_Start"), GetPosition());
+		}
+		else {
+			SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/Vehicles/StrykerEngine_Start"), GetPosition());
 		}
 	}
+	SetPosition(GetPosition()+r3dPoint3D(0,8,0));
+	vehicleViewActive_ = VehicleView_Driver;
+	ActualVehicle=target_Vehicle;
+	TogglePhysicsSimulation(false);
+	d_drive_vehicles->SetBool( true );
+	ActualVehicle->NetworkLocal = true;
+	ActualVehicle->Occupants=1;
 
-	if( success == false )
+	PKT_C2C_PlayerOnVehicle_s n;
+	n.PlayerOnVehicle=true;
+	n.VehicleID=toP2pNetId(ActualVehicle->GetNetworkID());
+	p2pSendToHost(this, &n, sizeof(n));
+	VehicleID=n.VehicleID;
+}
+
+void obj_Player::exitVehicle()  // Server Vehicles
+{
+     hudMain->setCarInfo(0,0,0,0,0,0,false);
+	if (ActualVehicle->DamageCar>0 && ActualVehicle->GasolineCar>=1)
 	{
-		// don't know the height right now. 
-		r3dVector targetPosition = currentCar->GetPosition() + r3dVector( 0, 3, 0 );
-		if ( TestExitPosition( targetPosition, true ) )
-		{
-			TeleportPlayer( targetPosition, "Exiting vehicle");
-			success = true;
-		}
+		if (ActualVehicle->FileName == "data/objectsdepot/vehicles/drivable_buggy_02.sco")
+			SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/Vehicles/DuneBuggyEngine_Stop"), GetPosition());
+		else
+			SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/Vehicles/StrykerEngine_Stop"), GetPosition());		
+	}
+	float pos1=4.0f;
+	float pos2=-4.0f;
+	switch((int)u_GetRandom(0,5))
+	{
+	case 0:
+		pos1=4.0f;
+		pos2=-4.0f;
+		break;
+	case 1:
+		pos1=4.0f;
+		pos2=4.0f;
+		break;
+	case 2:
+		pos1=-4.0f;
+		pos2=4.0f;
+		break;
+	case 3:
+		pos1=-4.0f;
+		pos2=-4.0f;
+		break;
+	case 4:
+		pos1=4.0f;
+		pos2=-4.0f;
+		break;
+	case 5:
+		pos1=4.0f;
+		pos2=4.0f;
+		break;
 	}
 
-	if( success == true ) 
-	{
-		// Fast version from Frank
-		vehicleViewActive_ = VehicleView_None; 
-		d_drive_vehicles->SetBool( false ); // to release control currently. 
-		TogglePhysicsSimulation(true);
-	}
-	
+	PKT_C2C_PlayerOnVehicle_s n;
+	n.PlayerOnVehicle=false;
+	n.VehicleID=toP2pNetId(ActualVehicle->GetNetworkID());
+	p2pSendToHost(this, &n, sizeof(n));
+	VehicleID=n.VehicleID;
+
+	r3dVector targetPosition = ActualVehicle->GetPosition() + r3dPoint3D( pos1, 3, pos2); // Server Vehicles
+	TeleportPlayer( targetPosition, "Exiting vehicle");
+	ActualVehicle->Occupants=0;
+	d_drive_vehicles->SetBool( false );
+	ActualVehicle->NetworkLocal = false;
+	TogglePhysicsSimulation(true);
+	vehicleViewActive_ = VehicleView_None;
+	ActualVehicle=NULL;
 }
 
 bool obj_Player::isDriving()
@@ -6425,9 +6857,14 @@ bool obj_Player::isDriving()
 	return vehicleViewActive_ == VehicleView_Driver;
 }
 
-bool obj_Player::isInVehicle() 
+bool obj_Player::isPassenger()
 {
-	return vehicleViewActive_ != VehicleView_None;
+	return vehicleViewActive_ == VehicleView_Passenger;
+}
+
+bool obj_Player::isInVehicle()
+{
+	return vehicleViewActive_ == VehicleView_Driver;
 }
 
 bool obj_Player::TestExitPosition( r3dVector& exitPosition, bool ignoreGround)
@@ -6435,7 +6872,7 @@ bool obj_Player::TestExitPosition( r3dVector& exitPosition, bool ignoreGround)
 
 	// snap to ground
 	if ( ignoreGround == false ) {
-		// first find out if there's ground. 
+		// first find out if there's ground.
 		PxRaycastHit hit;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
 		if(g_pPhysicsWorld->raycastSingle(PxVec3(exitPosition.x, exitPosition.y+1, exitPosition.z), PxVec3(0, -1, 0), 2, PxSceneQueryFlag::eIMPACT, hit, filter))
@@ -6443,14 +6880,14 @@ bool obj_Player::TestExitPosition( r3dVector& exitPosition, bool ignoreGround)
 			exitPosition.x = hit.impact.x;
 			exitPosition.y = hit.impact.y;
 			exitPosition.z = hit.impact.z;
-		} 
-		else 
+		}
+		else
 		{
 			return false;
 		}
 	}
 
-	// check spawn area. 
+	// check spawn area.
 	PxShape* overlapHit = NULL;
 	PxU32 collisionFlag = COLLIDABLE_STATIC_MASK ;
 	PxBoxGeometry playerBox( 0.2f, 0.9f, 0.2f) ;

@@ -120,7 +120,7 @@ void obj_Barricade::AppendRenderables( RenderArray ( & render_arrays  )[ rsCount
 }
 
 /*virtual*/
-r3dMesh* obj_Barricade::GetObjectMesh() 
+r3dMesh* obj_Barricade::GetObjectMesh()
 {
 	return m_PrivateModel;
 }

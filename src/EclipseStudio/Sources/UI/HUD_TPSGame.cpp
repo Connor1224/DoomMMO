@@ -32,6 +32,7 @@
 #include "rendering/Deffered/D3DMiscFunctions.h"
 
 extern float GameFOV;
+int externalcam;
 
 HUDDisplay*	hudMain = NULL;
 HUDPause*	hudPause = NULL;
@@ -512,28 +513,28 @@ int spectator_observingPlrIdx = 0;
 r3dPoint3D spectator_cameraPos(0,0,0);
 void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 {
-#ifndef FINAL_BUILD
+//#ifndef FINAL_BUILD
 	if(d_video_spectator_mode->GetBool() || d_observer_mode->GetBool())
 	{
 		r3dPoint3D CamPos = FPS_Position;
 		CamPos.Y += 1.8f;
 		r3dPoint3D ViewPos = CamPos + FPS_vVision*10.0f;
 
-		Cam.FOV = r_video_fov->GetFloat();
+		//Cam.FOV = r_video_fov->GetFloat();
 		Cam.SetPosition( CamPos );
 		Cam.PointTo(ViewPos);
 
-		LevelDOF = r_video_DOF_enable->GetBool();
+		//LevelDOF = r_video_DOF_enable->GetBool();
 		_NEAR_DOF = 1;
 		_FAR_DOF = 1;
-		DepthOfField_NearStart = r_video_nearDOF_start->GetFloat();
-		DepthOfField_NearEnd = r_video_nearDOF_end->GetFloat();
-		DepthOfField_FarStart = r_video_farDOF_start->GetFloat();
-		DepthOfField_FarEnd = r_video_farDOF_end->GetFloat();
-		
+		//DepthOfField_NearStart = r_video_nearDOF_start->GetFloat();
+		//DepthOfField_NearEnd = r_video_nearDOF_end->GetFloat();
+		//DepthOfField_FarStart = r_video_farDOF_start->GetFloat();
+		//DepthOfField_FarEnd = r_video_farDOF_end->GetFloat();
+
 		return;
 	}
-#endif
+//#endif
 
 	const ClientGameLogic& CGL = gClientLogic();
 	obj_Player* pl = CGL.localPlayer_;
@@ -543,7 +544,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 	}
 
 	extern bool SetCameraPlayerVehicle(const obj_Player* pl, r3dCamera &Cam);
-	if(SetCameraPlayerVehicle(pl, Cam))
+	if(SetCameraPlayerVehicle(pl, Cam) || pl->isInVehicle() || pl->isPassenger()) // server vehicles
 	{
 		FPS_Position = Cam;
 		return;
@@ -551,7 +552,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 
 
 	// dead camera
-	if(pl->bDead)
+	if(pl->bDead && !hudPause->isActive() && !hudMain->isPlayersListVisible() && !hudPause->isActive())
 	{
 		r3dPoint3D camPos, camPointTo;
 		bool do_camera = false;
@@ -565,7 +566,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 			if(!oldPlayerPos.AlmostEqual(pl->GetPosition())) // make sure to do that check only once
 			{
 				oldPlayerPos = pl->GetPosition();
-				r3dPoint3D possible_cam_offset[4] = {r3dPoint3D(-3, 5, -3), r3dPoint3D(3, 5, -3), r3dPoint3D(-3, 5, 3), r3dPoint3D(3, 5, 3)};
+				r3dPoint3D possible_cam_offset[4] = {r3dPoint3D(-3, 0, -3), r3dPoint3D(3, 5, -3), r3dPoint3D(-3, 5, 3), r3dPoint3D(3, 5, 3)};
 				int found=-1;
 				for(int i=0; i<4; ++i)
 				{
@@ -585,15 +586,15 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 				}
 				if(found!=-1)
 				{
-					camPosOffset = possible_cam_offset[found];
+					camPosOffset = (possible_cam_offset[found] - r3dPoint3D(0, 3, 0));
 				}
 				else
 				{
-					camPosOffset = r3dPoint3D(-0.1f, 5, -0.1f);
+					camPosOffset = r3dPoint3D(-0.1f, 0, -0.1f);
 				}
 			}
 
-			camPos = pl->GetPosition() + camPosOffset; 
+			camPos = pl->GetPosition() + camPosOffset;
 			do_camera = true;
 			check_cam_collision = false;
 		}
@@ -609,10 +610,42 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 			if(check_cam_collision)
 				CheckCameraCollision(camPos, camPointTo, false);
 
-			Cam.FOV = 60;
+			/*Cam.FOV = 60;
 			Cam.SetPosition( camPos );
 			Cam.PointTo( camPointTo );
-			FPS_Position = Cam;
+			FPS_Position = Cam;*/
+/////////////////////////
+
+			if (!hudPause->isActive())
+			{
+				int mMX=Mouse->m_MouseMoveX, mMY=Mouse->m_MouseMoveY;
+				float  glb_MouseSensAdj = CurrentRig.MouseSensetivity * g_mouse_sensitivity->GetFloat();
+
+				static float camangle = 0;
+				static float camangle2 = 0;
+				camangle += float(-mMX) * glb_MouseSensAdj;
+				camangle2 += float(-mMY) * glb_MouseSensAdj;
+
+				if(camangle > 360.0f ) camangle = camangle - 360.0f;
+				if(camangle < 0.0f )   camangle = camangle + 360.0f;
+
+				if(camangle2 > -20.0f ) camangle2 = -20.0f;
+				if(camangle2 < -60.0f )   camangle2 = -60.0f;
+
+
+				D3DXMATRIX mr;
+				D3DXMatrixRotationYawPitchRoll(&mr, R3D_DEG2RAD(-camangle), R3D_DEG2RAD(-camangle2), 0);
+				r3dVector DeadForwardVector = r3dVector(mr ._31, mr ._32, mr ._33);
+
+				camPos = pl->GetPosition();
+				camPos += -DeadForwardVector * 8 ;
+			
+				Cam.SetPosition(camPos);
+				Cam.PointTo(camPointTo + DeadForwardVector + r3dVector ( 0, -1, 0));
+				Cam.vUP = r3dPoint3D(0, 1, 0);
+				//FPS_Position = Cam;
+			}
+/////////////////////
 			return;
 		}
 	}
@@ -656,7 +689,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 		{
 			CamPos = savedCamPos;
 			playerPosHead = playerPos;
-			playerPosHead.y += CharacterHeight - 1.8f;
+			playerPosHead.y += CharacterHeight - 2.8f;
 			CheckCameraCollision(CamPos, playerPosHead, true);
 		}
 	}
@@ -884,6 +917,8 @@ static void DrawMenus()
 				hudMain->setChatChannel(1);
 			if(InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_CHAT_CHANNEL3))
 				hudMain->setChatChannel(2);
+			if(InputMappingMngr->wasReleased(r3dInputMappingMngr::KS_CHAT_CHANNEL4))
+				hudMain->setChatChannel(3);
 		}
 
 		if(hudMain && !hudMain->isChatInputActive())
@@ -907,7 +942,7 @@ static void DrawMenus()
 							bool isme=false;
 							if (strcmp(CGL.playerNames[i].Gamertag,plrUserName) == 0)
 								isme=true;
-							hudMain->addPlayerToList(index++, CGL.playerNames[i].Gamertag, CGL.playerNames[i].plrRep, CGL.playerNames[i].isLegend, CGL.playerNames[i].isDev, isme);
+							hudMain->addPlayerToList(index++, CGL.playerNames[i].Gamertag, CGL.playerNames[i].plrRep, CGL.playerNames[i].isLegend, CGL.playerNames[i].isDev, CGL.playerNames[i].isPunisher, CGL.playerNames[i].isInvitePending, CGL.playerNames[i].IsPremium, isme);
 						}
 					}
 					hudMain->showPlayersList(1);
@@ -1002,41 +1037,133 @@ void TPSGameHUD :: Draw()
 	return;  
 }
 
-bool SetCameraPlayerVehicle(const obj_Player* pl, r3dCamera &Cam)
+bool SetCameraPlayerVehicle(const obj_Player* pl, r3dCamera &Cam) // Server Vehicles
 {
 	static bool wasDrivenByPlayer = false;
 #if VEHICLES_ENABLED
-	if ( g_pPhysicsWorld && g_pPhysicsWorld->m_VehicleManager->GetDrivenCar() && d_drive_vehicles->GetBool() == true )
+	if ( g_pPhysicsWorld )// && g_pPhysicsWorld->m_VehicleManager->GetDrivenCar())// && d_drive_vehicles->GetBool() == true)// && !hudPause->isActive())
 	{
-		obj_Vehicle* vehicle = g_pPhysicsWorld->m_VehicleManager->getRealDrivenVehicle();
-		if( vehicle ) 
+		obj_Vehicle* vehicle = pl->ActualVehicle;//g_pPhysicsWorld->m_VehicleManager->getRealDrivenVehicle();
+		if( vehicle )
 		{
-#if	VEHICLE_CINEMATIC_MODE
+//#if	VEHICLE_CINEMATIC_MODE
 			r3dVector CamPos = vehicle->GetPosition();
 			CamPos += r3dPoint3D( 0, ( 5 ), 0 );
 
 			int mMX=Mouse->m_MouseMoveX, mMY=Mouse->m_MouseMoveY;
-			float  glb_MouseSensAdj = CurrentRig.MouseSensetivity * g_mouse_sensitivity->GetFloat();	
+			float  glb_MouseSensAdj = CurrentRig.MouseSensetivity * g_mouse_sensitivity->GetFloat();
 
 			static float camangle = 0;
+			static float camangle2 = 0;
+			if (!hudPause->isActive() && !hudMain->isPlayersListVisible())
+			{
 			camangle += float(-mMX) * glb_MouseSensAdj;
+			camangle2 += float(-mMY) * glb_MouseSensAdj;
+
 
 			if(camangle > 360.0f ) camangle = camangle - 360.0f;
 			if(camangle < 0.0f )   camangle = camangle + 360.0f;
 
+			if(camangle2 > 5.0f ) camangle2 = 5.0f;
+			if(camangle2 < -30.0f )   camangle2 = -30.0f;
+			}
+
+
 			D3DXMATRIX mr;
-			D3DXMatrixRotationYawPitchRoll(&mr, R3D_DEG2RAD(-camangle), 0.0f, 0);
+			D3DXMatrixRotationYawPitchRoll(&mr, R3D_DEG2RAD(-camangle), R3D_DEG2RAD(-camangle2), 0);
+			//D3DXMatrixRotationYawPitchRoll(&mr, R3D_DEG2RAD(-camangle), 0.0f, 0);
 			r3dVector vehicleForwardVector = r3dVector(mr ._31, mr ._32, mr ._33);
 
 			CamPos += -vehicleForwardVector * 8 ;
 
-			Cam.SetPosition(CamPos);
-			Cam.PointTo( CamPos + vehicleForwardVector * 3 + r3dVector ( 0, -1, 0) );
-			Cam.vUP = r3dPoint3D(0, 1, 0);
-#else 
-			g_pPhysicsWorld->m_VehicleManager->ConfigureCamera(Cam);
-#endif
-			wasDrivenByPlayer = true;
+			if(Keyboard->WasPressed(kbsC) && !hudMain->isChatInputActive())
+			{
+                    externalcam++;
+				if (externalcam>5)
+					externalcam=1;
+			}
+
+          if (externalcam==1)
+		  {
+			        CamPos += -vehicleForwardVector * 8 ;
+			        Cam.SetPosition(CamPos);
+			        Cam.PointTo( CamPos + vehicleForwardVector * 3 + r3dVector ( 0, -1, 0) );
+			        Cam.vUP = r3dPoint3D(0, 1, 0);
+		  }
+		  else if (externalcam==2)
+		  {
+			        r3dPoint3D InCarCam=vehicle->GetPosition();
+			        InCarCam += r3dPoint3D( 0, ( 5 ), 0 );
+			        D3DXMATRIX mr2;
+			        D3DXMatrixRotationYawPitchRoll(&mr2, R3D_DEG2RAD(vehicle->GetRotationVector().x), R3D_DEG2RAD(vehicle->GetRotationVector().y), 0);
+			        r3dVector vehicleForwardVector2 = r3dVector(mr2 ._31, mr2 ._32, mr2 ._33);
+
+			        InCarCam += -vehicleForwardVector2 *8;
+
+			        Cam.SetPosition(InCarCam);
+
+			        Cam.PointTo(InCarCam + vehicleForwardVector2 * 3 + r3dVector ( 0, -1, 0) );
+			        Cam.vUP = r3dPoint3D(0, 1, 0);
+		  }
+          else if (externalcam==3)
+		  {
+			        CamPos += -vehicleForwardVector * 15 ;
+			        Cam.SetPosition(CamPos);
+			        Cam.PointTo( CamPos + vehicleForwardVector * 3 + r3dVector ( 0, -1, 0) );
+			        Cam.vUP = r3dPoint3D(0, 1, 0);
+		  }
+		  else if (externalcam==4)
+		  {
+			        r3dPoint3D InCarCam=vehicle->GetPosition();
+			        InCarCam += r3dPoint3D( 0, ( 5 ), 0 );
+			        D3DXMATRIX mr2;
+			        D3DXMatrixRotationYawPitchRoll(&mr2, R3D_DEG2RAD(vehicle->GetRotationVector().x), R3D_DEG2RAD(vehicle->GetRotationVector().y), 0);
+			        r3dVector vehicleForwardVector2 = r3dVector(mr2 ._31, mr2 ._32, mr2 ._33);
+
+			        InCarCam += -vehicleForwardVector2 *15;
+
+			        Cam.SetPosition(InCarCam);
+
+			        Cam.PointTo(InCarCam + vehicleForwardVector2 * 3 + r3dVector ( 0, -1, 0) );
+			        Cam.vUP = r3dPoint3D(0, 1, 0);
+		  }
+		  else if (externalcam==5) // No funciona bien
+		  {
+			        r3dPoint3D InCarCam=vehicle->GetPosition();
+					r3dPoint3D Rotation=r3dVector(vehicle->GetRotationMatrix()._31,vehicle->GetRotationMatrix()._32,vehicle->GetRotationMatrix()._33);
+
+					if (vehicle->FileName=="data/objectsdepot/vehicles/drivable_buggy_02.sco")
+					{
+                                InCarCam += r3dPoint3D( 0, ( 1.6 ), 0 );
+								InCarCam +=-Rotation/1.4;
+					}
+					else if (vehicle->FileName=="data/objectsdepot/vehicles/drivable_buggy_01.sco")
+					{
+                                InCarCam += r3dPoint3D( 0, ( 1.4 ), 0 );
+								InCarCam +=-Rotation/1.4;
+					}
+					else if (vehicle->FileName=="data/objectsdepot/vehicles/drivable_stryker.sco")
+					{
+			                    InCarCam += r3dPoint3D( 0, ( 2.5 ), 0 );
+								InCarCam +=-Rotation/2;
+					}
+					else if (vehicle->FileName=="data/objectsdepot/vehicles/zombie_killer_car.sco")
+					{
+			                    InCarCam += r3dPoint3D( 0, ( 2.1 ), 0 );
+								InCarCam +=-Rotation/2;
+					}
+
+
+			        Cam.SetPosition(InCarCam);
+			        Cam.PointTo(InCarCam + Rotation*3 + r3dVector ( 0 , -1, 0));
+			        Cam.vUP = r3dPoint3D( 0, 1, 0);
+		  }
+
+//#else
+//			g_pPhysicsWorld->m_VehicleManager->ConfigureCamera(Cam);
+//#endif
+			if(Keyboard->WasPressed(kbsE) && wasDrivenByPlayer==false)
+			   wasDrivenByPlayer = true;
 		}
 		else
 		{
@@ -1047,7 +1174,7 @@ bool SetCameraPlayerVehicle(const obj_Player* pl, r3dCamera &Cam)
 	{
 		wasDrivenByPlayer = false;
 	}
-#endif 
+#endif
 	return wasDrivenByPlayer;
 
 }
@@ -1057,7 +1184,20 @@ static float g_lastAimAnimTime = -1.f;
 void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 {
 	r3d_assert(pl->NetworkLocal);
-
+#if VEHICLES_ENABLED
+	if (pl->isInVehicle() && !InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_INTERACT))
+	{
+		pl->PlayerState = PLAYER_MOVE_RUN;
+		pl->UpdateLocalPlayerMovement();
+		   return;
+	}
+	else if (pl->isPassenger() && !InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_INTERACT))
+	{
+		pl->PlayerState = PLAYER_MOVE_RUN;
+		pl->UpdateLocalPlayerMovement();
+		   return;
+	}
+#endif
 	// check fire weapon should be called all the time, as it will reset weapon fire in case if you are sitting on the menu, etc
 	{
 		R3DPROFILE_FUNCTION("update fire");
@@ -1066,17 +1206,19 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 
     if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_SWITCH_FPS_TPS) && !(hudAttm && hudAttm->isActive()) && !(hudMain && hudMain->isChatInputActive()) && !Mouse->GetMouseVisibility() && !pl->bSwim)
     {
-        pl->switchFPS_TPS();
+		if (!pl->isInVehicle() && !pl->isPassenger())
+		pl->switchFPS_TPS();
     }
+
 
     if (pl->bSwim && g_camera_mode->GetInt() == 2)
     {
-		pl->switchFPS_TPS();
-	}
+        pl->switchFPS_TPS();
+    }
 
 	r3dPoint3D prevAccel = pl->InputAcceleration;
 	pl->InputAcceleration.Assign(0, 0, 0);
-	
+
 	static int shiftWasPressed = 0;
 	float movingSpeed = pl->plr_local_moving_speed * (1.0f/r3dGetFrameTime());
 
@@ -1097,23 +1239,22 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 
 	const Weapon* wpn = pl->m_Weapons[pl->m_SelectedWeapon];
 
-	if(!Mouse->GetMouseVisibility()
-		&& wpn)
+	if(!Mouse->GetMouseVisibility()) // Server Vehicles
 	{
-
 		// vehicles
-		if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_INTERACT) )
+		if(InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_INTERACT) && !(hudMain &&hudMain->isChatInputActive())) // Server Vehicles
 		{
 #if VEHICLES_ENABLED
-			obj_Vehicle* target_Vehicle = pl->canEnterVehicle();
-		
-			if( pl->isInVehicle() ) {
-				pl->exitVehicle();
-			}
-			else if ( target_Vehicle  ) // now we're going to try to use vehicles (otherwise UAV characters can't use vehicles).
-			{
-				pl->enterVehicle( target_Vehicle );
-			}
+
+				if (pl->isPassenger())
+				{
+				   pl->exitVehicleHowPassenger();
+				}
+				else if (pl->isInVehicle())
+				{
+				   pl->exitVehicle();
+				}
+				externalcam=1;
 #endif
 		}
 	}
@@ -1221,13 +1362,16 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 
 		extern float getWaterDepthAtPos(const r3dPoint3D& pos);
         float waterDepth = getWaterDepthAtPos(pl->GetPosition());
+
+    {
         if(waterDepth > 1.4f)
         {
             proning = false;
             crouching = false;
         }
+    }
 
-	if(proning) 
+	if(proning)
 	{
 		if(!wasProning)
 			playerState = PLAYER_PRONE_DOWN;
@@ -1285,7 +1429,7 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 	if(proning && aiming)
 		disablePlayerMovement = true;
 
-	VMPROTECT_BeginMutation("ProcessPlayerMovement_Accel");	
+	VMPROTECT_BeginMutation("ProcessPlayerMovement_Accel");
 	{
 
 		r3dPoint3D accelaration(0,0,0);
@@ -1304,11 +1448,11 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 			// due to animation, firstly check left and right movement, so that if you move diagonally we will play moving forward animation
 			float thumbX, thumbY;
 			Gamepad->GetLeftThumb(thumbX, thumbY);
-			if(InputMappingMngr->isPressed(r3dInputMappingMngr::KS_MOVE_LEFT)) 
+			if(InputMappingMngr->isPressed(r3dInputMappingMngr::KS_MOVE_LEFT))
 			{
 				accelaration += (aiming)?r3dPoint3D(-GPP->AI_WALK_SPEED*GPP->AI_BASE_MOD_SIDE,0,0):r3dPoint3D(-GPP->AI_RUN_SPEED*GPP->AI_BASE_MOD_SIDE,0,0);
 			}
-			else if(InputMappingMngr->isPressed(r3dInputMappingMngr::KS_MOVE_RIGHT)) 
+			else if(InputMappingMngr->isPressed(r3dInputMappingMngr::KS_MOVE_RIGHT))
 			{
 				accelaration += (aiming)?r3dPoint3D(GPP->AI_WALK_SPEED*GPP->AI_BASE_MOD_SIDE,0,0):r3dPoint3D(GPP->AI_RUN_SPEED*GPP->AI_BASE_MOD_SIDE,0,0);
 			}
@@ -1318,7 +1462,7 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 			}
 
 			//r3dOutToLog("sprint: %d, canSprint: %d, speed: %.3f\n", (int)shiftWasPressed, (int)canSprint, movingSpeed);
-			if(shiftWasPressed && canSprint /*&& pl->bOnGround*/ && !crouching && !proning && !disableSprint && (pl->m_Stamina>0.0f) && pl->m_StaminaPenaltyTime<=0 && !pl->bSwim && waterDepth < 1.2f) 
+            if(shiftWasPressed && canSprint /*&& pl->bOnGround*/ && !crouching && !proning && !disableSprint && (pl->m_Stamina>0.0f) && pl->m_StaminaPenaltyTime<=0 && !pl->bSwim && waterDepth < 1.2f)
             {
                 playerState = PLAYER_MOVE_SPRINT;
                 accelaration *= 0.5f; // half side movement when sprinting
@@ -1327,7 +1471,7 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
             }
 			else
 			{
-				if(InputMappingMngr->isPressed(r3dInputMappingMngr::KS_MOVE_FORWARD) || shiftWasPressed) 
+				if(InputMappingMngr->isPressed(r3dInputMappingMngr::KS_MOVE_FORWARD) || shiftWasPressed)
 				{
 					float spd = GPP->AI_BASE_MOD_FORWARD * (aiming ? GPP->AI_WALK_SPEED : GPP->AI_RUN_SPEED);
 					accelaration += r3dPoint3D(0,0,spd);
@@ -1340,68 +1484,84 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 					accelaration  = accelaration.NormalizeTo() * spd;
 				}
 				else if(thumbY!=0.0f)
-                {
-                    if(thumbY>0)
-                        accelaration += (aiming)?r3dPoint3D(0,0,GPP->AI_WALK_SPEED*GPP->AI_BASE_MOD_FORWARD*thumbY):r3dPoint3D(0,0,GPP->AI_RUN_SPEED*GPP->AI_BASE_MOD_FORWARD*thumbY);
-                    else
-                        accelaration += (aiming)?r3dPoint3D(0,0,GPP->AI_WALK_SPEED*GPP->AI_BASE_MOD_BACKWARD*thumbY):r3dPoint3D(0,0,GPP->AI_RUN_SPEED*GPP->AI_BASE_MOD_BACKWARD*thumbY);
-                }
+				     {
+					//////// hasta aki
+				        if(thumbY>0)
+				            accelaration += (aiming)?r3dPoint3D(0,0,GPP->AI_WALK_SPEED*GPP->AI_BASE_MOD_FORWARD*thumbY):r3dPoint3D(0,0,GPP->AI_RUN_SPEED*GPP->AI_BASE_MOD_FORWARD*thumbY);
+				        else
+				            accelaration += (aiming)?r3dPoint3D(0,0,GPP->AI_WALK_SPEED*GPP->AI_BASE_MOD_BACKWARD*thumbY):r3dPoint3D(0,0,GPP->AI_RUN_SPEED*GPP->AI_BASE_MOD_BACKWARD*thumbY);
+				      }
+
+				        if(waterDepth > 1.4f)
+				        {
+				            pl->bSwim = true;
+				            if(shiftWasPressed && canSprint && (pl->m_Stamina>0.0f) && pl->m_StaminaPenaltyTime<=0)
+				            {
+				                pl->bSwimShift = true;
+				                accelaration *= 1.5f; // half side movement when sprinting
+				                playerState = PLAYER_SWIM_F;
+				            }
+				            else
+				            {
+								pl->bSwimShift = false;
+				            }
+				        }
+				        else if (pl->bSwim && waterDepth < 1.2f)
+				        {
+								pl->bSwim = false;
+				        }
 
 
-                if(waterDepth > 1.4f)
+				               if (!pl->bSwim) // AomBE : Fix Bugs Stamina
+				                {
+				                    pl->bSwimShift = false;
+				                }
+							   //return;/////// desde aki
+							    // if (!pl->bAllowToUseWeapons)
+				                    //pl->SyncAnimation(true);
+				        }
+
+				if (pl->bSwim)
 				{
-					pl->bSwim = true;
-					if(shiftWasPressed && canSprint && (pl->m_Stamina>0.0f) && pl->m_StaminaPenaltyTime<=0) 
+							if ( !pl->bSwimShift )
+							{
+							playerState = PLAYER_SWIM_M;
+							}
+				}
+				else if (!pl->bSwim)
 				{
-					pl->bSwimShift = true;
-					accelaration *= 1.5f; // half side movement when sprinting
-					playerState = PLAYER_SWIM_F;
-				}
-					else
-					{
-						pl->bSwimShift = false;
-					}
-				}
-				else if (pl->bSwim && waterDepth < 1.2f)
-				{
-					pl->bSwim = false;
-				}
+				            // set walk/run state
+				            if(playerState != PLAYER_MOVE_SPRINT && !crouching && !proning && (accelaration.x || accelaration.z))
+				                playerState = aiming ? PLAYER_MOVE_WALK_AIM : PLAYER_MOVE_RUN;
+				            // set prone walk state
+				            if(playerState != PLAYER_MOVE_SPRINT && !crouching && proning && (accelaration.x || accelaration.z))
+				                playerState = aiming ? PLAYER_PRONE_AIM : PLAYER_MOVE_PRONE;
+				            }
 
+				           if((playerState == PLAYER_MOVE_RUN || playerState == PLAYER_MOVE_SPRINT) && (r3dGetTime() < pl->m_SpeedBoostTime))
+				            {
+				                accelaration *= pl->m_SpeedBoost;
+                            }
 
-                                if (!pl->bSwim) // AomBE : Fix Bugs Stamina
-                {
-                    pl->bSwimShift = false;
-                }
-                    pl->SyncAnimation(true);
-            }
-
-			if (pl->bSwim && !pl->bSwimShift)
-			{
-				playerState = PLAYER_SWIM_M;
-			}
-			else if (!pl->bSwim)
-            {
-            // set walk/run state
-            if(playerState != PLAYER_MOVE_SPRINT && !crouching && !proning && (accelaration.x || accelaration.z))
-                playerState = aiming ? PLAYER_MOVE_WALK_AIM : PLAYER_MOVE_RUN;
-            // set prone walk state
-            if(playerState != PLAYER_MOVE_SPRINT && !crouching && proning && (accelaration.x || accelaration.z))
-                playerState = aiming ? PLAYER_PRONE_AIM : PLAYER_MOVE_PRONE;
-            }
-        
-			if((playerState == PLAYER_MOVE_RUN || playerState == PLAYER_MOVE_SPRINT) && (r3dGetTime() < pl->m_SpeedBoostTime))
-            {
-                accelaration *= pl->m_SpeedBoost;
-            }
-
-			if(gUserProfile.ProfileData.isDevAccount && Keyboard->IsPressed(kbsV))
-				accelaration *= 8.0f;
+//#ifndef FINAL_BUILD
+			if(gUserProfile.ProfileData.isDevAccount && Keyboard->IsPressed(kbsLeftAlt))
+				accelaration *= 5.0f;
+//#endif
 
 			// 		STORE_CATEGORIES equippedItemCat = wpn ? wpn->getCategory() : storecat_INVALID;;
 			// 		if(equippedItemCat == storecat_SUPPORT || equippedItemCat == storecat_MG)
 			// 			accelaration *= 0.8f; // 20% slow down
 		}
 
+
+		if (pl->bSwim)
+		{
+			playerState = PLAYER_SWIM_M;
+		}
+		if (pl->bSwimShift)
+		{
+            playerState = PLAYER_SWIM_F;
+		}
 
 		if(pl->CurLoadout.Health < GPP->c_fSpeedMultiplier_LowHealthLevel)
 			accelaration *= GPP->c_fSpeedMultiplier_LowHealthValue;
@@ -1423,8 +1583,8 @@ void ProcessPlayerMovement(obj_Player* pl, bool editor_debug )
 		// process jump after assigning InputAcceleration, so that we can predict where player will jump
 		if(!disablePlayerMovement)
 		{
-			if(pl->bOnGround && (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_JUMP)||Gamepad->WasPressed(gpA)) 
-				&& !crouching 
+			if(pl->bOnGround && (InputMappingMngr->wasPressed(r3dInputMappingMngr::KS_JUMP)||Gamepad->WasPressed(gpA))
+				&& !crouching
 				&& !proning
 				&& !pl->IsJumpActive()
 				&& prevAccel.z >= 0 /* prevent jump backward*/
@@ -1584,8 +1744,8 @@ void TPSGameHUD :: Process()
 
 	obj_Player* pl = gClientLogic().localPlayer_;
 	if(!pl) return;
+    if (gUserProfile.ProfileData.isDevAccount){ 
 
-#ifndef FINAL_BUILD
 
 	bool allow_specator_mode = true;
 	if(Keyboard->WasPressed(kbsF8) && allow_specator_mode)
@@ -1711,6 +1871,6 @@ void TPSGameHUD :: Process()
 
 		return;
 	}
-#endif
+}
 	ProcessPlayerMovement(pl, false);
 }

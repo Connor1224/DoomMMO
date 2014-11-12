@@ -7,30 +7,31 @@ private:
 	struct FilterGames
 	{
 		bool gameworld;
+        bool enabled;
 		bool stronghold;
+        bool privateservers;
 		bool hideempty;
 		bool hidefull;
+        bool passworded;
 
 		bool tracers;
 		bool nameplates;
 		bool crosshair;
-		bool privateServers;
 
 		bool region_us;
 		bool region_eu;
-		bool region_ru;
+        bool region_ru;
 		bool region_sa;
 
-		bool enabled;
-		bool passworded;
-
-		FilterGames() 
-		{ 
+		FilterGames()
+		{
 			gameworld = true;
+			enabled = true;
 			stronghold = true;
+			privateservers = true;
 			hideempty = false;
 			hidefull = false;
-			privateServers = true;
+			passworded = false;
 
 			tracers = false;
 			nameplates = false;
@@ -40,8 +41,6 @@ private:
 			region_eu = false;
 			region_ru = false;
 			region_sa = false;
-			enabled = true;
-			passworded = false;
 		}
 	};
 public:

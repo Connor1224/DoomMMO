@@ -77,6 +77,11 @@ BOOL obj_DroppedItem::OnCreate()
 		m_ActionUI_Title = gLangMngr.getString("Money");
 		m_ActionUI_Msg = gLangMngr.getString("HoldEToPickUpMoney");
 	}
+	else if (SpawnedItem == true)
+	{
+		m_ActionUI_Title = gLangMngr.getString("ITEM");//$FR_PAUSE_USE_ITEM");
+		m_ActionUI_Msg = gLangMngr.getString("HoldEToPickUpMoney");
+	}
 	else
 	{
 		const BaseItemConfig* cfg = g_pWeaponArmory->getConfig(m_Item.itemID);
@@ -85,11 +90,13 @@ BOOL obj_DroppedItem::OnCreate()
 	}
 
 	ReadPhysicsConfig();
-	PhysicsConfig.group = PHYSCOLL_TINY_GEOMETRY; // skip collision with players
+	PhysicsConfig.group = PHYSCOLL_LOCALPLAYER; // skip collision with players
 	PhysicsConfig.requireNoBounceMaterial = true;
 	PhysicsConfig.isFastMoving = true;
+	//m_bEnablePhysics = false;
+
 	SetPosition(GetPosition()+r3dPoint3D(0,0.25f,0));
-	
+
 	m_spawnPos = GetPosition();
 
 	parent::OnCreate();
@@ -152,7 +159,9 @@ void obj_DroppedItem::AppendRenderables( RenderArray ( & render_arrays )[ rsCoun
 
 		rend.Init( MeshGameObject::GetObjectLodMesh(), this );
 		rend.SortValue = 0;
-		
+		if (SpawnedItem == true)
+		rend.Parent->SetScale(r3dPoint3D(1.15,1.15,1.15));
+
 		render_arrays[ rsFillGBufferEffects ].PushBack( rend );
 	}
 }

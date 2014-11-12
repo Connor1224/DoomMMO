@@ -11,12 +11,13 @@ public:
 	UIMarket();
 
 	void initialize(r3dScaleformMovie* gfxMovie);
-	void setCurrency();
+
 	void eventBuyItem(r3dScaleformMovie* pMovie, const Scaleform::GFx::Value* args, unsigned argCount);
 
 	void update();
 
 	bool processing();
+	void setCurrency();
 
 private:
 	void addTabTypes();

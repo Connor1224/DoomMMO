@@ -92,7 +92,7 @@ void ClientGameLogic::SetPlayerPtr(int idx, obj_Player* ptr)
 	r3d_assert(idx < MAX_NUM_PLAYERS);
 	players2_[idx].ptr  = ptr;
 
-	if(idx >= CurMaxPlayerIdx) 
+	if(idx >= CurMaxPlayerIdx)
 		CurMaxPlayerIdx = idx + 1;
 
 	VMPROTECT_End();
@@ -183,9 +183,20 @@ void ClientGameLogic::Reset()
 		playerNames[i].plrRep = 0;
 		playerNames[i].isLegend = false;
 		playerNames[i].isDev = false;
+		playerNames[i].isPunisher = false;
+		playerNames[i].isInvitePending = false;
+		playerNames[i].MeCustomerID = 0;
+		playerNames[i].ShowCustomerID = 0;
+		playerNames[i].IsPremium = false;
 	}
-	
-	// clearing scoping.  Particularly important for Spectator modes. 
+
+	for(int i=0; i<R3D_ARRAYSIZE(HelpCalls); i++)
+	{
+		HelpCalls[i].DistressText[0] = 0;
+		HelpCalls[i].pos = r3dPoint3D(0,0,0);
+		HelpCalls[i].rewardText[0] = 0;
+	}
+	// clearing scoping.  Particularly important for Spectator modes.
 	g_RenderScopeEffect = 0;
 }
 
@@ -317,8 +328,10 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_JoinGameAns)
 	g_num_matches_played->SetInt(g_num_matches_played->GetInt()+1);
 	void writeGameOptionsFile();
 	writeGameOptionsFile();
-
-	gUserSettings.addGameToRecent(n.gameInfo.gameServerId);
+	if(!gUserSettings.isInRecentGamesList(n.gameInfo.gameServerId))
+	{
+		gUserSettings.addGameToRecent(n.gameInfo.gameServerId);
+	}
 	gUserSettings.saveSettings();
 
 	return;
@@ -360,10 +373,338 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_StartGameAns)
 	return;
 }
 
+IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_PositionVehicle) // Server Vehicles
+{
+	GameObject* from = GameWorld().GetNetworkObject(n.spawnID);
+	if(from)
+	{
+		const float fTimePassed = r3dGetFrameTime();
+		obj_Vehicle* ResPawnCar = (obj_Vehicle*)from;
+		if (n.RespawnCar==true)
+		{
+			if (!ResPawnCar)
+				return;
+			r3dOutToLog("VehicleID: %i is Respawned\n",n.FromID);
+		if (ResPawnCar->m_ParticleTracer)
+		{
+			ResPawnCar->m_ParticleTracer->SetPosition(n.spawnPos);
+			ResPawnCar->m_ParticleTracer->bKill=true;
+			ResPawnCar->m_ParticleTracer = NULL;
+		}
+
+		if (ResPawnCar->m_Particlebomb)
+			ResPawnCar->m_Particlebomb = NULL;
+
+		if (ResPawnCar->CollisionCar != NULL)
+		{
+			ResPawnCar->CollisionCar->SetPosition(n.spawnPos);
+			ResPawnCar->CollisionCar->SetRotationVector(n.RotationPos + r3dPoint3D(90,0,0));
+		}
+			ResPawnCar->SetPosition(n.spawnPos);
+			ResPawnCar->SetRotationVector(n.RotationPos);
+			ResPawnCar->DamageCar=n.DamageCar;
+			ResPawnCar->GasolineCar=n.GasolineCar;
+			ResPawnCar->Occupants=n.OccupantsVehicle;
+			ResPawnCar->DestroyOnWater=false;
+			ResPawnCar->curTime=0;
+			ResPawnCar->BombTime=0;
+			ResPawnCar->bOn=false;
+			if (ResPawnCar->Light)
+				ResPawnCar->Light->SetPosition(n.spawnPos+r3dPoint3D(0,2,0));
+		}
+		else {
+			if (ResPawnCar)
+			{
+			   if (!ResPawnCar->NetworkLocal)
+			   {
+				
+				if (ResPawnCar->CollisionCar != NULL)
+				{
+					if (n.DamageCar>0)
+					{
+					ResPawnCar->CollisionCar->SetPosition(n.spawnPos);
+					ResPawnCar->CollisionCar->SetRotationVector(n.RotationPos + r3dPoint3D(90,0,0));
+					}
+				}
+				if (n.DamageCar>0)
+				{
+					ResPawnCar->SetRotationVector(n.RotationPos);
+					ResPawnCar->SetPosition(n.spawnPos);
+				}
+				ResPawnCar->Occupants=n.OccupantsVehicle;
+				ResPawnCar->GasolineCar=n.GasolineCar;
+				ResPawnCar->DamageCar=n.DamageCar;
+				ResPawnCar->RPMPlayer=n.RPMPlayer;
+				ResPawnCar->RotationSpeed=n.RotationSpeed;
+				ResPawnCar->bOn=n.bOn;
+				//r3dOutToLog("VehicleID: %i is have %i passengers\n",n.FromID,n.OccupantsVehicle);
+				g_pPhysicsWorld->m_VehicleManager->DoUserCarControl(n.timeStep,true,n.controlData,n.spawnID);
+			   }
+			}
+		}
+	}
+}
+
+IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_GroupData)
+{
+	switch (n.State)
+	{
+	default:
+		break;
+	case 1:
+		{
+			break;
+		}
+	case 2:
+		{
+			break;
+		}
+	case 3:
+		{
+			char text[128];
+			sprintf(text, "%s $InfoMsg_GroupInviteDecline",n.intogamertag);
+			hudMain->showMessage(gLangMngr.getString(text));	
+			break;
+		}
+	case 4:
+		{
+			if (!hudMain || !gClientLogic().localPlayer_)
+				return;
+			if (hudMain)
+			{
+				gClientLogic().localPlayer_->MaxGroupPlayers=n.PlayersOnGroup;
+
+				for(int u=0;u<11;u++)
+				{
+					strcpy(gClientLogic().localPlayer_->PlayersNames[u],"");
+					gClientLogic().localPlayer_->IDSPlayers[u]=0;
+					gClientLogic().localPlayer_->PlayersOnGroup[u]=false;
+				}
+
+				for(int i=0;i<11;i++)
+				{
+					if (n.NetworkIDPlayer[i]>0)
+					{
+							if (strcmp(hudMain->GametagName,"") == 0 && !gClientLogic().localPlayer_->imOnGruop)
+							{
+								gClientLogic().localPlayer_->imOnGruop=true;
+								hudMain->TimeToWaitGroup=r3dGetTime();
+							}
+							strcpy(gClientLogic().localPlayer_->PlayersNames[i],n.gametag[i]);
+							gClientLogic().localPlayer_->IDSPlayers[i]=n.NetworkIDPlayer[i];
+							if (strcmp(gClientLogic().localPlayer_->PlayersNames[i],"") != 0)
+								gClientLogic().localPlayer_->PlayersOnGroup[i]=true;
+							else
+								gClientLogic().localPlayer_->PlayersOnGroup[i]=false;
+
+								hudMain->addPlayerToGroup(n.gametag[i],n.GameLeader[i]);
+								gClientLogic().localPlayer_->CheckGruoupPlayer(n.NetworkIDPlayer[i],n.PlayerPosition[i]);
+					}
+				}
+			}
+			break;
+		}
+	case 5:
+		{
+			if (n.status == 2)
+			{
+				hudMain->currentinvite = true;
+			}
+			if (strcmp(n.GametagLeader,"") != 0)
+			{
+				for(int i=0; i<R3D_ARRAYSIZE(gClientLogic().playerNames); i++)
+				{
+					if (strcmp(gClientLogic().playerNames[i].Gamertag,n.GametagLeader) == 0 )
+					{
+						if (!playerNames[i].isInvitePending)
+						{
+							if (!gClientLogic().localPlayer_->imOnGruop)
+							{
+								playerNames[i].isInvitePending = true;						
+								char text[128];
+								sprintf(text,"$InfoMsg_GroupRcvdInviteFrom %s",n.GametagLeader);
+								hudMain->showMessage(gLangMngr.getString(text));
+								return;
+							}
+							else {
+								char text[128];
+								sprintf(text,"$InfoMsg_YouHaveBeenInvited");
+								hudMain->showMessage(gLangMngr.getString(text));
+								return;
+							}
+						}
+						break;
+					}
+				}
+			}
+			break;
+		}
+	case 6: // leave player group
+		{
+			if (!gClientLogic().localPlayer_)
+				return;
+
+			if (strcmp(n.MyNickName,gClientLogic().localPlayer_->CurLoadout.Gamertag) == 0)
+			{
+				gClientLogic().localPlayer_->PlayerIDGroupLeave=true;
+				strcpy(hudMain->GametagName,"");
+				gClientLogic().localPlayer_->imOnGruop=false;
+				gClientLogic().localPlayer_->CurLoadout.GroupID=0;
+
+				for (int i=0;i<11;i++)
+				{
+					hudMain->removePlayerFromGroup(gClientLogic().localPlayer_->PlayersNames[i],false);
+					strcpy(gClientLogic().localPlayer_->PlayersNames[i],"");
+					gClientLogic().localPlayer_->IDSPlayers[i]=0;
+					gClientLogic().localPlayer_->PlayersOnGroup[i]=false;
+				}
+
+				gClientLogic().localPlayer_->CurLoadout.GroupID=0;
+				gClientLogic().localPlayer_->MaxGroupPlayers=0;
+				hudMain->TimeToWaitGroup=0;
+				hudMain->showMessage(gLangMngr.getString("$InfoMsg_YouLeaveGroup"));
+				return;
+			}
+
+			if (gClientLogic().localPlayer_->CurLoadout.GroupID==n.MyID && gClientLogic().localPlayer_->CurLoadout.GroupID != 0)
+			{
+				bool PlayerOnlist=false;
+
+				for (int i=0;i<11;i++)
+				{
+					if (strcmp(gClientLogic().localPlayer_->PlayersNames[i],n.MyNickName) == 0)
+					{
+						strcpy(gClientLogic().localPlayer_->PlayersNames[i],"");
+						gClientLogic().localPlayer_->IDSPlayers[i]=0;
+						gClientLogic().localPlayer_->PlayersOnGroup[i]=false;
+						PlayerOnlist=true;
+						break;
+					}
+				}
+
+				if (!PlayerOnlist)
+					  return;
+
+				hudMain->removePlayerFromGroup(n.MyNickName,false);
+
+				GameObject* from = GameWorld().GetNetworkObject(n.IDPlayerOutGroup);
+
+				if (from)
+				{
+					obj_Player* targetPlr = (obj_Player*)from;
+					targetPlr->CurLoadout.GroupID = 0;
+				}
+				
+				gClientLogic().localPlayer_->MaxGroupPlayers=0;
+				
+				for (int u=0;u<10;u++)
+				{
+					if (strcmp(gClientLogic().localPlayer_->PlayersNames[u],"") != 0)
+						gClientLogic().localPlayer_->MaxGroupPlayers++;
+				}
+
+				char text[128];
+				sprintf(text,"%s $InfoMsg_LeaveGroup_msg",n.MyNickName);
+				hudMain->showMessage(gLangMngr.getString(text));
+
+				char NewList[11][512];
+				int NewIDS[11];
+				bool PlayersGRP[11];
+				int count = 0;
+			    
+				for (int po=0;po<11;po++)
+				{
+					strcpy(NewList[po],"");
+					NewIDS[po] = 0;
+					PlayersGRP[po] = false;
+				}
+
+				for (int e=0;e<10;e++)
+				{
+					if (strcmp(gClientLogic().localPlayer_->PlayersNames[e],"") != 0)
+					{
+						strcpy(NewList[count],gClientLogic().localPlayer_->PlayersNames[e]);
+						NewIDS[count]=gClientLogic().localPlayer_->IDSPlayers[e];
+						PlayersGRP[count]=gClientLogic().localPlayer_->PlayersOnGroup[e];
+						count++;
+					}
+					strcpy(gClientLogic().localPlayer_->PlayersNames[e],"");
+					gClientLogic().localPlayer_->IDSPlayers[e]=0;
+					gClientLogic().localPlayer_->PlayersOnGroup[e]=0;
+				}
+				for (int i=0;i<10;i++)
+				{
+					strcpy(gClientLogic().localPlayer_->PlayersNames[i],NewList[i]);
+					gClientLogic().localPlayer_->IDSPlayers[i]=NewIDS[i];
+					gClientLogic().localPlayer_->PlayersOnGroup[i]=PlayersGRP[i];
+				}
+
+				if (strcmp(gClientLogic().localPlayer_->PlayersNames[0],gClientLogic().localPlayer_->CurLoadout.Gamertag) != 0)
+				{
+					// update leader
+					strcpy(hudMain->GametagName,gClientLogic().localPlayer_->PlayersNames[0]);
+					hudMain->updateLeaderGroup(gClientLogic().localPlayer_->PlayersNames[0]);
+				}
+				else {
+					strcpy(hudMain->GametagName,"");
+					hudMain->updateLeaderGroup(gClientLogic().localPlayer_->CurLoadout.Gamertag);
+				}
+			}
+			break;
+		}
+	case 7:
+		{
+			gClientLogic().localPlayer_->CheckGruoupPlayer(n.IDPlayer,n.Position);
+			break;
+		}
+	case 8:
+		{
+			char text[128];
+			sprintf(text, "%s $InfoMsg_InOtherGroup",n.pName);
+			hudMain->showMessage(gLangMngr.getString(text));
+			break;
+		}
+	case 9:
+		{
+			if (gClientLogic().localPlayer_->CurLoadout.GroupID==n.MyID && gClientLogic().localPlayer_->CurLoadout.GroupID != 0)
+			{
+				char text[128];
+				sprintf(text,"%s $InfoMsg_GroupWantLeave",n.fromgamertag);
+				if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag,n.fromgamertag) != 0)
+					hudMain->showMessage(gLangMngr.getString(text));
+
+				if (strcmp(gClientLogic().localPlayer_->CurLoadout.Gamertag,n.fromgamertag) == 0)
+				{
+					gClientLogic().localPlayer_->LeavingGroup=r3dGetTime();
+					gClientLogic().localPlayer_->StartToLeaveGroup=true;
+					hudMain->aboutToLeavePlayerFromGroup(n.fromgamertag);
+				}
+				else {
+					hudMain->aboutToLeavePlayerFromGroup(n.fromgamertag);
+				}
+			}
+			break;
+		}
+	}
+}
+
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_C2C_ChatMessage)
 {
 	hudMain->showChat(true);
 	hudMain->addChatMessage(n.msgChannel, n.gamertag, n.msg, n.userFlag);
+}
+
+IMPL_PACKET_FUNC(ClientGameLogic, PKT_C2S_SendHelpCall)
+{
+		gClientLogic().HelpCalls[n.FromID].pos = n.pos;
+		hudMain->showMessage(gLangMngr.getString("HUD_CallForHelp_RequestSent"));
+}
+IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_SendHelpCallData)
+{
+		sprintf(gClientLogic().HelpCalls[n.peerid].DistressText,n.DistressText);
+	 	sprintf(gClientLogic().HelpCalls[n.peerid].rewardText,n.rewardText);
+		gClientLogic().HelpCalls[n.peerid].pos = n.pos;
+		hudMain->showMessage(gLangMngr.getString("HUD_CallForHelp_RequestSent"));
 }
 
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_UpdateWeaponData)
@@ -496,14 +837,40 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateNote)
 
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_SetNoteData)
 {
-	obj_Note* obj = (obj_Note*)fromObj;
-	r3d_assert(obj);
-	
-	obj->m_GotData = true;
-	obj->m_TextFrom = n.TextFrom;
-	obj->m_Text = n.TextSubj;
 
-	hudMain->showReadNote(obj->m_Text.c_str());
+			obj_Note* obj = (obj_Note*)fromObj;
+			r3d_assert(obj);
+
+			obj->m_GotData = true;
+			obj->m_TextFrom = n.TextFrom;
+			obj->m_Text = n.TextSubj;
+
+			hudMain->showReadNote(obj->m_Text.c_str());
+}
+
+IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateVehicle) // Server Vehicles
+{
+#if VEHICLES_ENABLED
+	r3d_assert(GameWorld().GetNetworkObject(n.spawnID) == NULL);
+
+	r3dOutToLog("Created vehicle -> %s\n", n.vehicle);
+
+	obj_Vehicle* obj = (obj_Vehicle*)srv_CreateGameObject("obj_Vehicle", n.vehicle, n.spawnPos);
+	obj->DisablePhysX = true;
+	obj->SetNetworkID(n.spawnID);
+	obj->NetworkLocal = false;
+	obj->m_isSerializable = true;
+	obj->SetRotationVector(n.spawnDir);
+	obj->GasolineCar = n.Gasolinecar;
+	obj->Occupants = n.Ocuppants;
+	obj->DamageCar = n.DamageCar;
+	obj->FirstRotationVector = n.FirstRotationVector;
+	obj->FirstPosition = n.FirstPosition;
+	obj->OnCreate();
+
+	// set base cell for movement data (must do it AFTER OnCreate())
+	obj->netMover.SetStartCell(n.moveCell);
+#endif
 }
 
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateZombie)
@@ -528,7 +895,23 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_PlayerNameJoined)
 	playerNames[n.peerId].plrRep = n.Reputation;
 	playerNames[n.peerId].isLegend = (n.flags & 1)?true:false;
 	playerNames[n.peerId].isDev = (n.flags & 2)?true:false;
+	playerNames[n.peerId].IsPremium = n.IsPremium;
 
+}
+
+IMPL_PACKET_FUNC(ClientGameLogic, PKT_C2S_DamageCar)
+{
+	if (gClientLogic().localPlayer_)
+	{
+		if (gClientLogic().localPlayer_->ActualVehicle != NULL)
+		{
+			if (gClientLogic().localPlayer_->ActualVehicle->GetNetworkID() == n.CarID)
+			{
+				if (n.WeaponID != NULL)
+					gClientLogic().localPlayer_->ActualVehicle->ApplyDamage(gClientLogic().localPlayer_->ActualVehicle->GetNetworkID(),n.WeaponID);
+			}
+		}
+	}
 }
 
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_PlayerNameLeft)
@@ -555,6 +938,9 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreatePlayer)
 
 		if(hudMain && n.ClanID != 0)
 			hudMain->enableClanChannel();
+
+		if(hudMain && n.GroupID != 0)
+			hudMain->enableGroupChannel();
 
 		// make sure that our loadout is same as server reported. if not - disconnect and try again
 		if(slot.Items[wiCharDataFull::CHAR_LOADOUT_WEAPON1 ].itemID != n.WeaponID0 ||
@@ -624,6 +1010,7 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreatePlayer)
 	// should be safe to use playerIdx, as it should be uniq to each player
 	sprintf_s(plr->m_MinimapTagIconName, 64, "pl_%u", n.playerIdx);
 	plr->ClanID = n.ClanID;
+	plr->GroupID = n.GroupID;
 	r3dscpy(plr->ClanTag, n.ClanTag);
 	plr->ClanTagColor = n.ClanTagColor;
 
@@ -752,8 +1139,14 @@ int ClientGameLogic::ProcessWorldEvent(GameObject* fromObj, DWORD eventId, DWORD
 		DEFINE_PACKET_HANDLER(PKT_S2C_CreateDroppedItem);
 		DEFINE_PACKET_HANDLER(PKT_S2C_CreateNote);
 		DEFINE_PACKET_HANDLER(PKT_S2C_SetNoteData);
+		DEFINE_PACKET_HANDLER(PKT_S2C_CreateVehicle);
 		DEFINE_PACKET_HANDLER(PKT_S2C_CreateZombie);
 		DEFINE_PACKET_HANDLER(PKT_S2C_CheatWarning);
+		DEFINE_PACKET_HANDLER(PKT_S2C_SendHelpCallData);
+		DEFINE_PACKET_HANDLER(PKT_C2S_SendHelpCall);
+		DEFINE_PACKET_HANDLER(PKT_S2C_PositionVehicle);
+		DEFINE_PACKET_HANDLER(PKT_C2S_DamageCar);
+		DEFINE_PACKET_HANDLER(PKT_S2C_GroupData);
 	}
 
 	return FALSE;

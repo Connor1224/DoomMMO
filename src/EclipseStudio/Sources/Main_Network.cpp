@@ -93,9 +93,9 @@ static void MasterServerQuckJoin()
 	n.CustomerID = gUserProfile.CustomerID;
 	n.gameMap    = d_use_test_map->GetInt();
 	n.region     = 0xFF;
-		
+
 	gMasterServerLogic.SendJoinQuickGame(n);
-	
+
 	const float endTime = r3dGetTime() + 60.0f;
 	while(r3dGetTime() < endTime)
 	{

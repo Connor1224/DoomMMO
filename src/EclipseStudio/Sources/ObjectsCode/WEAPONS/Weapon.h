@@ -9,6 +9,7 @@
 
 #include "..\..\GameCode\UserProfile.h"
 #include "WeaponConfig.h"
+#include "../../multiplayer/NetCellMover.h"
 
 class Ammo;
 class GameObject;
@@ -28,19 +29,20 @@ class Weapon
 public:
 	Weapon(obj_Player* owner, int backpackIdx, const WeaponConfig* conf, bool first_person, bool allow_async_loading, const wiWeaponAttachment* attm);
 	~Weapon();
-	
+
 	void Reset();
 
 	bool isReadyToFire(bool triggerPressed, bool scopeMode);
 
 	int  getNumShotsRequired(); // because we have weapons with firerate of 900+ and our fps is around 30 we need to be able to shoot more than one bullet per frame
+	void StopSND();
 	void Fire(const r3dPoint3D& hitPos, const D3DXMATRIX& weaponBone, bool executeWeaponFireCode, float holdingDelay=0, const r3dPoint3D& grenadeFireFrom = R3D_ZERO_VECTOR );
 	void Update(const D3DXMATRIX& weaponBone); // call before fire
 	void Reload();
 	void   StartReloadSequence(); // used for network players
 
 	void OnEquip(); // called when player equips that weapon
-	void OnUnequip(); // called when the player is changing weapons.  
+	void OnUnequip(); // called when the player is changing weapons.
 
 	const WeaponAttachmentConfig* getClipConfig();
 	wiInventoryItem& getPlayerItem();
@@ -58,7 +60,7 @@ public:
 	r3dPoint3D getShellDir(const D3DXMATRIX& weaponBone) const;
 
 	WeaponAnimTypeEnum getAnimType() const { return m_pConfig->m_AnimType; }
-	
+
 	bool isUsableItem() const { return m_pConfig->category == storecat_UsableItem; }
 
 	uint32_t getItemID() const { return m_pConfig->m_itemID; }
@@ -70,9 +72,9 @@ public:
 	float	getAmmoSpeed() const;
 	float	getAmmoMass() const;
 	float	getAmmoDmgDecay() const { return m_pConfig->m_AmmoDecay; }
-	
+
 	float	calcDamage(float dist) const; // return 0 if weapon isn't immediate
-	
+
 	float getLastTimeFired() const { return m_lastTimeFired; }
 
 	float getSpread() const; // returns diameter of spread at 50meter range
@@ -99,18 +101,18 @@ public:
 	void checkForSkeleton();
 	bool isAnimated() const { return m_WeaponAnim_FPS!=NULL; }
 	r3dAnimation* getAnimation() const { return m_WeaponAnim_FPS; }
-	
+
 	void OnGameEnded();
 
 	void setWeaponAttachmentsByIDs(const uint32_t* ids);
 	void setWeaponAttachments(const WeaponAttachmentConfig** wpnAttmConfigs);
 	uint32_t getWeaponAttachmentID(WeaponAttachmentTypeEnum attm_type); // if any
-	void getCurrentAttachments(const WeaponAttachmentConfig** attms) 
-	{ 
+	void getCurrentAttachments(const WeaponAttachmentConfig** attms)
+	{
 		r3d_assert(attms);
-		memcpy((void*)attms, m_Attachments, sizeof(m_Attachments)); 
+		memcpy((void*)attms, m_Attachments, sizeof(m_Attachments));
 	}
-	void getCurrentAttachmentIDs(uint32_t* ids) 
+	void getCurrentAttachmentIDs(uint32_t* ids)
 	{
 		r3d_assert(ids);
 		memset(ids, 0, sizeof(uint32_t)*WPN_ATTM_MAX);
@@ -130,7 +132,7 @@ public:
 
 	const int* getWeaponAnimID_FPS() const;
 
-	bool hasLaserPointer(r3dPoint3D& laserPos); 
+	bool hasLaserPointer(r3dPoint3D& laserPos);
 
 	bool m_needDelayedAction; // for grenades, to sync with animation
 
@@ -143,12 +145,12 @@ private:
 
 	obj_Player*	m_Owner; // todo: change that to safeID!
 	int		m_BackpackIdx;
-	
+
 	WeaponState	m_State;
 	float m_lastReloadingTime;
-	
+
 	float m_fractionTimeLeftFromPreviousShot; // for accurate fire rate
-	
+
 	obj_ParticleSystem*	m_MuzzleParticle;
 	r3dLight		m_MuzzleLight;
 	obj_ParticleSystem*	m_LaserPointerParticle;
@@ -162,6 +164,7 @@ private:
 	class obj_ParticleSystem* m_ShellExtractParticle;
 	int m_firemode;
 	int m_triggerPressed; // for how many shots trigger is pressed
+    bool m_flashlightToggle;
 
 	r3dPoint3D m_needDelayedAction_pos;
 	float m_needDelayedAction_delay;
@@ -195,6 +198,7 @@ private:
 
 	int getWeaponFireSound();
 	void reloadMuzzleParticle();
+	void toggleFlashlight();
 };
 
 #endif //__WEAPON_H__

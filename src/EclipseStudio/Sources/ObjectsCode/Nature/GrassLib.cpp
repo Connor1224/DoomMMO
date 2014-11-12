@@ -8,6 +8,7 @@
 #include "../sf/RenderBuffer.h"
 
 #include "TSG_STL/BigEndian.h"
+#include "../EclipseStudio/Sources/GameLevel.h"
 
 #include "GrassGen.h"
 #include "GrassMap.h"

@@ -107,6 +107,8 @@ static	int		GetMoveDirFromAcceleration(const r3dPoint3D& accel);
 
 	  // misc ones
 	  int		turnins[5];
+	  int		Unarmed[4]; // Hands Combat
+	  int		Unarmedfps[4]; // Hands Combat
 	  int		grenades_tps[20];
 	  int		grenades_fps[20];
 	  //int		bombs_tps[20];
@@ -306,6 +308,7 @@ class CUberAnim
 	float		jumpStartTimeByState[2];
 	float		jumpStartTime;
 	void		StartJump();
+	void		UnarmedCombat(bool Network, int PlayerState);
 	void		UpdateJump(bool bOnGround);
 	
 	void		StartDeathAnim();

@@ -120,6 +120,8 @@ public:
 		ITEMID_C04Vaccine = 101303,
 		ITEMID_Medkit = 101304,
 		ITEMID_PieceOfPaper = 101305,	// used to create world notes
+		ITEMID_Flashlight = 101306,
+		ITEMID_EXP_M26 = 101310,
 		ITEMID_AirHorn = 101323,
 		ITEMID_Binoculars = 101315,
 		ITEMID_RangeFinder = 101319,

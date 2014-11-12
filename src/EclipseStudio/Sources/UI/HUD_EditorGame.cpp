@@ -199,11 +199,9 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosIdle2,
             gCameraPosScope2,
             60, 60, 60,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             70.0f, -70.0f, false, RigEffect_Clear
         },
-
-
         // PLAYER_IDLEAIM
         {
             gCameraPosIdleAim2,
@@ -262,28 +260,22 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             0.15f,0.15f,
             20.0f, -20.0f, false, RigEffect_SprintBlur
         },
-
-
 		// swimf
         {
             gCameraPosSprint2,
             gCameraPosScope2,
             65.0f, 65.0f, 50,
             0.15f,0.15f,
-            20.0f, -20.0f, false, RigEffect_SprintBlur
+            -5.0f, -20.0f, false, RigEffect_SprintBlur
         },
-
-
-		// swimm
+                // swimm
         {
             gCameraPosIdle2,
             gCameraPosScope2,
             60, 60, 60,
-            0.26f,0.26f, 
-            70.0f, -70.0f, false, RigEffect_Clear
+            0.26f,0.26f,
+            -5.0f, -70.0f, false, RigEffect_Clear
         },
-
-
         // PLAYER_MOVE_PRONE
         {
             gCameraPosProne2,
@@ -309,17 +301,15 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosIdle2,
             gCameraPosScope2,
             60, 60, 60,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
-
-
         // PLAYER_PRONE_DOWN
         {
             gCameraPosProne2,
             gCameraPosProneScope2,
             60, 60, 60,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
 
@@ -354,8 +344,6 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             0.26f,0.26f, 
             70.0f, -70.0f, false, RigEffect_Clear
         },
-
-
         // PLAYER_IDLEAIM
         {
             gCameraPosIdleAim,
@@ -415,14 +403,13 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             20.0f, -20.0f, false, RigEffect_SprintBlur
         },
 
-        
         // swimf
         {
             gCameraPosSprint,
             gCameraPosScope,
             55.0f, 55.0f, 50,
             0.15f,0.15f,
-            20.0f, -20.0f, false, RigEffect_SprintBlur
+            -5.0f, -20.0f, false, RigEffect_SprintBlur
         },
 
 
@@ -431,8 +418,8 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosIdle,
             gCameraPosScope,
             50, 50, 50,
-            0.26f,0.26f, 
-            70.0f, -70.0f, false, RigEffect_Clear
+            0.26f,0.26f,
+            -5.0f, -70.0f, false, RigEffect_Clear
         },
 
 
@@ -441,7 +428,7 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosProne,
             gCameraPosProneScope,
             50, 50, 50,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
 
@@ -461,7 +448,7 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosIdle,
             gCameraPosScope,
             50, 50, 50,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
 
@@ -471,16 +458,16 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosProne,
             gCameraPosProneScope,
             50, 50, 50,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
-    
+
         // PLAYER_MOVE_IDLE
         {
             gCameraPosProne,
             gCameraPosProneScope,
             50, 50, 50,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
 
@@ -502,11 +489,9 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosIdle3,
             gCameraPosScope3,
             60, 60, 50,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             70.0f, -70.0f, false, RigEffect_Clear
         },
-
-
         // PLAYER_IDLEAIM
         {
             gCameraPosIdleAim3,
@@ -573,7 +558,7 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosScope3,
             65.0f, 65.0f, 50,
             0.15f,0.15f,
-            20.0f, -20.0f, false, RigEffect_SprintBlur
+            -5.0f, -20.0f, false, RigEffect_SprintBlur
         },
 
 
@@ -582,9 +567,9 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosIdle3,
             gCameraPosScope3,
             60, 60, 50,
-            0.26f,0.26f, 
-            70.0f, -70.0f, false, RigEffect_Clear
-        },    
+            0.26f,0.26f,
+            -5.0f, -70.0f, false, RigEffect_Clear
+        },
 
 
         // PLAYER_MOVE_PRONE
@@ -622,7 +607,7 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosProne3,
             gCameraPosProneScope3,
             60, 60, 50,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
 
@@ -632,7 +617,7 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             gCameraPosProne3,
             gCameraPosProneScope3,
             60, 60, 50,
-            0.26f,0.26f, 
+            0.26f,0.26f,
             20.0f, -20.0f, false, RigEffect_Clear
         },
 
@@ -646,6 +631,7 @@ PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] =
             20.0f, -20.0f, false, RigEffect_Clear
         }
     },
+
 };
 
 struct CheckTPSCameras
@@ -777,7 +763,7 @@ void EditorGameHUD :: SetCameraPure ( r3dCamera &Cam)
 		{
 			CamPos = savedCamPos;
 			playerPosHead = playerPos;
-			playerPosHead.y += CharacterHeight-1.8f;
+			playerPosHead.y += CharacterHeight-2.8f;
 			CheckCameraCollision(CamPos, playerPosHead, true);
 		}
 	}

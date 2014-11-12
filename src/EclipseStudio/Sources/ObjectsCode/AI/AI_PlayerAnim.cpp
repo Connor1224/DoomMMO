@@ -98,8 +98,8 @@ static void enableAnimBone(const r3dSkeleton* skel, int bone, r3dAnimData* ad, i
 {
 	const char* name = skel->GetBoneName(bone);
 	ad->EnableTrack(name, enable);
-  
-	for(int i=0, e = skel->GetNumBones(); i < e; i++) 
+
+	for(int i=0, e = skel->GetNumBones(); i < e; i++)
 	{
 		if(skel->GetParentBoneId(i) == bone)
 			enableAnimBone(skel, i, ad, enable);
@@ -109,10 +109,10 @@ static void enableAnimBone(const r3dSkeleton* skel, int bone, r3dAnimData* ad, i
 void enableAnimBones(const char* boneName, const r3dSkeleton* skel, r3dAnimData* ad, int enable)
 {
 	ad->BipedSetEnabled(!enable);
-  
+
 	int bone = skel->GetBoneID(boneName);
 	r3d_assert(bone != -1);
-  
+
 	enableAnimBone(skel, bone, ad, enable);
 }
 
@@ -174,7 +174,7 @@ void CUberData::LoadLowerAnimations()
 	i[2] = AddAnimation("Sprint_StrLeft");
 	i[3] = AddAnimation("Sprint_StrRight");
 
-	i = aid_.swimm;
+    i = aid_.swimm;
     i[0] = AddAnimation("Swim_Idle_Tread_Water");
     i[1] = AddAnimation("Swim_Medium_Forward");
     i[2] = AddAnimation("Swim_Medium_Forward_Left");
@@ -184,7 +184,6 @@ void CUberData::LoadLowerAnimations()
     i[6] = AddAnimation("Swim_Medium_Backward");
     i[7] = AddAnimation("Swim_Medium_Backward_Left");
     i[8] = AddAnimation("Swim_Medium_Backward_Right");
-
 
     i = aid_.swimf;
     i[0] = AddAnimation("Swim_Fast_Forward");
@@ -196,10 +195,22 @@ void CUberData::LoadLowerAnimations()
     i[6] = AddAnimation("Swim_Medium_Backward");
     i[7] = AddAnimation("Swim_Medium_Backward_Left");
     i[8] = AddAnimation("Swim_Medium_Backward_Right");
-	
+
 	i = aid_.turnins;
 	i[0] = AddAnimation("Walk_Str_TurnIn", "Walk_Str");
 	i[1] = AddAnimation("Crouch_Str_TurnIn", "Crouch_Str");
+
+	i = aid_.Unarmed; // Hands Combat
+    i[0] = AddAnimation("Stand_Shooting_MEL_Hands_L_Hook");
+	i[1] = AddAnimation("Stand_Shooting_MEL_Hands_R_Punch");
+	i[2] = AddAnimation("Stand_Shooting_MEL_Hands_L_Jab");
+	i[3] = AddAnimation("Stand_Shooting_MEL_Hands_R_Punch");
+
+	i = aid_.Unarmedfps; // Unarmed combat
+    i[0] = AddAnimation("FPS_Stand_Shooting_MEL_Hands_L_Hook");
+	i[1] = AddAnimation("FPS_Stand_Shooting_MEL_Hands_R_Punch");
+	i[2] = AddAnimation("FPS_Stand_Shooting_MEL_Hands_L_Jab");
+	i[3] = AddAnimation("FPS_Stand_Shooting_MEL_Hands_R_Punch");
 }
 
 void CUberData::LoadWeaponAnim(int (&wid)[AIDX_COUNT], int (&wid_fps)[AIDX_COUNT], const char* names[AIDX_COUNT])
@@ -208,17 +219,17 @@ void CUberData::LoadWeaponAnim(int (&wid)[AIDX_COUNT], int (&wid_fps)[AIDX_COUNT
 	{
 		wid[i] = -1;
 		wid_fps[i] = -1;
-		
+
 		if(*names[i] == 0)
 			continue;
-			
+
 		// we need to create dummy upper body anim for idle and stand
 		char aname[128];
 		sprintf(aname, names[i]);
 		if(i == AIDX_IdleUpper || i == AIDX_StandUpper)
 			strcat(aname, "_Upper");
 		wid[i] = TryToAddAnimation(aname, names[i]);
-		
+
 		if(i >= AIDX_IdleUpper && wid[i]!=-1)
 		{
 			// those animations is upper body
@@ -247,7 +258,7 @@ void CUberData::LoadGrenadeAnim()
 	const static char* grenadeAnims[12] = {
 		"Crouch_Grenade_Throw_01_A_Pullback",	// 0
 		"Crouch_Blend_Grenade_Hold_01",		// 1
-		"Crouch_Grenade_Throw_01_B_Release",	// 2 
+		"Crouch_Grenade_Throw_01_B_Release",	// 2
 		"Run_Grenade_Throw_01_A_Pullback",	// 3
 		"Run_Blend_Grenade_Hold_01",		// 4
 		"Run_Grenade_Throw_01_B_Release",	// 5
@@ -258,14 +269,14 @@ void CUberData::LoadGrenadeAnim()
 		"Walk_Aim_Grenade_Hold_01",		// 10
 		"Walk_Grenade_Throw_01_B_Release",	// 11
 	};
-	
+
 	for(int i=0; i<R3D_ARRAYSIZE(grenadeAnims); i++)
 	{
 		AddAnimationWithFPS(grenadeAnims[i], aid_.grenades_tps[i], aid_.grenades_fps[i]);
-		
+
 		r3dAnimData* ad = animPool_.Get(aid_.grenades_tps[i]);
 		enableAnimBones("Bip01_Spine1", bindSkeleton_, ad, true);
-		
+
 		if(aid_.grenades_tps[i] != aid_.grenades_fps[i])
 		{
 			ad = animPool_.Get(aid_.grenades_fps[i]);
@@ -282,7 +293,7 @@ void CUberData::LoadGrenadeAnim()
 		"Stand_Place_VS50",			// GRENADE_ANIM_VS50
 		"Stand_Place_Valmara69",		// GRENADE_ANIM_V69
 	};
-	
+
 	for(int i=0; i<R3D_ARRAYSIZE(bombsAnims); i++)
 	{
 		AddAnimationWithFPS(bombsAnims[i], aid_.bombs_tps[i], aid_.bombs_fps[i]);
@@ -968,6 +979,7 @@ CUberAnim::CUberAnim(obj_Player* in_player, CUberData* in_data)
 	extern void _player_AdjustBoneCallback(DWORD dwData, int boneId, D3DXMATRIX &mp, D3DXMATRIX &anim);
 	anim.Init(data_->bindSkeleton_, &data_->animPool_, _player_AdjustBoneCallback, (DWORD)in_player);
 
+	HandsCombatID	    = INVALID_TRACK_ID;
 	reloadAnimTrackID	= INVALID_TRACK_ID;
 	recoilAnimTrackID	= INVALID_TRACK_ID;
 	turnInPlaceTrackID	= INVALID_TRACK_ID;
@@ -975,7 +987,7 @@ CUberAnim::CUberAnim(obj_Player* in_player, CUberData* in_data)
 	grenadeThrowTrackID	= INVALID_TRACK_ID;
 	//bombPlantingTrackID	= INVALID_TRACK_ID;
 	shootAnimTrackID = INVALID_TRACK_ID;
-	
+
 	jumpAnimSpeed           = 1.9f;
 	jumpStartTime           = 0.3f;
 	jumpStartTimeByState[0] = 0.3f; // idle
@@ -985,7 +997,7 @@ CUberAnim::CUberAnim(obj_Player* in_player, CUberData* in_data)
 	jumpMoveTrackID2		= INVALID_TRACK_ID;
 	jumpState               = -1;
 	jumpAirTime             = 0;
-	
+
 	scaleReloadAnimTime     = 1;
 
 	FillAnimStatesSpeed();
@@ -1156,30 +1168,34 @@ void CUberAnim::SwitchToState(int PlayerState, int MoveDir)
 			if(a1 == -1)
 				a1 = aid.sprint[CUberData::ANIMDIR_Str];
 			break;
-		case PLAYER_SWIM_M:
-			a1 = aid.swimm[MoveDir];
-			a2 = -1;
-			break;
-		case PLAYER_SWIM_F:
-			a1 = aid.swimf[MoveDir];
-			a2 = -1;
-			break;
+        case PLAYER_SWIM_M:
+       		 a1 = aid.swimm[MoveDir];
+       		 a2 = wids[CUberData::AIDX_ProneBlend];
+       		 if(!CurrentWeapon)
+				a2 = -1;
+   			break;
+    	case PLAYER_SWIM_F:
+        	 a1 = aid.swimf[MoveDir];
+        	 a2 = wids[CUberData::AIDX_ProneBlend];
+        	 if(!CurrentWeapon)
+				a2 = -1;
+    		break;
 	}
 
 	//r3d_assert(a1 >= 0);
 	//r3d_assert(a2 >= 0);
-	if(a1 == -1 && !IsFPSMode()) {	
+	if(a1 == -1 && !IsFPSMode()) {
 		r3dOutToLog("no animation for state %d, dir: %d\n", PlayerState, MoveDir);
 		a2 = -1;
 	}
 
 	// there was no animations, start new
-	if(anim.AnimTracks.size() == 0) 
+	if(anim.AnimTracks.size() == 0)
 	{
 		if(!IsFPSMode()) // do not play lower body anim in FPS mode
 			anim.StartAnimation(a1, ANIMFLAG_Looped, 1.0f, 1.0f, 0.0f);
 		anim.StartAnimation(a2, ANIMFLAG_Looped, 1.0f, 1.0f, 0.0f);
-			
+
 		return;
 	}
 
@@ -1193,14 +1209,14 @@ void CUberAnim::SwitchToState(int PlayerState, int MoveDir)
 	float inf3 = 0.1f; // time to blend
 
 	std::vector<r3dAnimation::r3dAnimInfo>::iterator it;
-	
+
 	// create two stacks for lower & upper animations
 	std::vector<r3dAnimation::r3dAnimInfo> lower;
 	std::vector<r3dAnimation::r3dAnimInfo> upper;
 	std::vector<r3dAnimation::r3dAnimInfo> top;
 	r3dAnimation::r3dAnimInfo              jumpAnim;
-	
-	for(it=anim.AnimTracks.begin(); it!=anim.AnimTracks.end(); ++it) 
+
+	for(it=anim.AnimTracks.begin(); it!=anim.AnimTracks.end(); ++it)
 	{
 		const r3dAnimation::r3dAnimInfo& ai = *it;
 		if(ai.iTrackId == grenadePinPullTrackID || ai.iTrackId == grenadeThrowTrackID)
@@ -1211,6 +1227,8 @@ void CUberAnim::SwitchToState(int PlayerState, int MoveDir)
 			top.push_back(ai);
 		else if(ai.iTrackId == shootAnimTrackID)
 			top.push_back(ai);
+		else if (ai.iTrackId == HandsCombatID)
+			top.push_back(ai);
 		else if(ai.iTrackId == jumpTrackID)
 			jumpAnim = ai;
 		else if(ai.pAnim->pTracks[0].bEnabled)
@@ -1218,7 +1236,7 @@ void CUberAnim::SwitchToState(int PlayerState, int MoveDir)
 		else
 			upper.push_back(ai);
 	}
-	
+
 	// expire all previous animations but be on lookout for same animation
 	for(it = lower.begin(); it!=lower.end(); ++it)
 	{
@@ -1226,8 +1244,8 @@ void CUberAnim::SwitchToState(int PlayerState, int MoveDir)
 		if((ai.dwStatus & ANIMSTATUS_Expiring))
 			continue;
 		if(
-			ai.pAnim->iAnimId == a1 || 
-			( (PlayerState == PLAYER_PRONE_UP || PlayerState == PLAYER_PRONE_DOWN) && (ai.pAnim->iAnimId == aid.prone_down_weapon || ai.pAnim->iAnimId == aid.prone_up_weapon || ai.pAnim->iAnimId == aid.prone_down_noweapon || ai.pAnim->iAnimId == aid.prone_up_noweapon) ) 
+			ai.pAnim->iAnimId == a1 ||
+			( (PlayerState == PLAYER_PRONE_UP || PlayerState == PLAYER_PRONE_DOWN) && (ai.pAnim->iAnimId == aid.prone_down_weapon || ai.pAnim->iAnimId == aid.prone_up_weapon || ai.pAnim->iAnimId == aid.prone_down_noweapon || ai.pAnim->iAnimId == aid.prone_up_noweapon) )
 		  )
 		{
 			// same lower body anim
@@ -1247,7 +1265,7 @@ void CUberAnim::SwitchToState(int PlayerState, int MoveDir)
 		r3dAnimation::r3dAnimInfo& ai = *it;
 		if((ai.dwStatus & ANIMSTATUS_Expiring))
 			continue;
-		if(ai.pAnim->iAnimId == a2) 
+		if(ai.pAnim->iAnimId == a2)
 		{
 			// same upper body
 			a2 = -1;
@@ -1260,7 +1278,7 @@ void CUberAnim::SwitchToState(int PlayerState, int MoveDir)
 		ai.dwStatus    |= ANIMSTATUS_Expiring;
 		ai.fExpireTime  = inf3;
 	}
-	
+
 	//ANIM_HACK: randomize IDLE animation frame
 	float fIdleAnimFrame = 0;
 	if(PlayerState == PLAYER_IDLE)
@@ -1909,6 +1927,30 @@ void CUberAnim::StartJump()
 
 	// resync animation, so jump track will be relocated to top of lower bodys anim
 	SwitchToState(AnimPlayerState, AnimMoveDir);
+}
+
+void CUberAnim::UnarmedCombat(bool Network, int PlayerState)   // Unarmed Combat with FPS and not FPS
+{
+   	if(CurrentWeapon)
+		return;
+
+	  HandsAnim=rand() % 3;
+
+	   int ID;
+	   if (Network==false)
+	   {
+			if (IsFPSMode())
+				 ID = data_->aid_.Unarmedfps[HandsAnim];
+			else 
+				 ID = data_->aid_.Unarmed[HandsAnim];
+	   }
+	   else {
+				 ID = data_->aid_.Unarmed[HandsAnim];
+	   }
+    	anim.Stop(HandsCombatID);
+		HandsCombatID = anim.StartAnimation(ID, 0, 0.0f, 1.0f, 0.0f);
+		anim.GetTrack(HandsCombatID)->fSpeed = 1.6f;
+    	SwitchToState(PlayerState, AnimMoveDir);
 }
 
 void CUberAnim::UpdateJump(bool bOnGround)

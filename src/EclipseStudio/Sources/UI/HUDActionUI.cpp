@@ -52,6 +52,12 @@ void HUDActionUI::Draw()
  	gfxMovie.UpdateAndDraw();
 }
 
+void HUDActionUI::showEBlock(bool var, bool show)
+{
+	gfxMovie.Invoke("_root.api.Main.showEBlock", var);
+	gfxMovie.SetVariable("_root.api.Main.Plate.visible", show);
+}
+
 void HUDActionUI::setScreenPos(int x, int y)
 {
 	x -= (int)r3dRenderer->ScreenW2;
@@ -81,6 +87,19 @@ void HUDActionUI::Activate()
 {
 	r3d_assert(!isActive_);
 	isActive_ = true;
+}
+
+void HUDActionUI::setCarInfo(int var1 , int var2 , int var3 ,int var4, int var5 , bool show)
+{
+	if(!isInit) return;
+	Scaleform::GFx::Value var[5];
+	var[0].SetInt(var1); // Damage Car
+	var[1].SetInt(var2); // Speed
+	var[2].SetInt(var3); // Armor
+	var[3].SetInt(var4); // Weight
+	var[4].SetInt(var5); // Gasoline
+	gfxMovie.Invoke("_root.api.Main.setCarInfo", var , 5);
+	gfxMovie.Invoke("_root.api.Main.setCarInfoVisibility", show);
 }
 
 void HUDActionUI::setText(const wchar_t* title, const wchar_t* msg, const char* letter)

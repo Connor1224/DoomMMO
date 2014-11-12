@@ -47,8 +47,11 @@ enum STORE_CATEGORIES
 	storecat_GRENADE	= 27,	// grenades and everything that you can throw. Mines shouldn't be in this group!!!
 	storecat_UsableItem  = 28,	// usable items
 	storecat_MELEE		 =29,   // melee items (knifes, etc)
-	storecat_Food		= 30,	// food 
-	storecat_Water		= 33,	// water
+	storecat_Food		= 30,	// food
+	storecat_Water		= 33,	// water,
+	storecat_Vehicle    = 34,   // Server vehicles
+	storecat_punch		= 35,   // Punch
+	storecat_ShootVehicle    = 51,
 
 	storecat_NUM_ITEMS, // should be the last one!!
 };
@@ -206,6 +209,11 @@ struct wiCharDataFull
 
 	// vars that is used only on client/server
 	int		Alive;	// 0 - dead, 1 - alive, 2 - revived, 3 - new character
+
+      //Introducing our variables for zombie repellent
+	int      Repellent; //0 = did not use repellent, 1 = repellent used
+	float    UsedRepellentAt; //Get the time when we used it
+	float    RepellentTime; //We use this to display our remaining repellent time on the client (not in this tut)
 	__int64		DeathUtcTime;
 	int		SecToRevive;
 	float		Health; // 0..100; 0-dead. 100 - healthy
@@ -220,6 +228,10 @@ struct wiCharDataFull
 
 	// current game data
 	int		GameMapId;
+	char	fromgamertag[128];
+	char	groupgamertag[128];
+	bool	isInvite;
+	bool	isGroupShow;
 	DWORD		GameServerId;
 	r3dPoint3D	GamePos;
 	float		GameDir;
@@ -229,6 +241,7 @@ struct wiCharDataFull
 
 	// clan info
 	int		ClanID;
+	int		GroupID;
 	int		ClanRank;
 	char		ClanTag[5*2]; //utf8
 	int		ClanTagColor;
@@ -272,7 +285,10 @@ struct wiCharDataFull
 
 struct wiUserProfile
 {
+	int		IsPremium;
 	int		isDevAccount;
+	int		isGod;
+	int		isPunisher;
 	int		AccountType; // 0 - legend, 1 - pioneer, 2 - survivor, 3 - guest
 
 	int		GamePoints;
@@ -295,6 +311,7 @@ class CUserProfile
 	DWORD		CustomerID;
 	DWORD		SessionID;
 	int		AccountStatus;
+	char    email[512];
 
 	struct tm	ServerTime;
 	int		ProfileDataDirty; // seconds after last game update with not closed game session
@@ -311,6 +328,7 @@ class CUserProfile
 	int 		GetProfile(int CharID = 0);
 	void		 ParseLoadouts(pugi::xml_node& xmlItem);
 	void		 ParseInventory(pugi::xml_node& xmlItem);
+	void		 ParseEmails(pugi::xml_node& xmlItem);
 	void		 ParseBackpacks(pugi::xml_node& xmlItem);
 
 	wiInventoryItem* getInventorySlot(__int64 InventoryID);

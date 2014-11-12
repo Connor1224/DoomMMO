@@ -667,11 +667,11 @@ void applyGraphicOptionsSoft( uint32_t settingsFlags )
 		case 1:
 			r_transp_shadows->SetInt( 0 ) ;
 			r_terra_shadows->SetInt( 0 );
-			r_shadow_blur->SetInt( 0 );
+			r_shadow_blur->SetInt( 1 );
 			r_dir_sm_size->SetInt( MAX_DIR_TEX_SIZE );
 			r_shared_sm_size->SetInt( 1024 );
-			r_shared_sm_cube_size->SetInt( 512 );
-			r_active_shadow_slices->SetInt( NumShadowSlices - 2 );
+			r_shared_sm_cube_size->SetInt( 1024 );
+			r_active_shadow_slices->SetInt( NumShadowSlices - 1 );
 			r3d_assert( r_active_shadow_slices->GetInt() ) ;
 			r_shadows->SetInt( 1 );
 			r_dd_pointlight_shadows->SetInt( 0 );
@@ -681,7 +681,7 @@ void applyGraphicOptionsSoft( uint32_t settingsFlags )
 		case 2:
 			r_transp_shadows->SetInt( 0 ) ;
 			r_terra_shadows->SetInt( 1 );
-			r_shadow_blur->SetInt( 0 );
+			r_shadow_blur->SetInt( 1 );
 			r_dir_sm_size->SetInt( MAX_DIR_TEX_SIZE );
 			r_shared_sm_size->SetInt( 1024 );
 			r_shared_sm_cube_size->SetInt( 512 );
@@ -713,7 +713,7 @@ void applyGraphicOptionsSoft( uint32_t settingsFlags )
 			r_shadows->SetInt( 1 );
 			r_dd_pointlight_shadows->SetInt( 1 );
 			ShadowSplitDistancesOpaque = &ShadowSplitDistancesOpaqueHigh[0];
-			break;		
+			break;
 		}
 	}
 
