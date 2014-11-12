@@ -2,6 +2,9 @@
 #include "r3d.h"
 
 #include "MasterServerConfig.h"
+#include "MasterGameServer.h"
+#include "MasterUserServer.h"
+#include "../EclipseStudio/Sources/backend/WOBackendAPI.h"
 
 	CMasterServerConfig* gServerConfig = NULL;
 

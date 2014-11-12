@@ -11,6 +11,7 @@
 #pragma warning(disable: 4065)	// switch statement contains 'default' but no 'case' labels
 
 #include "MasterGameServer.h"
+#include "MasterUserServer.h"
 #include "MasterServer.h"
 
 #include "../../MasterServer/Sources/NetPacketsServerBrowser.h"

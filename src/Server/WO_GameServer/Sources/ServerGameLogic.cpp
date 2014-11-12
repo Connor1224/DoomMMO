@@ -7,6 +7,8 @@
 #include "GameObjects/ObjManag.h"
 
 #include "ObjectsCode/obj_ServerPlayer.h"
+#include "ObjectsCode/Vehicles/obj_ServerVehicle.h"
+#include "ObjectsCode/Vehicles/obj_ServerVehicleSpawn.h"
 #include "ObjectsCode/obj_ServerLightMesh.h"
 #include "ObjectsCode/sobj_SpawnedItem.h"
 #include "ObjectsCode/sobj_DroppedItem.h"
@@ -17,6 +19,7 @@
 
 #include "../EclipseStudio/Sources/GameCode/UserProfile.h"
 #include "../EclipseStudio/Sources/ObjectsCode/weapons/WeaponArmory.h"
+#include "../EclipseStudio/Sources/backend/WOBackendAPI.h"
 
 #include "ServerWeapons/ServerWeapon.h"
 
@@ -224,12 +227,13 @@ void ServerGameLogic::ApiPlayerUpdateChar(obj_ServerPlayer* plr, bool disconnect
 {
 	// force current GameFlags update
 	plr->UpdateGameWorldFlags();
-
 	CJobUpdateChar* job = new CJobUpdateChar(plr);
 	job->CharData   = *plr->loadout_;
 	job->OldData    = plr->savedLoadout_;
 	job->Disconnect = disconnectAfter;
 	job->GameDollars = plr->profile_.ProfileData.GameDollars;
+	job->GamePoints = plr->profile_.ProfileData.GamePoints;
+
 	// add character play time to update data
 	job->CharData.Stats.TimePlayed += (int)(r3dGetTime() - plr->startPlayTime_);
 	g_AsyncApiMgr->AddJob(job);
@@ -254,7 +258,7 @@ void ServerGameLogic::LogInfo(DWORD peerId, const char* msg, const char* fmt, ..
 	va_start(ap, fmt);
 	StringCbVPrintfA(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
-	
+
 	LogCheat(peerId, 0, false, msg, buf);
 }
 
@@ -283,14 +287,14 @@ void ServerGameLogic::LogCheat(DWORD peerId, int LogID, int disconnect, const ch
 		r3dscpy(job->Data, buf);
 		g_AsyncApiMgr->AddJob(job);
   	}
-  	
+
   	const char* screenname = "<NOT_CONNECTED>";
   	if(peer.status_ == PEER_PLAYING)
   		screenname = peer.temp_profile.ProfileData.ArmorySlots[0].Gamertag;
 
-	r3dOutToLog("%s: peer%02d, r:%s %s, CID:%d [%s], ip:%s\n", 
+	r3dOutToLog("%s: peer%02d, r:%s %s, CID:%d [%s], ip:%s\n",
 		LogID > 0 ? "!!! cheat" : "LogInfo",
-		peerId, 
+		peerId,
 		msg, buf,
 		peer.CustomerID, screenname,
 		inet_ntoa(*(in_addr*)&IP));
@@ -401,6 +405,59 @@ void ServerGameLogic::OnNetPeerDisconnected(DWORD peerId)
 				ApiPlayerUpdateChar(peer.player);
 			}
 
+/////////////////////////////
+		if (peer.player->PlayerOnVehicle == true)
+		{
+			GameObject* from = GameWorld().GetNetworkObject(peer.player->IDOFMyVehicle);
+			if(from)
+			{
+				obj_Vehicle* VehicleFOUND= static_cast< obj_Vehicle* > ( from );
+				if (VehicleFOUND)
+				{
+					for (int i=0;i<=8;i++)
+					{
+						if (VehicleFOUND->PlayersOnVehicle[i]==peer.player->GetNetworkID())
+						{
+							if (VehicleFOUND->HaveDriver==peer.player->GetNetworkID())
+								VehicleFOUND->HaveDriver=0;
+
+							VehicleFOUND->PlayersOnVehicle[i]=0;
+							VehicleFOUND->OccupantsVehicle--;
+
+							PKT_S2C_PositionVehicle_s n2; // Server Vehicles
+							n2.spawnPos= VehicleFOUND->GetPosition();
+							n2.RotationPos = VehicleFOUND->GetRotationVector();
+							n2.OccupantsVehicle=VehicleFOUND->OccupantsVehicle;
+							n2.GasolineCar=VehicleFOUND->Gasolinecar;
+							n2.DamageCar=VehicleFOUND->DamageCar;
+							n2.RespawnCar=false;
+							n2.spawnID=VehicleFOUND->GetNetworkID();
+							gServerLogic.p2pBroadcastToAll(VehicleFOUND, &n2, sizeof(n2), true);
+							r3dOutToLog("######## VehicleID: %i Have %i Passengers\n",peer.player->IDOFMyVehicle,VehicleFOUND->OccupantsVehicle);
+							break;
+						}
+							
+					}
+				}
+			}
+		}
+		if (peer.player->loadout_->GroupID != 0)
+		{
+			PKT_S2C_GroupData_s n1;
+			n1.State = 6;
+			strcpy(n1.MyNickName,peer.player->loadout_->Gamertag);
+			n1.MyID=peer.player->loadout_->GroupID;
+			n1.IDPlayerOutGroup=peer.player->GetNetworkID();
+
+			r3dOutToLog("### %s Ha salido del grupo con el ID %i\n",peer.player->loadout_->Gamertag,peer.player->loadout_->GroupID);
+			peer.player->loadout_->GroupID=0;
+
+			peer.player->OnLoadoutChanged();
+			ApiPlayerUpdateChar(peer.player);
+
+			gServerLogic.p2pBroadcastToAll(NULL, &n1, sizeof(n1), true);
+		}
+/////////////////////////////
 			ApiPlayerLeftGame(peer.player);
 		
 			// report to users
@@ -727,11 +784,22 @@ bool ServerGameLogic::ApplyDamageToPlayer(GameObject* fromObj, obj_ServerPlayer*
 {
 	r3d_assert(fromObj);
 	r3d_assert(targetPlr);
+	//r3dOutToLog("Damage Source damageSource %i != storecat_ShootVehicle %i\n",damageSource,storecat_ShootVehicle);
+	if (targetPlr->PlayerOnVehicle == true && damageSource != storecat_ShootVehicle) // Server Vehicle
+	  return false;
 
-	if(targetPlr->loadout_->Alive == 0)
+	if(targetPlr->loadout_->Alive == 0 || targetPlr->profile_.ProfileData.isGod)
 		return false;
 
-	if(targetPlr->GodMode)
+	if(IsServerPlayer(fromObj)) // Cannot damage same groups
+	{
+		obj_ServerPlayer * fromPlr = ((obj_ServerPlayer*)fromObj);
+		if(fromPlr->loadout_->GroupID == targetPlr->loadout_->GroupID && targetPlr->loadout_->GroupID != 0)
+		{
+			return false;
+		}
+	}
+
         return false;
 		
 	// can't damage players in safe zones (postbox now act like that)
@@ -1623,6 +1691,12 @@ int ServerGameLogic::Cmd_Teleport(obj_ServerPlayer* plr, const char* cmd)
 	if(3 != sscanf(cmd, "%s %f %f", buf, &x, &z))
 		return 2;
 
+	if (plr->PlayerOnVehicle) // Server Vehicles
+	{
+		r3dOutToLog("unable to teleport - Player on vehicle\n");
+		return 9;
+	}
+
 	// cast ray down and find where we should place mine. should be in front of character, facing away from him
 	PxRaycastHit hit;
 	PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
@@ -1708,6 +1782,310 @@ int ServerGameLogic::Cmd_Kick(obj_ServerPlayer* plr, const char* cmd)
 	return 0;
 }
 
+IMPL_PACKET_FUNC(ServerGameLogic, PKT_S2C_GroupData)
+{
+	switch (n.State)
+	{
+	default:
+		break;
+	case 1:
+	{
+			  char find[128];
+			  r3dscpy(find, n.intogamertag);
+			  obj_ServerPlayer* tplr = FindPlayer(find);
+
+			  char find1[128];
+			  r3dscpy(find1, n.fromgamertag);
+			  obj_ServerPlayer* plr = FindPlayer(find1);
+
+			  if (!tplr)
+				  return;
+			  if (!plr)
+				  return;
+
+			  if (tplr->loadout_->GroupID != 0)
+			  {
+				  PKT_S2C_GroupData_s gr;
+				  gr.State = 8;
+				  strcpy(gr.pName, tplr->loadout_->Gamertag);
+				  gServerLogic.p2pSendToPeer(plr->peerId_, plr, &gr, sizeof(gr));
+				  return;
+			  }
+
+			  const float curTime = r3dGetTime();
+			  const float CHAT_DELAY_BETWEEN_MSG = 1.0f;	// expected delay between message
+			  const int   CHAT_NUMBER_TO_SPAM = 5;		// number of messages below delay time to be considered spam
+			  float diff = curTime - plr->lastChatTime_;
+
+			  if (diff > CHAT_DELAY_BETWEEN_MSG)
+			  {
+				  plr->numChatMessages_ = 0;
+				  plr->lastChatTime_ = curTime;
+			  }
+			  else
+			  {
+				  plr->numChatMessages_++;
+				  if (plr->numChatMessages_ >= CHAT_NUMBER_TO_SPAM)
+				  {
+					  return;
+				  }
+			  }
+			  if (tplr)
+			  {
+				  if (!tplr->loadout_->isInvite)
+				  {
+					  char message1[128] = { 0 };
+					  char message2[128] = { 0 };
+
+					  PKT_S2C_GroupData_s n2;
+					  n2.State = 5;
+					  n2.status = 2;
+					  n2.peerId = plr->peerId_;
+					  strcpy(message1, "InfoMsg_GroupRcvdInviteFrom");
+					  strcpy(n2.text, message1);
+					  strcpy(n2.GametagLeader, n.GametagLeader);
+					  gServerLogic.p2pSendToPeer(tplr->peerId_, tplr, &n2, sizeof(n2));
+				  }
+			  }
+			  break;
+	}
+	case 2:
+	{
+			  char find[128];
+			  char find1[128];
+			  r3dscpy(find, n.intogamertag);
+			  obj_ServerPlayer* tplr = FindPlayer(find);
+			  r3dscpy(find1, n.fromgamertag);
+			  obj_ServerPlayer* plr = FindPlayer(find1);
+
+			  if (!tplr)
+				  return;
+			  if (!plr)
+				  return;
+
+			  if (tplr->loadout_->GroupID == 0 && plr->loadout_->GroupID == 0)
+			  {
+				  float value;
+				  value = u_GetRandom(10, 9999999);
+				  tplr->loadout_->GroupID = (int)value;
+				  plr->loadout_->GroupID = tplr->loadout_->GroupID;
+				  ApiPlayerUpdateChar(plr);
+				  ApiPlayerUpdateChar(tplr);
+				  plr->OnLoadoutChanged();
+			  }
+			  else if (tplr->loadout_->GroupID != 0) // Have Groups
+			  {
+				  plr->loadout_->GroupID = tplr->loadout_->GroupID;
+				  ApiPlayerUpdateChar(plr);
+				  plr->OnLoadoutChanged();
+			  }
+			  else if (plr->loadout_->GroupID != 0) // Accpet player have groups
+			  {
+				  tplr->loadout_->GroupID = plr->loadout_->GroupID;
+				  ApiPlayerUpdateChar(tplr);
+				  tplr->OnLoadoutChanged();
+			  }
+
+			  char chatmessage[128] = { 0 };
+			  PKT_C2C_ChatMessage_s n1;
+			  sprintf(chatmessage, "%s join to group by Owner %s", plr->loadout_->Gamertag, tplr->loadout_->Gamertag);
+			  r3dscpy(n1.gamertag, "<System>");
+			  r3dscpy(n1.msg, chatmessage);
+			  n1.msgChannel = 3;
+			  n1.userFlag = 2;
+
+			  for (int i = 0; i < MAX_PEERS_COUNT; i++) {
+				  if (peers_[i].status_ >= PEER_VALIDATED1 && peers_[i].player) {
+					  if (tplr->loadout_->GroupID == peers_[i].player->loadout_->GroupID)
+						  net_->SendToPeer(&n1, sizeof(n1), i, true);
+				  }
+			  }
+
+			  char NamesUsersGroup[11][512];
+			  int PlayerIDS[11];
+			  int CountPlayersGroup = 1;
+			  r3dVector PositonGroups[11];
+			  bool isLeader[11];
+
+			  for (int o = 0; o < 11; o++)
+			  {
+				  strcpy(NamesUsersGroup[o], "");
+				  PlayerIDS[o] = 0;
+				  isLeader[o] = false;
+				  PositonGroups[o].x = 0;
+				  PositonGroups[o].y = 0;
+				  PositonGroups[o].z = 0;
+			  }
+
+			  strcpy(NamesUsersGroup[0], tplr->loadout_->Gamertag);
+			  PlayerIDS[0] = tplr->GetNetworkID();
+			  isLeader[0] = true;
+
+			  for (int a = 0; a < MAX_PEERS_COUNT; a++) {
+				  if (peers_[a].status_ >= PEER_PLAYING && peers_[a].player) {
+					  if (tplr->loadout_->GroupID == peers_[a].player->loadout_->GroupID && plr->loadout_->GroupID != 0)
+					  {
+						  if (tplr->GetNetworkID() != peers_[a].player->GetNetworkID())
+						  {
+							  strcpy(NamesUsersGroup[CountPlayersGroup], peers_[a].player->loadout_->Gamertag);
+							  PlayerIDS[CountPlayersGroup] = peers_[a].player->GetNetworkID();
+							  PositonGroups[CountPlayersGroup] = peers_[a].player->GetPosition();
+							  isLeader[CountPlayersGroup] = false;
+							  CountPlayersGroup++;
+						  }
+					  }
+				  }
+			  }
+
+			  for (int e = 0; e < MAX_PEERS_COUNT; e++) {
+				  if (peers_[e].status_ >= PEER_PLAYING && peers_[e].player) {
+					  if (tplr->loadout_->GroupID == peers_[e].player->loadout_->GroupID)
+					  {
+						  PKT_S2C_GroupData_s Groups;
+						  Groups.State = 4;
+						  memcpy(Groups.GameLeader, isLeader, sizeof(Groups.GameLeader));
+						  for (int i = 0; i < 11; i++)
+							  strcpy(Groups.gametag[i], NamesUsersGroup[i]);
+						  Groups.GroupID = tplr->loadout_->GroupID;
+						  Groups.PlayersOnGroup = CountPlayersGroup;
+						  memcpy(Groups.NetworkIDPlayer, PlayerIDS, sizeof(Groups.NetworkIDPlayer));
+						  memcpy(Groups.PlayerPosition, PositonGroups, sizeof(Groups.PlayerPosition));
+						  obj_ServerPlayer* Player = peers_[e].player;
+						  net_->SendToPeer(&Groups, sizeof(Groups), e, true);
+					  }
+				  }
+			  }
+			  break;
+	}
+	case 3:
+	{
+			  char find[128];
+			  r3dscpy(find, n.intogamertag); // el
+			  obj_ServerPlayer* tplr = FindPlayer(find);
+
+			  char find1[128];
+			  r3dscpy(find1, n.fromgamertag); //yo
+			  obj_ServerPlayer* plr = FindPlayer(find1);
+
+			  if (tplr)
+			  {
+				  PKT_S2C_GroupData_s n3;
+				  n3.State = 3;
+				  n3.FromCustomerID = 0;
+				  strcpy(n3.fromgamertag, "");
+				  r3dscpy(n3.intogamertag, n.fromgamertag);
+				  gServerLogic.p2pSendToPeer(tplr->peerId_, tplr, &n3, sizeof(n3));
+			  }
+			  break;
+	}
+	case 4:
+	{
+			  break;
+	}
+	case 5:
+	{
+			  break;
+	}
+	case 6:
+	{
+			  char findnick[128];
+			  r3dscpy(findnick, n.MyNickName);
+			  obj_ServerPlayer* PlayerLeave = FindPlayer(findnick);
+
+			  if (PlayerLeave)
+			  {
+
+				  PlayerLeave->loadout_->GroupID = 0;
+				  ApiPlayerUpdateChar(PlayerLeave);
+				  PlayerLeave->OnLoadoutChanged();
+
+				  PKT_S2C_GroupData_s n1;
+				  n1.State = 6;
+				  strcpy(n1.MyNickName, n.MyNickName);
+				  n1.MyID = n.MyID;
+				  n1.IDPlayerOutGroup = n.IDPlayerOutGroup;
+
+				  p2pSendToPeer(PlayerLeave->peerId_, PlayerLeave, &n1, sizeof(n1));
+
+				  for (int e = 0; e < MAX_PEERS_COUNT; e++) {
+					  if (gServerLogic.peers_[e].status_ >= PEER_PLAYING && gServerLogic.peers_[e].player) {
+						  if (n.MyID == gServerLogic.peers_[e].player->loadout_->GroupID)
+						  {
+							  net_->SendToPeer(&n1, sizeof(n1), e, true);
+						  }
+					  }
+				  }
+			  }
+			  break;
+	}
+	case 7:
+	{
+			  break;
+	}
+	case 8:
+	{
+			  break;
+	}
+	case 9:
+	{
+			  char find1[128];
+			  strcpy(find1, n.fromgamertag);
+			  obj_ServerPlayer* plr = FindPlayer(find1);
+
+			  for (int e = 0; e < MAX_PEERS_COUNT; e++) {
+				  if (peers_[e].status_ >= PEER_PLAYING && peers_[e].player) {
+					  if (plr->loadout_->GroupID == peers_[e].player->loadout_->GroupID)
+					  {
+						  PKT_S2C_GroupData_s Groups;
+						  Groups.State = 9;
+						  strcpy(Groups.fromgamertag, n.fromgamertag);
+						  Groups.MyID = n.MyID;
+						  Groups.IDPlayerOutGroup = n.IDPlayerOutGroup;
+						  net_->SendToPeer(&Groups, sizeof(Groups), e, true);
+					  }
+				  }
+			  }
+			  break;
+	}
+	case 10:
+	{
+
+			   char find1[128];
+			   strcpy(find1, n.fromgamertag);
+			   obj_ServerPlayer* plr = FindPlayer(find1);
+
+			   char chatmessage[128] = { 0 };
+			   PKT_C2C_ChatMessage_s n1;
+			   sprintf(chatmessage, "%s has been expelled from the group by %s", n.fromgamertag, n.intogamertag);
+			   r3dscpy(n1.gamertag, "<System>");
+			   r3dscpy(n1.msg, chatmessage);
+			   n1.msgChannel = 3;
+			   n1.userFlag = 2;
+
+			   for (int i = 0; i < MAX_PEERS_COUNT; i++) {
+				   if (peers_[i].status_ >= PEER_VALIDATED1 && peers_[i].player) {
+					   if (plr->loadout_->GroupID == peers_[i].player->loadout_->GroupID)
+						   net_->SendToPeer(&n1, sizeof(n1), i, true);
+				   }
+			   }
+
+			   for (int e = 0; e < MAX_PEERS_COUNT; e++) {
+				   if (peers_[e].status_ >= PEER_PLAYING && peers_[e].player) {
+					   if (plr->loadout_->GroupID == peers_[e].player->loadout_->GroupID)
+					   {
+						   PKT_S2C_GroupData_s Groups;
+						   Groups.State = 9;
+						   strcpy(Groups.fromgamertag, n.fromgamertag);
+						   Groups.MyID = n.MyID;
+						   net_->SendToPeer(&Groups, sizeof(Groups), e, true);
+					   }
+				   }
+			   }
+			   break;
+	}
+	}
+}
+
 int ServerGameLogic::Cmd_Ban(obj_ServerPlayer* plr, const char* cmd)
 {
     char buf[128] = {0};
@@ -1762,14 +2140,26 @@ int ServerGameLogic::Cmd_TeleportToPlayer(obj_ServerPlayer* plr, const char* cmd
 	if(2 != sscanf(cmd, "%s %63c", buf, find))
 		return 2;
 	obj_ServerPlayer* tplr = FindPlayer(find);
+	if (plr->PlayerOnVehicle)
+	{
+		r3dOutToLog("Unable teleport to player %s is on vehicle\n", plr->userName);
+		return 9;
+	}
 	if(tplr)
 	{
+		if (!tplr->PlayerOnVehicle) // Server Vehicle
+		{
 		r3dPoint3D NewPos = tplr->loadout_->GamePos;
 		PKT_S2C_MoveTeleport_s n;
 		n.teleport_pos = NewPos;
 		p2pBroadcastToActive(plr, &n, sizeof(n));
 		plr->SetLatePacketsBarrier("teleport");
 		plr->TeleportPlayer(NewPos);
+		}
+		else {
+			r3dOutToLog("Unable teleport to player %s is on vehicle\n", find);
+			return 9;
+		}
 	}
 	else
 	{
@@ -1789,12 +2179,19 @@ int ServerGameLogic::Cmd_TeleportToPlayerMe(obj_ServerPlayer* plr, const char* c
 	obj_ServerPlayer* tplr = FindPlayer(find);
 	if(tplr)
 	{
-		r3dPoint3D NewPos = plr->loadout_->GamePos;
-		PKT_S2C_MoveTeleport_s n;
-		n.teleport_pos = NewPos;
-		p2pBroadcastToActive(tplr, &n, sizeof(n));
-		tplr->SetLatePacketsBarrier("teleport");
-		tplr->TeleportPlayer(NewPos);
+		if (!tplr->PlayerOnVehicle)
+		{
+			r3dPoint3D NewPos = plr->loadout_->GamePos;
+			PKT_S2C_MoveTeleport_s n;
+			n.teleport_pos = NewPos;
+			p2pBroadcastToActive(tplr, &n, sizeof(n));
+			tplr->SetLatePacketsBarrier("teleport");
+			tplr->TeleportPlayer(NewPos);
+		}
+		else {
+			r3dOutToLog("Unable teleport to player %s is on vehicle\n", find);
+			return 9;
+		}
 	}
 	else
 	{
@@ -1887,6 +2284,17 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2C_ChatMessage)
 	{
 		int res = ProcessChatCommand(fromPlr, n.msg);
 
+		if( res == 9) // Server Vehicles
+		{
+			PKT_C2C_ChatMessage_s n2;
+			n2.userFlag = 0;
+			n2.msgChannel = 1;
+			r3dscpy(n2.msg, "Unable Teleport - Player on Vehicle");
+			r3dscpy(n2.gamertag, "<system>");
+			p2pSendToPeer(peerId, fromPlr, &n2, sizeof(n2));
+			return;
+		}
+
 		if( res == 0)
 		{
 			PKT_C2C_ChatMessage_s n2;
@@ -1958,10 +2366,21 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2C_ChatMessage)
 	// note
 	//   do not use p2p function here as they're visibility based now
 
-	switch( n.msgChannel ) 
+	switch( n.msgChannel )
 	{
-		case 3:
-        break;
+		case 3: // group
+		{
+            if(fromPlr->loadout_->GroupID != 0)
+			{
+				for(int i=0; i<MAX_PEERS_COUNT; i++) {
+					if(peers_[i].status_ >= PEER_PLAYING && i != peerId && peers_[i].player) {
+						if(fromPlr->loadout_->GroupID == peers_[i].player->loadout_->GroupID)
+							net_->SendToPeer(&n, sizeof(n), i, true);
+					}
+				}
+			}
+		}
+		break;
 
 		case 2: // clan
 		{
@@ -2013,6 +2432,120 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_DataUpdateReq)
 	//gMasterServerLogic.RequestDataUpdate();
 }
 
+IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_VehicleSet)
+{
+ 	for( GameObject* obj = GameWorld().GetFirstObject(); obj; obj = GameWorld().GetNextObject(obj) ) // Server Vehicles
+	{
+		if (obj->Class->Name == "obj_Vehicle") //safelock
+		{
+			if (obj->GetNetworkID() == n.VehicleID)
+			{
+				GameObject* targetObj = GameWorld().GetNetworkObject(n.PlayerSet);
+
+				obj_Vehicle* Vehicle = (obj_Vehicle*)obj;
+
+				bool found=false;
+				for (int i=0;i<=8;i++)
+				{
+					if (Vehicle->PlayersOnVehicle[i]==n.PlayerSet)
+					{
+						found=true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					for (int i=0;i<=8;i++)
+					{
+						if (Vehicle->PlayersOnVehicle[i]==0)
+						{
+							Vehicle->PlayersOnVehicle[i]=n.PlayerSet;
+							Vehicle->OccupantsVehicle++;
+							r3dOutToLog("######## VehicleID: %i Have %i Passengers\n",n.VehicleID,Vehicle->OccupantsVehicle);
+							break;
+						}
+					}
+				}
+				
+				if (Vehicle->HaveDriver == 0)
+				{
+					if (targetObj)
+					{
+						Vehicle->HaveDriver=n.PlayerSet;
+						if (targetObj->Class->Name == "obj_ServerPlayer")
+						{
+							if (Vehicle->DamageCar<=0)
+								Vehicle->HaveDriver=0;
+							//if (Vehicle->Gasolinecar<=0)
+							//	Vehicle->HaveDriver=0;
+
+							obj_ServerPlayer* plr = (obj_ServerPlayer*)targetObj;
+
+							PKT_C2S_VehicleSet_s n;
+							n.VehicleID = obj->GetNetworkID();
+							n.PlayerSet = Vehicle->HaveDriver;
+							p2pSendToPeer(plr->peerId_, plr, &n, sizeof(n));
+						}
+					}
+				}
+				else {
+					if (targetObj)
+					{
+						if (targetObj->Class->Name == "obj_ServerPlayer")
+						{
+							if (Vehicle->DamageCar<=0)
+								Vehicle->HaveDriver=0;
+							//if (Vehicle->Gasolinecar<=0)
+							//	Vehicle->HaveDriver=0;
+
+							obj_ServerPlayer* plr = (obj_ServerPlayer*)targetObj;
+
+							PKT_C2S_VehicleSet_s n;
+							n.VehicleID = obj->GetNetworkID();
+							n.PlayerSet = Vehicle->HaveDriver;
+							p2pSendToPeer(plr->peerId_, plr, &n, sizeof(n));
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_StatusPlayerVehicle)
+{
+	GameObject* from = GameWorld().GetNetworkObject(n.MyID);
+	GameObject* to = GameWorld().GetNetworkObject(n.PlayerID);
+
+	if (!to || !from)
+		return;
+
+	if (n.MyID == n.PlayerID)
+		return;
+
+	obj_ServerPlayer* tplr = (obj_ServerPlayer*)to;
+	obj_ServerPlayer* plr = (obj_ServerPlayer*)from;
+	
+	//r3dOutToLog("######## Enviando %s Nick %s\n",(tplr->PlayerOnVehicle==true)?"true":"false",tplr->loadout_->Gamertag);
+	PKT_C2C_PlayerOnVehicle_s n2;
+	n2.PlayerOnVehicle=tplr->PlayerOnVehicle;
+	n2.VehicleID=tplr->IDOFMyVehicle;
+	p2pSendToPeer(plr->peerId_, tplr, &n2, sizeof(n2));
+}
+
+IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2C_Auratype)
+{
+	GameObject* from = GameWorld().GetNetworkObject(n.MyID);
+	if(from)
+	{
+		obj_ServerPlayer* plr = (obj_ServerPlayer*)from;
+		PKT_C2C_Auratype_s n2;
+		n2.MyID=n.MyID;
+		n2.m_AuraType=n.m_AuraType;
+		p2pBroadcastToActive(plr, &n2, sizeof(n2));
+	}
+}
+
 IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_Admin_PlayerKick)
 {
 	peerInfo_s& peer = GetPeer(peerId);
@@ -2043,7 +2576,7 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_Admin_GiveItem)
 	// check if received from legitimate admin account
 	if(!peer.player || !peer.temp_profile.ProfileData.isDevAccount)
 		return;
-		
+
 	if(g_pWeaponArmory->getConfig(n.ItemID) == NULL) {
 		r3dOutToLog("PKT_C2S_Admin_GiveItem: no item %d\n", n.ItemID);
 		return;
@@ -2051,7 +2584,7 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_Admin_GiveItem)
 
 	wiInventoryItem wi;
 	wi.itemID   = n.ItemID;
-	wi.quantity = 1;	
+	wi.quantity = 1;
 	peer.player->BackpackAddItem(wi);
 }
 
@@ -2180,6 +2713,9 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_UseNetObject)
 	{
 		obj_Note* obj = (obj_Note*)base;
 		obj->NetSendNoteData(peerId);
+	}
+	else if(base->Class->Name == "obj_Vehicle")
+	{
 	}
 	else
 	{
@@ -2310,7 +2846,10 @@ int ServerGameLogic::ProcessWorldEvent(GameObject* fromObj, DWORD eventId, DWORD
 		DEFINE_PACKET_HANDLER(PKT_C2S_TEST_SpawnDummyReq);
 		
 		DEFINE_PACKET_HANDLER(PKT_C2S_DBG_LogMessage);
-		
+		DEFINE_PACKET_HANDLER(PKT_C2S_VehicleSet);
+		DEFINE_PACKET_HANDLER(PKT_C2S_StatusPlayerVehicle);
+		DEFINE_PACKET_HANDLER(PKT_C2C_Auratype);
+		DEFINE_PACKET_HANDLER(PKT_S2C_GroupData);	
 		// special packet case with variable length
 		case PKT_C2S_ScreenshotData:
 		{

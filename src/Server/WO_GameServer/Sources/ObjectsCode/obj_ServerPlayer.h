@@ -24,6 +24,8 @@ enum Playerstate_e
 	PLAYER_MOVE_WALK_AIM,
 	PLAYER_MOVE_RUN,
 	PLAYER_MOVE_SPRINT,
+    PLAYER_SWIM_F,
+    PLAYER_SWIM_M,
 	PLAYER_MOVE_PRONE,
 	PLAYER_MOVE_PRONE_AIM,
 	PLAYER_PRONE_UP,
@@ -31,9 +33,6 @@ enum Playerstate_e
 	PLAYER_PRONE_IDLE,
 
 	PLAYER_DIE,
-
-	PLAYER_SWIM_F,
-	PLAYER_SWIM_M,
 
 	PLAYER_NUM_STATES,
 };
@@ -45,9 +44,11 @@ class obj_ServerPlayer : public GameObject, INetworkHelper
 
 	// info about player
 	DWORD		peerId_;
-	
+	bool		PlayerOnVehicle;
+	bool		dieForExplosion;
+	int			IDOFMyVehicle;
 	bool		wasDisconnected_;
-
+	float		GroupTime;
 	float		startPlayTime_;
 	float		m_PlayerRotation;
 	int		m_PlayerState; // comes from client
@@ -192,6 +193,12 @@ public:
 	void		OnNetPacket(const PKT_C2S_StackClip_s& n);
 	void		OnNetPacket(const PKT_C2S_DisconnectReq_s& n);
 	void		OnNetPacket(const PKT_C2S_FallingDamage_s& n);
+    void 		OnNetPacket(const PKT_C2S_SendHelpCall_s& n);
+    void		OnNetPacket(const PKT_C2C_PlayerOnVehicle_s& n); // Server Vehicles
+	void		OnNetPacket(const PKT_C2C_Auratype_s& n); 
+	void		OnNetPacket(const PKT_C2C_flashlightToggle_s& n); // flashlight
+	void		OnNetPacket(const PKT_C2S_CarKill_s& n); // Server Vehicles
+	void		OnNetPacket(const PKT_C2C_UnarmedCombat_s& n); // Unarmed Combat
 
 	void		OnNetPacket(const PKT_C2S_PlayerWeapDataRep_s& n);
 	

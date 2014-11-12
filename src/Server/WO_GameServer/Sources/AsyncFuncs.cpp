@@ -491,7 +491,7 @@ int CJobUpdateChar::Exec()
 	req.AddParam("s9",          slot.Stats.Reputation);
 	req.AddParam("sA",          slot.GameFlags);
 	req.AddParam("sB",          GameDollars);
-	
+	req.AddParam("gP",          GamePoints);	
 	UpdateChar_SetAttachments(req, slot);
 	UpdateChar_SetBackpack(req, CharData, OldData);
 	
@@ -502,6 +502,7 @@ int CJobUpdateChar::Exec()
 	req.AddParam("ts03",        0);
 	req.AddParam("ts04",        0);
 	req.AddParam("ts05",        0);
+	req.AddParam("GroupID",        slot.GroupID);
 
 	req.AddParam("SkillID0",	slot.Stats.skillid0);
 	req.AddParam("SkillID1",	slot.Stats.skillid1);

@@ -2,6 +2,7 @@
 #include "r3d.h"
 
 #include "obj_ServerPlayer.h"
+#include "ObjectsCode/Vehicles/obj_ServerVehicle.h"
 
 #include "ServerWeapons/ServerWeapon.h"
 #include "ServerWeapons/ServerGear.h"
@@ -18,7 +19,7 @@
 
 #include "AsyncFuncs.h"
 #include "Async_Notes.h"
-
+#include "../EclipseStudio/Sources/backend/WOBackendAPI.h"
 #include "../EclipseStudio/Sources/Gameplay_Params.h"
 extern CGamePlayParams		GPP_Data;
 
@@ -34,6 +35,7 @@ obj_ServerPlayer::obj_ServerPlayer() :
 
 	peerId_ = -1;
 	startPlayTime_ = r3dGetTime();
+	PlayerOnVehicle=false;
 
 	m_PlayerFlyingAntiCheatTimer = 0.0f;
 	m_PlayerUndergroundAntiCheatTimer = 0.0f;
@@ -84,6 +86,8 @@ BOOL obj_ServerPlayer::OnCreate()
 	myPacketSequence = 0;
 	clientPacketSequence = 0;
 	packetBarrierReason = "";
+	PlayerOnVehicle=false;
+	GroupTime=0;
 
 	FireHitCount = 0;
 
@@ -91,6 +95,7 @@ BOOL obj_ServerPlayer::OnCreate()
 
 	lastWeapDataRep   = r3dGetTime();
 	weapCheatReported = false;
+	dieForExplosion = false;
 
 	lastPlayerAction_ = r3dGetTime();
 	m_PlayerState = 0;
@@ -541,9 +546,11 @@ float obj_ServerPlayer::ApplyDamage(float damage, GameObject* fromObj, int bodyP
   if(!isTargetDummy_ || 1)
 	loadout_->Health -= damage;
 
-  //r3dOutToLog("%s damaged by %s by %.1f points, %.1f left\n", userName, fromObj->Name.c_str(), damage, m_Health);
+	loadout_->Health = R3D_CLAMP(loadout_->Health, 0.0f, 100.0f);
 
-  return damage;    
+	//r3dOutToLog("########## %s damaged by %s by %.1f points\n", userName, fromObj->Name.c_str(), damage);
+
+  return damage;
 }
 
 void obj_ServerPlayer::SetWeaponSlot(int wslot, uint32_t weapId, const wiWeaponAttachment& attm)
@@ -593,7 +600,8 @@ void obj_ServerPlayer::SetGearSlot(int gslot, uint32_t gearId)
 void obj_ServerPlayer::SetLoadoutData()
 {
 	wiCharDataFull& slot = profile_.ProfileData.ArmorySlots[0];
-	
+	slot.GroupID = 0;
+
 	//@ FOR NOW, attachment are RESET on entry. need to detect if some of them was dropped
 	// (SERVER CODE SYNC POINT)
 	slot.Attachment[0] = wiWeaponAttachment();
@@ -618,6 +626,31 @@ BOOL obj_ServerPlayer::Update()
 {
 	parent::Update();
   
+	if (loadout_->GroupID != 0)
+	{
+		if ((r3dGetTime() - GroupTime) > 10)
+		{
+			GroupTime = r3dGetTime();
+			for( GameObject* obj = GameWorld().GetFirstObject(); obj; obj = GameWorld().GetNextObject(obj) ) // Server Vehicles
+			{
+				if(obj->isObjType(OBJTYPE_Human))
+				{
+					obj_ServerPlayer* Player= static_cast< obj_ServerPlayer* > ( obj );
+					if (Player->loadout_->GroupID == loadout_->GroupID)
+					{
+						PKT_S2C_GroupData_s n;
+						n.State = 7;
+						n.IDPlayer=Player->GetNetworkID();
+						n.Position=Player->GetPosition();
+						gServerLogic.p2pSendToPeer(this->peerId_,this, &n, sizeof(n), true);
+					}
+				}
+			}
+		}
+	}
+	else {
+		GroupTime = r3dGetTime();
+	}
 	const float timePassed = r3dGetFrameTime();
 	const float curTime = r3dGetTime();
 
@@ -747,7 +780,9 @@ BOOL obj_ServerPlayer::Update()
 	// send vitals if they're changed
 	PKT_S2C_SetPlayerVitals_s vitals;
 	vitals.FromChar(loadout_);
-	if(vitals != lastVitals_)
+
+	vitals.GroupID = loadout_->GroupID;
+	if(vitals != lastVitals_ || vitals.GroupID != lastVitals_.GroupID)
 	{
 		gServerLogic.p2pBroadcastToActive(this, &vitals, sizeof(vitals));
 		lastVitals_.FromChar(loadout_);
@@ -1044,6 +1079,10 @@ r3dPoint3D obj_ServerPlayer::GetRandomPosForItemDrop()
 {
 	// create random position around player
 	r3dPoint3D pos = GetPosition();
+	if (this->PlayerOnVehicle==true)
+	{
+		pos+=r3dPoint3D(u_GetRandom(-4,4),-8,u_GetRandom(-4,4));
+	}
 	pos.y += 0.4f;
 	pos.x += u_GetRandom(-1, 1);
 	pos.z += u_GetRandom(-1, 1);
@@ -1623,7 +1662,9 @@ void obj_ServerPlayer::UseItem_ApplyEffect(const PKT_C2C_PlayerUseItem_s& n, uin
 			break;
 
 		case WeaponConfig::ITEMID_ZombieRepellent:
-			//todo
+			//When the item is used in-game make it so the server knows we used it
+			loadout_->Repellent = 1;
+			loadout_->UsedRepellentAt = r3dGetTime();
 			break;
 
 		default:
@@ -1703,7 +1744,9 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerReload_s& n)
 	// reload weapon
 	wpn->getPlayerItem().Var1 = ammoReloaded;
 	wpn->getPlayerItem().Var2 = wpn->getClipConfig()->m_itemID;
-		
+
+	gServerLogic.ApiPlayerUpdateChar(this);
+
 	RelayPacket(&n, sizeof(n));
 }
 
@@ -2072,7 +2115,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_BackpackDrop_s& n)
 		wi.Reset();
 
 	OnBackpackChanged(n.SlotFrom);
-
+	gServerLogic.ApiPlayerUpdateChar(this);
 	return;
 }
 				
@@ -2105,6 +2148,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_BackpackSwap_s& n)
 			
 	OnBackpackChanged(n.SlotFrom);
 	OnBackpackChanged(n.SlotTo);
+	gServerLogic.ApiPlayerUpdateChar(this);
 	return;
 }
 
@@ -2134,6 +2178,7 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_BackpackJoin_s& n)
 			
 	OnBackpackChanged(n.SlotFrom);
 	OnBackpackChanged(n.SlotTo);
+	gServerLogic.ApiPlayerUpdateChar(this);
 	return;
 }
 
@@ -2183,6 +2228,16 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_UnloadClipReq_s& n)
 	}
 }
 
+void obj_ServerPlayer::OnNetPacket(const PKT_C2S_SendHelpCall_s& n)
+{
+	PKT_S2C_SendHelpCallData_s n1;
+	sprintf(n1.DistressText,n.DistressText);
+	n1.peerid = peerId_;
+	n1.pName = n.pName;
+	n1.pos = n.pos;
+	sprintf(n1.rewardText,n.rewardText);
+	 gServerLogic.p2pBroadcastToAll(NULL, &n1, sizeof(n1), true);
+}
 void obj_ServerPlayer::OnNetPacket(const PKT_C2S_StackClip_s& n)
 {
 	wiInventoryItem wi = loadout_->Items[n.slotId];
@@ -2446,6 +2501,11 @@ BOOL obj_ServerPlayer::OnNetReceive(DWORD EventID, const void* packetData, int p
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2C_PlayerUseItem);
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_UnloadClipReq);
 		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_StackClip);
+		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2C_PlayerOnVehicle);
+		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2C_flashlightToggle); // flashlight
+		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2C_UnarmedCombat); // Unarmed Combat
+		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_SendHelpCall);
+		DEFINE_GAMEOBJ_PACKET_HANDLER(PKT_C2S_CarKill); // Server Vehicles
 	}
   
 	return FALSE;
@@ -2486,6 +2546,7 @@ DefaultPacket* obj_ServerPlayer::NetGetCreatePacket(int* out_size)
 	
 	r3dscpy(n.gamertag, slot.Gamertag);
 	n.ClanID = slot.ClanID;
+	n.GroupID = slot.GroupID;
 	r3dscpy(n.ClanTag, slot.ClanTag);
 	n.ClanTagColor = slot.ClanTagColor;
 
@@ -2493,6 +2554,155 @@ DefaultPacket* obj_ServerPlayer::NetGetCreatePacket(int* out_size)
 
 	*out_size = sizeof(n);
 	return &n;
+}
+
+void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerOnVehicle_s& n)  // Server Vehicles
+{
+	PlayerOnVehicle=n.PlayerOnVehicle;
+	IDOFMyVehicle=n.VehicleID;
+
+	if (!PlayerOnVehicle)
+	{
+		GameObject* targetObj = GameWorld().GetNetworkObject(IDOFMyVehicle);
+
+		if (targetObj)
+		{
+			obj_Vehicle* Vehicle = (obj_Vehicle*)targetObj;
+			
+			for (int i=0;i<=8;i++)
+			{
+				if (Vehicle->PlayersOnVehicle[i]==this->GetNetworkID())
+				{
+					Vehicle->PlayersOnVehicle[i]=0;
+					Vehicle->OccupantsVehicle--;
+					if (Vehicle->HaveDriver==this->GetNetworkID())
+						Vehicle->HaveDriver=0;
+
+					if (Vehicle->OccupantsVehicle<=0)
+					{
+						PKT_S2C_PositionVehicle_s n2; // Server Vehicles
+						n2.spawnPos=Vehicle->GetPosition(); 
+						n2.RotationPos = Vehicle->GetRotationVector();
+						n2.OccupantsVehicle=0;
+						n2.GasolineCar=Vehicle->Gasolinecar;
+						n2.DamageCar=Vehicle->DamageCar;
+						n2.RPMPlayer=0;
+						n2.RotationSpeed=0;
+						n2.RespawnCar=false;
+						n2.bOn = false;
+						n2.spawnID=Vehicle->GetNetworkID();
+						n2.timeStep=0;
+						gServerLogic.p2pBroadcastToAll(this, &n2, sizeof(n2), true);
+					}
+
+					r3dOutToLog("######## VehicleID: %i Have %i Passengers\n",IDOFMyVehicle,Vehicle->OccupantsVehicle);
+					break;
+				}
+			}
+		}
+	}
+	RelayPacket(&n, sizeof(n), false);
+}
+
+void obj_ServerPlayer::OnNetPacket(const PKT_C2C_flashlightToggle_s& n)  // flashlight
+{
+	RelayPacket(&n, sizeof(n), false);
+}
+
+void obj_ServerPlayer::OnNetPacket(const PKT_C2S_CarKill_s& n) // Server Vehicles
+{
+	//r3dOutToLog("ENTRA %i\n",n.targetId);
+	GameObject* target = GameWorld().GetNetworkObject(n.targetId);
+	if (!target) return;
+
+	if (n.weaponID==101399)
+	{
+		int isHead = (n.extra_info == 1);
+		if (target->isObjType(OBJTYPE_Zombie))
+			gServerLogic.ApplyDamageToZombie(this,target,GetPosition()+r3dPoint3D(0,1,0),16, isHead, isHead, false, storecat_punch);
+		else if (target->isObjType(OBJTYPE_Human))
+		{
+			obj_ServerPlayer* targetPlr = IsServerPlayer(target);
+			if ( targetPlr->PlayerOnVehicle == true || targetPlr->loadout_->Alive <=0 || targetPlr->profile_.ProfileData.isGod || (targetPlr->loadout_->GameFlags) || (targetPlr->loadout_->GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox))
+				return;
+			else
+			gServerLogic.ApplyDamage(this, target, GetPosition(), 16.0f, true, storecat_Vehicle);
+		}
+		return;
+	}
+	if (target->Class->Name == "obj_ServerBarricade")
+	{
+		obj_ServerBarricade* shield = (obj_ServerBarricade*)target;
+
+		if (shield->m_ItemID == 101358)
+		{
+			if (n.weaponID != 100999 && n.weaponID != 101310)
+				shield->DoDamage(10);
+			else
+				shield->DoDamage(50);
+		}
+	}
+	if (target->isObjType(OBJTYPE_Zombie))
+	{
+		if (n.weaponID==6)
+			gServerLogic.ApplyDamageToZombie(this,target,GetPosition()+r3dPoint3D(0,1,0),100, 1, 1, false, storecat_Vehicle);
+		else
+			gServerLogic.ApplyDamageToZombie(this,target,GetPosition()+r3dPoint3D(0,1,0),100, 1, 1, false, storecat_ShootVehicle);
+	}
+	else if (target->Class->Name == "obj_Vehicle")
+	{
+		obj_Vehicle* Vehicle = (obj_Vehicle*)target;
+
+		if (Vehicle && Vehicle->OccupantsVehicle>0)
+		{
+			for (int i=0;i<=8;i++)
+			{
+				if (Vehicle->PlayersOnVehicle[i]!=0)
+				{
+					GameObject* from = GameWorld().GetNetworkObject(Vehicle->PlayersOnVehicle[i]);
+					if (from)
+					{
+						obj_ServerPlayer* Player = (obj_ServerPlayer*)from;
+						if (Player->profile_.ProfileData.isGod || (Player->loadout_->GameFlags) || (Player->loadout_->GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox))
+							return;
+
+						PKT_C2S_DamageCar_s n2;
+						n2.CarID = Vehicle->GetNetworkID();
+						n2.WeaponID =n.weaponID;
+						gServerLogic.p2pSendToPeer(Player->peerId_, this, &n2, sizeof(n2));
+					}
+				}
+							
+			}
+		}
+		
+	}
+	else if (target->isObjType(OBJTYPE_Human))
+	{
+		obj_ServerPlayer* targetPlr = IsServerPlayer(target);
+		if (n.DieForExplosion == true && !targetPlr->profile_.ProfileData.isGod && !(targetPlr->loadout_->GameFlags) && !(targetPlr->loadout_->GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox))
+		{
+			targetPlr->dieForExplosion=true;
+			gServerLogic.DoKillPlayer(this,targetPlr,storecat_Vehicle);
+		}
+		else if ( targetPlr->PlayerOnVehicle == true || targetPlr->loadout_->Alive <=0 || targetPlr->profile_.ProfileData.isGod || (targetPlr->loadout_->GameFlags) || (targetPlr->loadout_->GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox))
+		{
+			return;
+		}
+		else {
+			if (targetPlr->loadout_->GroupID == this->loadout_->GroupID)
+			{
+				if (targetPlr->loadout_->GroupID != 0)
+					return;
+			}
+			gServerLogic.DoKillPlayer(this,targetPlr,storecat_Vehicle);
+		}
+	}
+}
+
+void obj_ServerPlayer::OnNetPacket(const PKT_C2C_UnarmedCombat_s& n)  // Unarmed Combat
+{
+	RelayPacket(&n, sizeof(n), false);
 }
 
 void obj_ServerPlayer::RelayPacket(const DefaultPacket* packetData, int packetSize, bool guaranteedAndOrdered)

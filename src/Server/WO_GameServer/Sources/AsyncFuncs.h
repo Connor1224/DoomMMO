@@ -112,6 +112,7 @@ class CJobUpdateChar : public CAsyncApiJob
 	wiCharDataFull	CharData;
 	wiCharDataFull	OldData;
 	int		GameDollars;
+	int		GamePoints;
 
 	const static int DISCONNECT_WAIT_TIME = 10; // time player must wait before actual disconnect (to prevent exiting from battlefield while fighting)
 	bool		Disconnect;	// disconnect after update

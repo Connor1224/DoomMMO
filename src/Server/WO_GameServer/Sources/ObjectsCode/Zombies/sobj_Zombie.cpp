@@ -14,6 +14,7 @@
 #include "ObjectsCode/sobj_DroppedItem.h"
 #include "ObjectsCode/obj_ServerBarricade.h"
 #include "ServerWeapons/ServerWeapon.h"
+#include "ObjectsCode/Vehicles/obj_ServerVehicle.h"
 
 #include "../../EclipseStudio/Sources/ObjectsCode/Gameplay/ZombieStates.h"
 
