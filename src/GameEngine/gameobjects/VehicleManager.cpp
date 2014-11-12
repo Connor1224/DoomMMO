@@ -19,6 +19,13 @@
 #include "VehicleManager.h"
 #include "obj_Vehicle.h"
 #include "VehicleDescriptor.h"
+#include "../../EclipseStudio/Sources/ui/HUDPause.h"
+#include "../../EclipseStudio/Sources/ui/HUDDisplay.h"
+#include "../../EclipseStudio/Sources/ObjectsCode/AI/AI_Player.h"
+#include "../../EclipseStudio/Sources/multiplayer/ClientGameLogic.h"
+
+extern HUDPause*	hudPause;
+extern HUDDisplay*	hudMain;
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -39,13 +46,33 @@ namespace
 
 	void DriveVehiclesChangeCallback(int oldI, float oldF)
 	{
-		ObjectManager& GW = GameWorld();
+		/*ObjectManager& GW = GameWorld();
 		for (GameObject *obj = GW.GetFirstObject(); obj; obj = GW.GetNextObject(obj))
 		{
 			if(obj->isObjType(OBJTYPE_Vehicle))
 			{
 				obj_Vehicle * vh = static_cast<obj_Vehicle*>(obj);
 				vh->SwitchToDrivable(d_drive_vehicles->GetBool());
+			}
+		}*/
+		ObjectManager& GW = GameWorld();
+		for (GameObject *obj = GW.GetFirstObject(); obj; obj = GW.GetNextObject(obj))
+		{
+			if(obj->isObjType(OBJTYPE_Vehicle))
+			{
+				if (gClientLogic().localPlayer_)
+				{
+					obj_Player* plr = gClientLogic().localPlayer_;
+					obj_Vehicle * vh = static_cast<obj_Vehicle*>(obj);
+					if (plr->ActualVehicle != NULL && !plr->isPassenger())
+					{
+						if (vh->GetNetworkID() == plr->ActualVehicle->GetNetworkID())
+						{
+						    vh->SwitchToDrivable(d_drive_vehicles->GetBool());
+							return;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -55,18 +82,18 @@ namespace
 	PxVehicleKeySmoothingData gKeySmoothingData=
 	{
 		{
-			3.0f,	//rise rate PX_VEHICLE_ANALOG_INPUT_ACCEL		
-			3.0f,	//rise rate PX_VEHICLE_ANALOG_INPUT_BRAKE		
-			10.0f,	//rise rate PX_VEHICLE_ANALOG_INPUT_HANDBRAKE	
-			2.5f,	//rise rate PX_VEHICLE_ANALOG_INPUT_STEER_LEFT	
-			2.5f	//rise rate PX_VEHICLE_ANALOG_INPUT_STEER_RIGHT	
+			3.0f,	//rise rate PX_VEHICLE_ANALOG_INPUT_ACCEL
+			3.0f,	//rise rate PX_VEHICLE_ANALOG_INPUT_BRAKE
+			10.0f,	//rise rate PX_VEHICLE_ANALOG_INPUT_HANDBRAKE
+			2.5f,	//rise rate PX_VEHICLE_ANALOG_INPUT_STEER_LEFT
+			2.5f	//rise rate PX_VEHICLE_ANALOG_INPUT_STEER_RIGHT
 		},
 		{
-			5.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_ACCEL		
-			5.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_BRAKE		
-			10.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_HANDBRAKE	
-			5.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_STEER_LEFT	
-			5.0f	//fall rate PX_VEHICLE_ANALOG_INPUT_STEER_RIGHT	
+			5.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_ACCEL
+			5.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_BRAKE
+			10.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_HANDBRAKE
+			5.0f,	//fall rate PX_VEHICLE_ANALOG_INPUT_STEER_LEFT
+			5.0f	//fall rate PX_VEHICLE_ANALOG_INPUT_STEER_RIGHT
 		}
 	};
 
@@ -129,7 +156,7 @@ namespace
 	}
 
 //////////////////////////////////////////////////////////////////////////
-	
+
 	PxVec3 ComputeChassisMOI(const PxVec3& chassisDims, const PxF32 chassisMass)
 	{
 		//We can approximately work out the chassis moment of inertia from the aabb.
@@ -147,8 +174,8 @@ namespace
 //////////////////////////////////////////////////////////////////////////
 
 	PxSceneQueryHitType::Enum VehicleWheelRaycastPreFilter
-	(	
-		PxFilterData filterData0, 
+	(
+		PxFilterData filterData0,
 		PxFilterData filterData1,
 		const void* constantBlock,
 		PxU32 constantBlockSize,
@@ -161,6 +188,7 @@ namespace
 		PX_UNUSED(constantBlockSize);
 		PX_UNUSED(constantBlock);
 		PX_UNUSED(filterData0);
+
 		PxSceneQueryHitType::Enum ht = ((0 == (filterData1.word3 & VEHICLE_DRIVABLE_SURFACE)) ? PxSceneQueryHitType::eNONE : PxSceneQueryHitType::eBLOCK);
 		return ht;
 	}
@@ -245,7 +273,7 @@ namespace
 
 		PxU32 numShapes = a->getNbShapes();
 		r3d_assert(numShapes <= vd.numWheels + vd.numHullParts);
-		
+
 		for (PxU32 i = 0; i < numShapes; ++i)
 		{
 			PxShape *s = 0;
@@ -277,7 +305,7 @@ namespace
 
 	void SetupActor
 	(
-		PxRigidDynamic* vehActor, 
+		PxRigidDynamic* vehActor,
 		const PxFilterData& vehQryFilterData,
 		const PxConvexMeshGeometry* wheelGeometries, const PxTransform* wheelLocalPoses, const PxU32 numWheelGeometries, const PxMaterial* wheelMaterial, const PxFilterData& wheelCollFilterData,
 		const PxConvexMeshGeometry* chassisGeometries, const PxTransform* chassisLocalPoses, const PxU32 numChassisGeometries, const PxMaterial* chassisMaterial, const PxFilterData& chassisCollFilterData,
@@ -328,7 +356,7 @@ namespace
 		const float chassisMass = vd.chassisData.mMass;
 
 		//Work out the front/rear mass split from the cm offset.
-		//This is a very approximate calculation with lots of assumptions. 
+		//This is a very approximate calculation with lots of assumptions.
 		//massRear*zRear + massFront*zFront = mass*cm		(1)
 		//massRear       + massFront        = mass			(2)
 		//Rearrange (2)
@@ -348,6 +376,7 @@ namespace
 		//Extract the wheel radius and width from the wheel convex meshes.
 		PxF32 wheelWidths[MAX_WHEELS_COUNT];
 		PxF32 wheelRadii[MAX_WHEELS_COUNT];
+
 		ComputeWheelWidthsAndRadii(wheelMeshes, wheelWidths, wheelRadii, vd.numWheels);
 
 		//Now compute the wheel masses and inertias components around the axle's axis.
@@ -439,6 +468,7 @@ namespace
 		PxFilterData vehQryFilterData;
 		VehicleSetupNonDrivableShapeQueryFilterData(vehQryFilterData);
 
+
 		SetupActor
 		(
 			vehActor,
@@ -473,9 +503,10 @@ VehicleManager::VehicleManager()
 
 	PxInitVehicleSDK(*g_pPhysicsWorld->PhysXSDK);
 
-	surfaceTypePairs = PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(MAX_NUM_TYRE_TYPES,MAX_NUM_SURFACE_TYPES);
-	const PxMaterial *mats[] = {g_pPhysicsWorld->defaultMaterial};
-	surfaceTypePairs->setup(MAX_NUM_TYRE_TYPES, MAX_NUM_SURFACE_TYPES, mats, &drivableSurfaceType);
+    surfaceTypePairs = PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(MAX_NUM_TYRE_TYPES,MAX_NUM_SURFACE_TYPES);
+    const PxMaterial *mats[] = {g_pPhysicsWorld->defaultMaterial};
+    surfaceTypePairs->setup(MAX_NUM_TYRE_TYPES, MAX_NUM_SURFACE_TYPES, mats, &drivableSurfaceType);
+
 	for (PxU32 i = 0; i < MAX_NUM_SURFACE_TYPES; i++)
 	{
 		for (PxU32 j = 0; j < MAX_NUM_TYRE_TYPES; j++)
@@ -501,13 +532,14 @@ VehicleManager::~VehicleManager()
 		surfaceTypePairs->release();
 	}
 	PxCloseVehicleSDK();
+	stopcar=true;
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 void VehicleManager::Update(float timeStep)
 {
-	if (vehicles.Count() == 0 || !d_drive_vehicles->GetBool())
+	if (vehicles.Count() == 0) // || !d_drive_vehicles->GetBool())
 		return;
 
 	if (!batchSuspensionRaycasts)
@@ -518,61 +550,207 @@ void VehicleManager::Update(float timeStep)
 	physxVehs.Resize(vehicles.Count());
 	for (uint32_t i = 0, i_end = physxVehs.Count(); i < i_end; ++i)
 	{
-		physxVehs[i] = vehicles[i]->vehicle;
+			physxVehs[i] = vehicles[i]->vehicle;
 	}
 
-	DoUserCarControl(timeStep);	
 
-	PxVehicleSuspensionRaycasts(batchSuspensionRaycasts, vehicles.Count(), &physxVehs.GetFirst(), batchQueryResults.Count(), &batchQueryResults.GetFirst());
+		if (gClientLogic().localPlayer_)
+		{
+			obj_Player* plr = gClientLogic().localPlayer_;
+			if (plr->ActualVehicle != NULL && !plr->isPassenger())
+			{
+				if (plr->ActualVehicle->GetNetworkID() == this->getRealDrivenVehicle()->GetNetworkID())
+				{
+					DoUserCarControl(timeStep,false, carControlData,0);
+				}
+			}
+		}
 
-	PxVec3 gravity = g_pPhysicsWorld->PhysXScene->getGravity();
-	PxVehicleUpdates(timeStep, gravity, *surfaceTypePairs, physxVehs.Count(), &physxVehs[0]);
-
-	cameraContoller.Update(timeStep);
+	for (uint32_t i = 0, i_end = physxVehs.Count(); i < i_end; ++i)
+	{
+		if (vehicles[i]->owner)
+		{
+			if (vehicles[i]->owner->Occupants>0)
+			{
+				obj_Player* plr = gClientLogic().localPlayer_;
+			  if (gClientLogic().localPlayer_)
+			  {
+				  if (plr->ActualVehicle == vehicles[i]->owner && plr->isInVehicle())
+				{
+					PxVehicleSuspensionRaycasts(batchSuspensionRaycasts, vehicles.Count(), &physxVehs.GetFirst(), batchQueryResults.Count(), &batchQueryResults.GetFirst());
+					PxVec3 gravity = g_pPhysicsWorld->PhysXScene->getGravity();
+					PxVehicleUpdates(timeStep, gravity, *surfaceTypePairs, 1, &physxVehs[i]);
+				}
+				else {
+					PxVehicleSuspensionRaycasts(batchSuspensionRaycasts, 1, &physxVehs[i], 0, 0);
+					PxVec3 gravity = g_pPhysicsWorld->PhysXScene->getGravity();
+					PxVehicleUpdates(timeStep, gravity, *surfaceTypePairs, 1, &physxVehs[i]);
+				}
+			  }
+			}
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-void VehicleManager::DoUserCarControl(float timeStep)
+void VehicleManager::DoUserCarControl(float timeStep,bool enable, PxVehicleDrive4WRawInputData OthercontrolData,int othercar)
 {
-	if (!drivableCar)
-		return;
-
-	PxVehicleDrive4W &car = *drivableCar->vehicle;
-
-	//Work out if the car is to flip from reverse to forward gear or from forward gear to reverse.
-	bool toggleAutoReverse = false;
-	if (car.mDriveDynData.getUseAutoGears())
-	{
-		toggleAutoReverse = ProcessAutoReverse(timeStep);
-	}
-
-	//If the car is to flip gear direction then switch gear as appropriate.
-	if(toggleAutoReverse)
-	{
-		mInReverseMode = !mInReverseMode;
-
-		if(mInReverseMode)
+ if (enable==true)
+ {
+	    GameObject* from = GameWorld().GetNetworkObject(othercar);
+		if (from)
 		{
-			car.mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
+			obj_Vehicle* VehicleID= static_cast< obj_Vehicle* > ( from );
+			PxVehicleDrive4W &VehiD = *VehicleID->vd->vehicle;
+			//r3dOutToLog("######## timeStep %f\n",timeStep);
+			if (OthercontrolData.getDigitalAccel())
+			{
+				VehiD.mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
+			}
+			else if (OthercontrolData.getDigitalBrake())
+			{
+				VehiD.mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
+			}
+			
+			PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs(gKeySmoothingData,  gSteerVsForwardSpeedTable, OthercontrolData, timeStep, VehiD);
+			return;
 		}
-		else
+ }
+
+if (!drivableCar)
+  return;
+if (!gClientLogic().localPlayer_)
+	return;	
+obj_Player* plr = gClientLogic().localPlayer_;
+
+if (plr->ActualVehicle == NULL)
+	 return;
+ timeStepGet=timeStep;
+ PxVehicleDrive4W &car = *drivableCar->vehicle;
+
+ //Work out if the car is to flip from reverse to forward gear or from forward gear to reverse.
+ bool toggleAutoReverse = true;
+
+ if (plr->ActualVehicle->GasolineCar<=0.9 || hudPause->isActive() || hudMain->isPlayersListVisible() || hudMain->isChatInputActive()) // Server Vehicles
+ {
+        carControlData.setDigitalAccel(false);
+        carControlData.setDigitalBrake(false);
+		if (hudPause->isActive() || hudMain->isPlayersListVisible() || hudMain->isChatInputActive())
 		{
-			car.mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
+			carControlData.setDigitalSteerLeft(false);
+			carControlData.setDigitalSteerRight(false);
 		}
-	}
+        PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs(gKeySmoothingData,  gSteerVsForwardSpeedTable, carControlData, timeStep, car);
+        clearInputData = true;
+	    return;
+ }
+ if (plr->ActualVehicle->DamageCar<=0.99) // Server Vehicles
+ {
+        carControlData.setDigitalAccel(false);
+        carControlData.setDigitalBrake(false);
+		carControlData.setDigitalSteerLeft(false);
+		carControlData.setDigitalSteerRight(false);
+        PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs(gKeySmoothingData,  gSteerVsForwardSpeedTable, carControlData, timeStep, car);
+        clearInputData = true;
+	    return;
+ }
+ /*if (car.mDriveDynData.getUseAutoGears())
+ {
+  toggleAutoReverse = ProcessAutoReverse(timeStep);
+ }
 
-	//If in reverse mode then swap the accel and brake.
-	if(mInReverseMode)
-	{
-		const bool accel = carControlData.getDigitalAccel();
-		const bool brake = carControlData.getDigitalBrake();
-		carControlData.setDigitalAccel(brake);
-		carControlData.setDigitalBrake(accel);
-	}
+ //If the car is to flip gear direction then switch gear as appropriate.
+ if(toggleAutoReverse)
+ {
+        mInReverseMode = !mInReverseMode;
+ }*/
 
-	PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs(gKeySmoothingData, gSteerVsForwardSpeedTable, carControlData, timeStep, car);
-	clearInputData = true;
+  if (Keyboard->IsPressed(kbsS)) // Reverse - AomBE Edit
+  {
+	  if ((plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) <=0)
+	  {
+        car.mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
+        carControlData.setDigitalAccel(Keyboard->IsPressed(kbsS));
+        carControlData.setDigitalBrake(Keyboard->IsPressed(kbsW));
+	  }
+	  else {
+        carControlData.setDigitalAccel(false);
+        carControlData.setDigitalBrake(Keyboard->IsPressed(kbsS));
+		if (!SoundSys.isPlaying(m_sndVehicleDrive))
+		{
+			if ((plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) > 15 || (plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) < -0.15 )
+			{
+				if (stopcar == true)
+				{
+				  if (!plr->ActualVehicle->vd->vehicle->isInAir())
+				  {
+						m_sndVehicleDrive = SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/Vehicles/Braking/Brake_Concrete"), plr->ActualVehicle->GetPosition(),true);
+						SoundSys.Start(m_sndVehicleDrive);
+				  }
+				 stopcar=false;
+				}
+			}
+		}
+	  }
+  }
+  else if (Keyboard->IsPressed(kbsW)) // Forward Gear
+  {
+	  if ((plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) >=0)
+	  {
+        car.mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
+        carControlData.setDigitalAccel(Keyboard->IsPressed(kbsW));
+        carControlData.setDigitalBrake(Keyboard->IsPressed(kbsS));
+	  }
+	  else {
+        carControlData.setDigitalAccel(false);
+        carControlData.setDigitalBrake(Keyboard->IsPressed(kbsW));
+		if (!SoundSys.isPlaying(m_sndVehicleDrive))
+		{
+			if ((plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) > 15 || (plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) < -0.15 )
+			{
+				if (stopcar == true)
+				{
+				  if (!plr->ActualVehicle->vd->vehicle->isInAir())
+				  {
+						m_sndVehicleDrive = SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/Vehicles/Braking/Brake_Concrete"), plr->ActualVehicle->GetPosition(),true);
+						SoundSys.Start(m_sndVehicleDrive);
+				  }
+				 stopcar=false;
+				}
+			}
+		}
+	  }
+  }
+ else if (Keyboard->IsPressed(kbsSpace))
+ {
+        carControlData.setDigitalAccel(false);
+        carControlData.setDigitalBrake(Keyboard->IsPressed(kbsSpace));
+		if (!SoundSys.isPlaying(m_sndVehicleDrive))
+		{
+			if ((plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) > 15 || (plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) < -0.15 )
+			{
+				if (stopcar == true)
+				{
+				  if (!plr->ActualVehicle->vd->vehicle->isInAir())
+				  {
+						m_sndVehicleDrive = SoundSys.Play(SoundSys.GetEventIDByPath("Sounds/Vehicles/Braking/Brake_Concrete"), plr->ActualVehicle->GetPosition(),true);
+						SoundSys.Start(m_sndVehicleDrive);
+				  }
+				 stopcar=false;
+				}
+			}
+		}
+ }
+   else {
+
+  stopcar=true;
+  }
+if ((plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2)> -0.5 && (plr->ActualVehicle->vd->vehicle->computeForwardSpeed()*2) < 5)
+	 stopcar=true;
+
+    PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs(gKeySmoothingData,  gSteerVsForwardSpeedTable, carControlData, timeStep, car);
+    clearInputData = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -612,7 +790,7 @@ bool VehicleManager::ProcessAutoReverse(float timestep)
 
 	//If the flag is raised and the player pressed accelerate then lower the flag.
 	if(mAtRestUnderBraking && accel)
-	{	
+	{
 		mAtRestUnderBraking = false;
 		mTimeElapsedSinceAtRestUnderBraking = 0.0f;
 	}
@@ -646,11 +824,11 @@ void VehicleManager::UpdateInput()
 		carControlData.setDigitalSteerRight(false);
 		clearInputData = false;
 	}
-	carControlData.setDigitalAccel(carControlData.getDigitalAccel() || Keyboard->IsPressed(kbsUp));
-	carControlData.setDigitalBrake(carControlData.getDigitalBrake() || Keyboard->IsPressed(kbsDown));
+	carControlData.setDigitalAccel(carControlData.getDigitalAccel() || Keyboard->IsPressed(kbsW));
+	carControlData.setDigitalBrake(carControlData.getDigitalBrake() || Keyboard->IsPressed(kbsS));
 	//	Left and right are switched intentionally
-	carControlData.setDigitalSteerLeft(carControlData.getDigitalSteerLeft() || Keyboard->IsPressed(kbsRight));
-	carControlData.setDigitalSteerRight(carControlData.getDigitalSteerRight() || Keyboard->IsPressed(kbsLeft));
+	carControlData.setDigitalSteerLeft(carControlData.getDigitalSteerLeft() || Keyboard->IsPressed(kbsD));
+	carControlData.setDigitalSteerRight(carControlData.getDigitalSteerRight() || Keyboard->IsPressed(kbsA));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -687,7 +865,7 @@ VehicleDescriptor * VehicleManager::CreateVehicle(const r3dMesh *m)
 		uint32_t meshIdx = INVALID_INDEX;
 		uint32_t wheelIdx = vd->GetWheelIndex(boneId);
 		uint32_t hullIdx = vd->GetHullIndex(boneId);
-		
+
 		if (wheelIdx != INCORRECT_INDEX)
 		{
 			meshArr = &wheelMeshes;
@@ -716,6 +894,7 @@ VehicleDescriptor * VehicleManager::CreateVehicle(const r3dMesh *m)
 	PxConvexMesh *hull = CreateConvexMesh(&hullMeshes[0][0], hullMeshes[0].Count());
 
 	// Wheel meshes
+
 	PxConvexMesh **wheels = reinterpret_cast<PxConvexMesh**>(_alloca(sizeof(PxConvexMesh*) * wheelMeshes.Count()));
 	for (uint32_t i = 0; i < wheelMeshes.Count(); ++i)
 	{
@@ -733,7 +912,16 @@ VehicleDescriptor * VehicleManager::CreateVehicle(const r3dMesh *m)
 	r3d_assert(vehActor);
 
 	vd->vehicle = PxVehicleDrive4W::allocate(vd->numWheels);
-	vd->vehicle->setup(g_pPhysicsWorld->PhysXSDK, vehActor, *wheelsData, driveData, std::max<int>(vd->numWheels - 4, 0));
+
+	if ((int)vd->numWheels>4)
+		vd->vehicle->setup(g_pPhysicsWorld->PhysXSDK, vehActor, *wheelsData, driveData, std::max<int>(vd->numWheels, 0));
+	else
+		vd->vehicle->setup(g_pPhysicsWorld->PhysXSDK, vehActor, *wheelsData, driveData, std::max<int>(vd->numWheels-4, 0));
+
+	for(int i=0;i<(int)vd->numWheels;i++)
+	{
+		vd->vehicle->setWheelShapeMapping(i, i);
+	}
 
 	//Don't forget to add the actor to the scene.
 	g_pPhysicsWorld->PhysXScene->addActor(*vehActor);
@@ -825,10 +1013,10 @@ void VehicleManager::ClearSuspensionRaycatsQuery()
 void VehicleManager::DriveCar(VehicleDescriptor *car)
 {
 	drivableCar = car;
-	if (car)
+	/*if (car)
 		cameraContoller.SetDrivenVehicle(car->vehicle->getRigidDynamicActor());
 	else
-		cameraContoller.SetDrivenVehicle(0);
+		cameraContoller.SetDrivenVehicle(0);*/
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -858,7 +1046,7 @@ obj_Vehicle* VehicleManager::getRealDrivenVehicle()
 			if ( vh->getVehicleDescriptor() == drivableCar ){
 				return vh;
 			}
-			
+
 		}
 	}
 	return NULL;
@@ -913,6 +1101,7 @@ void VehicleCameraController::SetDrivenVehicle(PxRigidDynamic *a)
 }
 
 //////////////////////////////////////////////////////////////////////////
+
 
 void VehicleCameraController::Update(float dtime)
 {

@@ -61,26 +61,26 @@ BasePhysicsObject* BasePhysicsObject::CreateCharacterController(const PhysicsObj
 
 	if(!(r3d_float_isFinite(objectPos.x) && r3d_float_isFinite(objectPos.y) && r3d_float_isFinite(objectPos.z)))
 	{
-		r3dError("CreateCharacterController: objectPos is invalid!"); 
+		r3dError("CreateCharacterController: objectPos is invalid!");
 	}
 
 #ifdef _DEBUG
 //	r3dOutToLog("Creating character controller obj at: %.2f, %.2f, %.2f\n", objectPos.x, objectPos.y, objectPos.z);
 #endif
-	
+
 	if(!(r3d_float_isFinite(objectRotation._11) && r3d_float_isFinite(objectRotation._12) && r3d_float_isFinite(objectRotation._13) &&
 		r3d_float_isFinite(objectRotation._21) && r3d_float_isFinite(objectRotation._22) && r3d_float_isFinite(objectRotation._23) &&
 		r3d_float_isFinite(objectRotation._31) && r3d_float_isFinite(objectRotation._32) && r3d_float_isFinite(objectRotation._33)))
 	{
-		r3dError("CreateCharacterController: objectRotation is invalid!"); 
+		r3dError("CreateCharacterController: objectRotation is invalid!");
 	}
 
 	r3d_assert(params.type == PHYSICS_TYPE_CONTROLLER || params.type == PHYSICS_TYPE_CONTROLLER_ZOMBIE);
 
 	PxCapsuleControllerDesc desc;
 	desc.setToDefault();
-	desc.radius			= 0.3f; 
-	desc.height			= 1.1f; 
+	desc.radius			= 0.3f;
+	desc.height			= 1.1f;
 	desc.climbingMode	= PxCapsuleClimbingMode::eCONSTRAINED;
 
 	desc.position = PxExtendedVec3(objectPos.x, objectPos.y, objectPos.z);
@@ -94,7 +94,7 @@ BasePhysicsObject* BasePhysicsObject::CreateCharacterController(const PhysicsObj
 	desc.userData = (void*)physCallbackObj;
 	desc.nonWalkableMode = PxCCTNonWalkableMode::eFORCE_SLIDING;
 	desc.groupsBitmask = 1<<params.type;
-	
+
 	PxController* Controller = g_pPhysicsWorld->CharacterManager->createController(*g_pPhysicsWorld->PhysXSDK, g_pPhysicsWorld->PhysXScene, desc);
 	r3d_assert(Controller);
 
@@ -142,7 +142,7 @@ BasePhysicsObject* BasePhysicsObject::CreateDynamicObject(const PhysicsObjectCon
 
 	if(!(r3d_float_isFinite(objectPos.x) && r3d_float_isFinite(objectPos.y) && r3d_float_isFinite(objectPos.z)))
 	{
-		r3dError("CreateDynamicObject: objectPos is invalid!"); 
+		r3dError("CreateDynamicObject: objectPos is invalid!");
 	}
 
 #ifdef _DEBUG
@@ -159,7 +159,7 @@ BasePhysicsObject* BasePhysicsObject::CreateDynamicObject(const PhysicsObjectCon
 		r3d_float_isFinite(objectRotation._21) && r3d_float_isFinite(objectRotation._22) && r3d_float_isFinite(objectRotation._23) &&
 		r3d_float_isFinite(objectRotation._31) && r3d_float_isFinite(objectRotation._32) && r3d_float_isFinite(objectRotation._33)))
 	{
-		r3dError("CreateDynamicObject: objectRotation is invalid!"); 
+		r3dError("CreateDynamicObject: objectRotation is invalid!");
 	}
 
 	r3d_assert(params.type != PHYSICS_TYPE_UNKNOWN);
@@ -261,7 +261,7 @@ BasePhysicsObject* BasePhysicsObject::CreateDynamicObject(const PhysicsObjectCon
 	else if(params.type == PHYSICS_TYPE_CONVEX)
 	{
 		r3d_assert(params.meshFilename);
-		char cookedMeshFilename[256]; 
+		char cookedMeshFilename[256];
 		r3dscpy(cookedMeshFilename, params.meshFilename);
 		int len = strlen(cookedMeshFilename);
 		r3dscpy(&cookedMeshFilename[len-3], "cpx");
@@ -372,7 +372,7 @@ BasePhysicsObject* BasePhysicsObject::CreateDynamicObject(const PhysicsObjectCon
 	}
 
 	PxRigidBodyExt::setMassAndUpdateInertia(*actor, params.mass);
-	actor->userData = (void*)physCallbackObj;	
+	actor->userData = (void*)physCallbackObj;
 
 	g_pPhysicsWorld->AddActor(*actor);
 
@@ -425,7 +425,7 @@ BasePhysicsObject* BasePhysicsObject::CreateStaticObject(const PhysicsObjectConf
 	}
 	if(!(r3d_float_isFinite(objectPos.x) && r3d_float_isFinite(objectPos.y) && r3d_float_isFinite(objectPos.z)))
 	{
-		r3dError("CreateStaticObject: objectPos is invalid!"); 
+		r3dError("CreateStaticObject: objectPos is invalid!");
 	}
 
 #ifdef _DEBUG
@@ -436,7 +436,7 @@ BasePhysicsObject* BasePhysicsObject::CreateStaticObject(const PhysicsObjectConf
 		r3d_float_isFinite(objectRotation._21) && r3d_float_isFinite(objectRotation._22) && r3d_float_isFinite(objectRotation._23) &&
 		r3d_float_isFinite(objectRotation._31) && r3d_float_isFinite(objectRotation._32) && r3d_float_isFinite(objectRotation._33)))
 	{
-		r3dError("CreateStaticObject: objectRotation is invalid!"); 
+		r3dError("CreateStaticObject: objectRotation is invalid!");
 	}
 
 	r3d_assert(params.type != PHYSICS_TYPE_UNKNOWN);
@@ -565,7 +565,7 @@ BasePhysicsObject* BasePhysicsObject::CreateStaticObject(const PhysicsObjectConf
 	else if(params.type == PHYSICS_TYPE_CONVEX)
 	{
 		r3d_assert(params.meshFilename);
-		char cookedMeshFilename[256]; 
+		char cookedMeshFilename[256];
 		r3dscpy(cookedMeshFilename, params.meshFilename);
 		int len = strlen(cookedMeshFilename);
 		r3dscpy(&cookedMeshFilename[len-3], "cpx");
@@ -673,14 +673,14 @@ BasePhysicsObject* BasePhysicsObject::CreateStaticObject(const PhysicsObjectConf
 #endif //WO_SERVER
 	shape->setQueryFilterData(qfilterData);
 	shape->userData = (void*)physCallbackObj;
-	
+
 	if(params.isTrigger)
 		shape->setFlags(PxShapeFlag::eTRIGGER_SHAPE);
 
 	if(params.needBoxCollision)
 	{
 		PxShape* boxCollisionShape = actor->createShape(PxBoxGeometry(objectSize.x*0.5f, objectSize.y*0.5f, objectSize.z*0.5f), params.requireNoBounceMaterial?*(g_pPhysicsWorld->noBounceMaterial):*(g_pPhysicsWorld->defaultMaterial));
-		
+
 		PxFilterData filterData2(params.group, 0, 0, 0);
 		boxCollisionShape->setSimulationFilterData(filterData2);
 		PxFilterData qfilterData2(1<<params.group, 0, 0, 0);
@@ -690,7 +690,7 @@ BasePhysicsObject* BasePhysicsObject::CreateStaticObject(const PhysicsObjectConf
 
 	r3d_assert(params.isKinematic==false);
 
-	actor->userData = (void*)physCallbackObj;	
+	actor->userData = (void*)physCallbackObj;
 
 	g_pPhysicsWorld->AddActor(*actor);
 
@@ -916,18 +916,18 @@ r3dPoint3D PhysObj::GetScale() const
 	return r3dPoint3D(1.0f, 1.0f, 1.0f);
 }
 
-bool PhysObj::IsSleeping() 
-{ 
+bool PhysObj::IsSleeping()
+{
 	if(Actor && Actor->isRigidDynamic())
-		return Actor->isRigidDynamic()->isSleeping(); 
+		return Actor->isRigidDynamic()->isSleeping();
 
 	return true; // static
 }
 
-void PhysObj::ForceToSleep() 
-{ 
+void PhysObj::ForceToSleep()
+{
 	if(Actor && Actor->isRigidDynamic())
-		Actor->isRigidDynamic()->putToSleep(); 
+		Actor->isRigidDynamic()->putToSleep();
 }
 
 void PhysObj::addSmoothVelocity(const r3dVector& vel)
@@ -1051,7 +1051,7 @@ void ControllerPhysObj::Move(const r3dPoint3D& move, float sharpness)
 	// iterate movement by 0.2meter steps
 	const int steps = int(move.Length() / 0.2f) + 1;
 	PxVec3 dstep = d / (float)steps;
-	for(int cur_step=0; cur_step<steps; cur_step++) 
+	for(int cur_step=0; cur_step<steps; cur_step++)
 	{
 		{
 			PxFilterData filterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK, 0, 0, 0); //COLLIDABLE_PLAYER_COLLIDABLE_MASK
@@ -1065,7 +1065,7 @@ void ControllerPhysObj::Move(const r3dPoint3D& move, float sharpness)
 			Controller->move(dstep, 0.001f, r3dGetFrameTime(), cf, g_pPhysicsWorld->m_PlayerObstaclesManager);
 #endif
 		}
-	
+
 		// SPECIAL CODE TO PREVENT PLAYER FROM GOING THROUGH WALLS
 		new_pos.x = static_cast<float>(Controller->getPosition().x); //getDebugPosition will return new updated position from Controller->move. getPosition() returns previous frame position
 		new_pos.y = static_cast<float>(Controller->getPosition().y);
@@ -1079,11 +1079,11 @@ void ControllerPhysObj::Move(const r3dPoint3D& move, float sharpness)
 		PxTransform pose(PxVec3(new_pos.x, new_pos.y, new_pos.z), PxQuat(0,0,0,1));
 		PxShape* hit = NULL;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK,0,0,0), PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC);
-		if(!g_pPhysicsWorld->PhysXScene->overlapAny(bbox, pose, hit, filter)) 
+		if(!g_pPhysicsWorld->PhysXScene->overlapAny(bbox, pose, hit, filter))
 		{
 			continue;
 		}
-			
+
 		// player somehow ended up in geometry, move him back
 		Controller->setPosition(PxExtendedVec3(old_pos.x, old_pos.y, old_pos.z));
 
@@ -1159,7 +1159,7 @@ r3dPoint3D ControllerPhysObj::GetScale() const
 
 bool ControllerPhysObj::IsSleeping()
 {
-	return Controller->getActor()->isSleeping(); 
+	return Controller->getActor()->isSleeping();
 }
 
 void ControllerPhysObj::AdjustControllerSize(float new_radius, float new_height, float new_offset)
@@ -1170,7 +1170,7 @@ void ControllerPhysObj::AdjustControllerSize(float new_radius, float new_height,
 	m_HeightOffset = new_offset;
 }
 
-PxActor* ControllerPhysObj::getPhysicsActor() 
+PxActor* ControllerPhysObj::getPhysicsActor()
 {
-	return Controller->getActor(); 
+	return Controller->getActor();
 }

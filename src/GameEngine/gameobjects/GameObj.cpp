@@ -98,7 +98,7 @@ GameObject::~GameObject()
 
 	if(PhysicsObject) delete PhysicsObject;
 
-	setSkipOcclusionCheck(false);	
+	setSkipOcclusionCheck(false);
 
 	if(NetworkID>0)
 	{
@@ -117,7 +117,7 @@ BOOL GameObject::Update()
 			!( ObjFlags & OBJFLAG_ForceSleep )
 				&&
 			PhysicsObject
-				&& 
+				&&
 			(!PhysicsObject->IsSleeping() || FirstUpdate) )
 	{
 		if(FirstUpdate != 0)
@@ -222,7 +222,7 @@ const r3dPoint3D& GameObject::GetVelocity() const
 bool GameObject::SetNetworkID(DWORD id)
 {
 	r3d_assert(NetworkID == 0);
-	
+
 	NetworkID = id;
 	std::pair<ObjectManager::NetMapType::iterator, bool> result = GameWorld().NetworkIDMap.insert(std::pair<DWORD, GameObject*>(NetworkID, this));
 	r3d_assert(result.second);
@@ -236,7 +236,7 @@ INetworkHelper* GameObject::GetNetworkHelper()
 	r3dError("implement GameObject::GetNetworkHelper() for object class %s", Class->Name.c_str());
 	return NULL;
 }
-#endif	
+#endif
 
 
 void
@@ -273,7 +273,7 @@ GameObject::AppendSlicedShadowRenderables( RenderArray ( & render_arrays )[ rsCo
 
 	float shadowsq_max = dist + shadowDim;
 	float shadowsq_min = R3D_MAX(dist - shadowDim, shadowSlice0);
-	
+
 	const float sC1 = 0.9f; // some overlapping required
 	const float sC2 = 1.0f;
 
@@ -295,7 +295,7 @@ GameObject::AppendSlicedShadowRenderables( RenderArray ( & render_arrays )[ rsCo
 			AppendShadowOptimizations( &gShadowMapOptimizationDataOpaque[ 0 ], miX, maX, miY, maY );
 		}
 	}
-	
+
 	if( ( ( shadowsq_min >= shadowSlice1*sC1 || num_slices == 2 ) && shadowsq_min < shadowSlice2*sC2) || (shadowsq_max > shadowSlice1*sC1 && shadowsq_max < shadowSlice2*sC2) || (shadowsq_min <= shadowSlice1*sC1 && shadowsq_max > shadowSlice2*sC2) )
 	{
 		if( inMainFrustum || ( num_slices == 2 && cache_last ) )
@@ -374,12 +374,12 @@ BOOL GameObject::Load(const char* fname)
 		{
 			temp_name[i] = '/';
 		}
-	}	
+	}
 
 	char* res = strrchr(temp_name, '/');
 	if(res)
 		Name = res;
-	else 
+	else
 		Name = temp_name;
 	FileName = fname;
 
@@ -508,7 +508,7 @@ void GameObject::ReadSerializedData(pugi::xml_node& node)
 	{
 		ObjFlags |= OBJFLAG_Detailed;
 	}
-		
+
 	pugi::xml_node rotNode = gameObjNode.child("rotation");
 	if(!rotNode.empty())
 	{

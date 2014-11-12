@@ -85,7 +85,7 @@
 
 
 PhysXWorld* g_pPhysicsWorld = 0;
-// because we might re-cook meshes in physics editor, let's be able to disable cache // true is fixing the mech over flow, false is not.
+// because we might re-cook meshes in physics editor, let's be able to disable cache
 bool gPhysics_DisableCacheForEditor = false;
 
 // regular mesh, can be only static
@@ -210,19 +210,19 @@ PhysXWorld::~PhysXWorld()
 }
 
 void* MyPhysXAllocator::allocate(size_t size, const char* typeName, const char* filename, int line)
-{	
+{
 	void* memPtr = _aligned_malloc(size, 16);
 	if(memPtr == NULL)
 	{
 		r3dOutToLog("PhysX: allocate of %u bytes failed: typeName=%s, filename=%s, line=%d\n", size, typeName, filename, line);
 		r3dError("PhysX: Out of memory when allocating %u bytes!", size );
 	}
-	return memPtr; 
+	return memPtr;
 }
 
 void MyPhysXAllocator::deallocate(void* ptr)
-{ 
-	_aligned_free(ptr); 
+{
+	_aligned_free(ptr);
 }
 MyPhysXAllocator myPhysXAllocator;
 
@@ -266,8 +266,8 @@ public:
 	}
 } myErrorCallback;
 
-class MySimulationEventCallback : public PxSimulationEventCallback     
-{        
+class MySimulationEventCallback : public PxSimulationEventCallback
+{
 public:
 	virtual void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 	{
@@ -292,7 +292,7 @@ public:
 				{
 					PxContactPairPoint &pt = contactPairs[i];
 					collInfo.Normal = *(r3dPoint3D*)&pt.normal;
-					collInfo.NewPosition = *(r3dPoint3D*)&pt.position;			
+					collInfo.NewPosition = *(r3dPoint3D*)&pt.position;
 					collInfo.Distance = pt.separation;
 					collInfo.pObj = obj2;
 					if(obj1)
@@ -445,23 +445,23 @@ void PhysXWorld::Init()
 	setGroupCollisionFlag(PHYSCOLL_NETWORKPLAYER, PHYSCOLL_NETWORKPLAYER, false);
 //#endif
 
-	setGroupCollisionFlag(PHYSCOLL_LOCALPLAYER, PHYSCOLL_TINY_GEOMETRY, false); 
+	setGroupCollisionFlag(PHYSCOLL_LOCALPLAYER, PHYSCOLL_TINY_GEOMETRY, false);
 	setGroupCollisionFlag(PHYSCOLL_NETWORKPLAYER, PHYSCOLL_TINY_GEOMETRY, false);
 
-	setGroupCollisionFlag(PHYSCOLL_LOCALPLAYER, PHYSCOLL_NON_PLAYER_GEOMETRY, false); 
+	setGroupCollisionFlag(PHYSCOLL_LOCALPLAYER, PHYSCOLL_NON_PLAYER_GEOMETRY, false);
 	setGroupCollisionFlag(PHYSCOLL_NETWORKPLAYER, PHYSCOLL_NON_PLAYER_GEOMETRY, false);
-	
-	setGroupCollisionFlag(PHYSCOLL_LOCALPLAYER, PHYSCOLL_PROJECTILES, false); 
 
-	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_LOCALPLAYER, false); 
-	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_NETWORKPLAYER, false); 
+	setGroupCollisionFlag(PHYSCOLL_LOCALPLAYER, PHYSCOLL_PROJECTILES, false);
 
-	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_PLAYER_ONLY_GEOMETRY, false); 
-	setGroupCollisionFlag(PHYSCOLL_TINY_GEOMETRY, PHYSCOLL_PLAYER_ONLY_GEOMETRY, false); 
+	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_LOCALPLAYER, false);
+	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_NETWORKPLAYER, false);
+
+	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_PLAYER_ONLY_GEOMETRY, false);
+	setGroupCollisionFlag(PHYSCOLL_TINY_GEOMETRY, PHYSCOLL_PLAYER_ONLY_GEOMETRY, false);
 	setGroupCollisionFlag(PHYSCOLL_NETWORKPLAYER, PHYSCOLL_PLAYER_ONLY_GEOMETRY, false);
 
-	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_CHARACTERCONTROLLER, false); 
-	setGroupCollisionFlag(PHYSCOLL_TINY_GEOMETRY, PHYSCOLL_CHARACTERCONTROLLER, false); 
+	setGroupCollisionFlag(PHYSCOLL_PROJECTILES, PHYSCOLL_CHARACTERCONTROLLER, false);
+	setGroupCollisionFlag(PHYSCOLL_TINY_GEOMETRY, PHYSCOLL_CHARACTERCONTROLLER, false);
 	setGroupCollisionFlag(PHYSCOLL_LOCALPLAYER, PHYSCOLL_CHARACTERCONTROLLER, false);
 	setGroupCollisionFlag(PHYSCOLL_NETWORKPLAYER, PHYSCOLL_CHARACTERCONTROLLER, false);
 
@@ -470,8 +470,13 @@ void PhysXWorld::Init()
 
 #if VEHICLES_ENABLED
 	//	Vehicle related collision detection
+	setGroupCollisionFlag(PHYSCOLL_PLAYER_ONLY_GEOMETRY, PHYSCOLL_VEHICLE_WHEEL, false);
+	setGroupCollisionFlag(PHYSCOLL_PLAYER_ONLY_GEOMETRY, PHYSCOLL_STATIC_GEOMETRY, false);
+	setGroupCollisionFlag(PHYSCOLL_TINY_GEOMETRY, PHYSCOLL_VEHICLE_WHEEL, false);
+	setGroupCollisionFlag(PHYSCOLL_TINY_GEOMETRY, PHYSCOLL_STATIC_GEOMETRY, false);
 	setGroupCollisionFlag(PHYSCOLL_COLLISION_GEOMETRY, PHYSCOLL_VEHICLE_WHEEL, false);
 	setGroupCollisionFlag(PHYSCOLL_STATIC_GEOMETRY, PHYSCOLL_VEHICLE_WHEEL, false);
+
 #endif
 
 	// create scene
@@ -483,7 +488,7 @@ void PhysXWorld::Init()
 	sceneDesc.cpuDispatcher = PxDefaultCpuDispatcherCreate(2, NULL);
 	if(!sceneDesc.cpuDispatcher)
 		r3dError("PhysX: Failed to create CPU dispatcher");
-	
+
 	sceneDesc.filterShader = MyCollisionFilterShader;
 
 	sceneDesc.gpuDispatcher = NULL;
@@ -492,15 +497,15 @@ void PhysXWorld::Init()
 	sceneDesc.flags |= PxSceneFlag::eENABLE_SWEPT_INTEGRATION;
 #endif
 
-	PhysXScene = PhysXSDK->createScene(sceneDesc);	
-	if (!PhysXScene) 
+	PhysXScene = PhysXSDK->createScene(sceneDesc);
+	if (!PhysXScene)
 		r3dError("PhysX: can't create physics scene!");
 
 	PhysXScene->setSimulationEventCallback(&mySimulationEventCallback);
 
 	defaultMaterial = PhysXSDK->createMaterial(0.8f, 0.8f, 0.05f);
 	noBounceMaterial = PhysXSDK->createMaterial(100.0f, 100.0f, 0.0f);
-	
+
 	CharacterManager = PxCreateControllerManager(PhysXSDK->getFoundation());
 
 #ifndef WO_SERVER
@@ -558,17 +563,17 @@ void PhysXWorld::Destroy()
 		CharacterManager->release();
 		CharacterManager = NULL;
 	}
-	
+
 	r3dFreePhysicsMeshes();
 	r3dFreePhysicsConvexMeshes();
-	
+
 	if(Cooking) {
 		Cooking->release();
 		Cooking = NULL;
 	}
 
 	PxCloseExtensions();
-	
+
 	if(PhysXScene)
 	{
 		PhysXScene->release();
@@ -625,12 +630,12 @@ void PhysXWorld::StartSimulation()
 		float elapsedTime = r3dGetFrameTime();
         static const float substepSize = 1.0f/30.0f;
         static const int numMaxSubsteps = 8;
-        
+
         static float accumulator = 0.0f;
         accumulator += elapsedTime;
         if(accumulator > substepSize*numMaxSubsteps)
             accumulator = substepSize*numMaxSubsteps;
-        
+
         int numStepsReq = (int)floorf(accumulator/substepSize);
         if(numStepsReq > 1)
         {
@@ -663,15 +668,17 @@ void PhysXWorld::StartSimulation()
 #endif
 #endif
 
+
 #if APEX_ENABLED
 #ifndef WO_SERVER
 			g_pApexWorld->Simulate(substepSize, true);
 			g_pApexWorld->FetchResults(true);
 #endif
 #else
-		    PhysXScene->simulate(substepSize); 
+		    PhysXScene->simulate(substepSize);
             m_needFetchResults = true;
 #endif
+
         }
 	}
 }
@@ -712,7 +719,7 @@ bool PhysXWorld::raycastSingle(const PxVec3& origin, const PxVec3& unitDir, cons
                     closestHit = hits[i].distance;
                     foundProperHit = true;
                 }
-            }					
+            }
         }
     }
 
@@ -734,26 +741,26 @@ void PhysXWorld::DrawDebug()
 	r3dRenderer->SetRenderingMode(R3D_BLEND_NOALPHA|R3D_BLEND_ZC);
 	// restore depth buffer, as at this point it fucked up by someone
 	r3dRenderer->SetDSS( ScreenBuffer->ZBuf.Get() );
-	
-	//Render lines       
+
+	//Render lines
 	{
 		PxU32 NbLines = dbgRenderable.getNbLines();
 		const PxDebugLine* Lines = dbgRenderable.getLines();
 		while(NbLines--)
-		{        
+		{
 			r3dDrawUniformLine3D(*(r3dPoint3D*)&Lines->pos0, *(r3dPoint3D*)&Lines->pos1, gCam, r3dColor(Lines->color0));
-			Lines++;            
-		}            
+			Lines++;
+		}
 	}
-	// Render triangles       
-	{           
-		PxU32 NbTris = dbgRenderable.getNbTriangles();  
-		const PxDebugTriangle* Triangles = dbgRenderable.getTriangles(); 
-		while(NbTris--)           
-		{   
+	// Render triangles
+	{
+		PxU32 NbTris = dbgRenderable.getNbTriangles();
+		const PxDebugTriangle* Triangles = dbgRenderable.getTriangles();
+		while(NbTris--)
+		{
 			r3dDrawTriangle3D(*(r3dPoint3D*)&Triangles->pos0, *(r3dPoint3D*)&Triangles->pos1, *(r3dPoint3D*)&Triangles->pos2, gCam, r3dColor(Triangles->color0));
-			Triangles++;          
-		}          
+			Triangles++;
+		}
 	}
 
 	// render terrain
@@ -767,7 +774,7 @@ void PhysXWorld::DrawDebug()
 // 			{
 // 				NxTriangle tri;
 // 				NxU32 triangleIndex = 2 * (row * hfs->getHeightField().getNbColumns() + column);
-// 
+//
 // 				if (hfs->getTriangle(tri, NULL, NULL, triangleIndex, true))
 // 				{
 // 					NxVec3 n = (tri.verts[1]-tri.verts[0]).cross(tri.verts[2]-tri.verts[0]);
@@ -805,13 +812,13 @@ bool PhysXWorld::CookMesh(const r3dMesh* orig_mesh, const char* save_as)
 
 	r3d_assert(mesh->NumVertices >0 && mesh->NumIndices>0);
 
-	//Build physical model 
-	PxTriangleMeshDesc meshDesc;    
-	meshDesc.points.count = mesh->NumVertices;    
-	meshDesc.points.stride = sizeof(r3dPoint3D);   
-	meshDesc.points.data = mesh->GetVertexPositions();  
-	meshDesc.triangles.count = mesh->NumIndices/3;    
-	meshDesc.triangles.stride = 3*sizeof(uint32_t);   
+	//Build physical model
+	PxTriangleMeshDesc meshDesc;
+	meshDesc.points.count = mesh->NumVertices;
+	meshDesc.points.stride = sizeof(r3dPoint3D);
+	meshDesc.points.data = mesh->GetVertexPositions();
+	meshDesc.triangles.count = mesh->NumIndices/3;
+	meshDesc.triangles.stride = 3*sizeof(uint32_t);
 	meshDesc.triangles.data = mesh->GetIndices();
 
 	r3d_assert( meshDesc.points.data && meshDesc.triangles.data ) ;
@@ -862,14 +869,14 @@ bool PhysXWorld::CookConvexMesh(const r3dMesh* orig_mesh, const char* save_as)
 
 	r3d_assert(mesh->NumVertices >0 && mesh->NumIndices>0);
 
-	//Build physical model 
-	PxConvexMeshDesc meshDesc;    
-	meshDesc.points.count = mesh->NumVertices;    
-	meshDesc.points.stride = sizeof(r3dPoint3D);   
-	meshDesc.points.data = mesh->GetVertexPositions();  
-	meshDesc.triangles.count = mesh->NumIndices/3;    
-	meshDesc.triangles.stride = 3*sizeof(uint32_t);   
-	meshDesc.triangles.data = mesh->GetIndices();   
+	//Build physical model
+	PxConvexMeshDesc meshDesc;
+	meshDesc.points.count = mesh->NumVertices;
+	meshDesc.points.stride = sizeof(r3dPoint3D);
+	meshDesc.points.data = mesh->GetVertexPositions();
+	meshDesc.triangles.count = mesh->NumIndices/3;
+	meshDesc.triangles.stride = 3*sizeof(uint32_t);
+	meshDesc.triangles.data = mesh->GetIndices();
 
 	r3d_assert( meshDesc.points.data && meshDesc.triangles.data ) ;
 

@@ -313,7 +313,7 @@ bool VehicleDescriptor::Save(const char *fileName)
 	pugi::xml_document xmlDoc;
 	pugi::xml_node v = xmlDoc.append_child();
 	v.set_name("vehicle");
-	
+
 	SetXMLVal("ackermann_accuracy", v, &ackermannData.mAccuracy);
 	SetXMLVal("gears_switch_time", v, &gearsData.mSwitchTime);
 
@@ -410,12 +410,12 @@ bool VehicleDescriptor::GetExitIndex( r3dVector& outVector, uint32_t exitIndex )
 {
 	const r3dBone *bonesStart = skl->Bones;
 	const r3dBone *bonesEnd = skl->Bones + skl->NumBones;
-	
+
 	const r3dBone *partName = std::find_if(bonesStart, bonesEnd, BoneSearcher(VEHICLE_EXIT_NAMES[exitIndex]));
 	if (partName != bonesEnd)
 	{
 		size_t idx = std::distance(bonesStart, partName);
-		
+
 		outVector = skl->Bones[idx].vRelPlacement;
 		return true;
 	}

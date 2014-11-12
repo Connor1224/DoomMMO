@@ -81,7 +81,7 @@ void ReadTerrainHeader(r3dFile* file, uint32_t& dwSignature, uint32_t& dwVersion
 	fread( &dwSignature, sizeof( dwSignature ), 1, file );
 	if ( dwSignature == TERRAIN_SIGNATURE )
 	{
-		fread( &dwVersion, sizeof( dwVersion ), 1, file );		
+		fread( &dwVersion, sizeof( dwVersion ), 1, file );
 	}
 	else
 	{
@@ -109,7 +109,7 @@ int RemapOffsetPS3( int x, int z, int tcx )
 #define PX_V(arg) if( !(arg) ) { r3dError( "PhysX Call " #arg " failed!" ); }
 
 //--------------------------------------------------------------------------------------------------------
-template <class T> 
+template <class T>
 inline T LerpFast ( T from, T to, float weight )
 {
 	return from + weight * ( to - from );
@@ -253,7 +253,7 @@ inline static void ChangeEndianess( T& val )
 	for( size_t i = 0, e = sz / 2; i < e; i ++ )
 	{
 		std::swap( byte[ i ], byte[ sz - i - 1 ] );
-	}	
+	}
 }
 
 inline static void ChangeEndianess( PackedTerrainVert_t& v )
@@ -318,9 +318,9 @@ inline static void FromPackedVert( HeightNormalVert& o, const PackedTerrainVert_
 	o.SetHeight(static_cast<int16_t>(i.Height));
 
 	// color
-	o.SetColor(0xff000000 | 
-		( i.Color >> 11 ) * 255 / 0x1f << 16 | 
-		( i.Color >> 5 & 0x3f ) * 255 / 0x3f << 8 | 
+	o.SetColor(0xff000000 |
+		( i.Color >> 11 ) * 255 / 0x1f << 16 |
+		( i.Color >> 5 & 0x3f ) * 255 / 0x3f << 8 |
 		( i.Color & 0x1f ) * 255 / 0x1f << 0);
 
 	// normal
@@ -389,7 +389,7 @@ namespace
 		int looseCount = ( vertDim - 2 ) * 2 + 2;
 
 		if( sideLodConnections & NORTH_CONNECTION )	total += connectCount;
-		else total += looseCount; 
+		else total += looseCount;
 
 		if( sideLodConnections & EAST_CONNECTION )	total += connectCount;
 		else total += looseCount;
@@ -498,7 +498,7 @@ namespace
 
 	typedef r3dTL::TFixedArray< int, MAX_SHADER_LAYERS > TerrainMinimapShaderArr;
 
-	TerrainMinimapShaderArr TerrainMinimapShaders; 
+	TerrainMinimapShaderArr TerrainMinimapShaders;
 
 	const char* NumLayersToString( int NumLayers )
 	{
@@ -559,7 +559,7 @@ namespace
 
 	R3D_FORCEINLINE void SetMP2VertexShader()
 	{
-		r3dRenderer->SetVertexShader( r_terrain_quality->GetInt() == 1 ? g_TerraLQ_VS_ID : g_TerraVS_ID ) ;		
+		r3dRenderer->SetVertexShader( r_terrain_quality->GetInt() == 1 ? g_TerraLQ_VS_ID : g_TerraVS_ID ) ;
 	}
 }
 
@@ -826,8 +826,8 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 		nMaxZ = ( sts.UpdateTileZEnd + 1 ) * sts.CellGridDim + 1;
 		z < nMaxZ; z++ )
 	{
-		for (	int	x = sts.UpdateTileXStart * sts.CellGridDim, 
-			nMaxX = ( sts.UpdateTileXEnd + 1 ) * sts.CellGridDim + 1; 
+		for (	int	x = sts.UpdateTileXStart * sts.CellGridDim,
+			nMaxX = ( sts.UpdateTileXEnd + 1 ) * sts.CellGridDim + 1;
 			x < nMaxX; x++ )
 		{
 
@@ -884,16 +884,16 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 			nMaxZ = ( sts.UpdateTileZEnd + 1 ) * sts.CellGridDim;
 			z < nMaxZ; z++ )
 		{
-			for (	int	x = sts.UpdateTileXStart * sts.CellGridDim, 
-				nMaxX = ( sts.UpdateTileXEnd + 1 ) * sts.CellGridDim; 
+			for (	int	x = sts.UpdateTileXStart * sts.CellGridDim,
+				nMaxX = ( sts.UpdateTileXEnd + 1 ) * sts.CellGridDim;
 				x < nMaxX; x++ )
 			{
 
 				int xc = x, zc = z;
 
-				int x0	= R3D_MAX( xc - dirx, 0 ), 
+				int x0	= R3D_MAX( xc - dirx, 0 ),
 					x1	= R3D_MIN( xc + dirx, iwidth - 1 ),
-					z0	= R3D_MAX( zc - dirz, 0 ), 
+					z0	= R3D_MAX( zc - dirz, 0 ),
 					z1	= R3D_MIN( zc + dirz, iheight - 1 );
 
 
@@ -938,7 +938,7 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 					(*pV).SetNormal(PackNorm(NormalMapData[ (uint32_t)(zz * Width + xx) ].GetPacked()));
 
 					(*pV).SetColor(GetEditColor( xx, zz ));
-				}		
+				}
 			}
 		}
 	}
@@ -1010,10 +1010,10 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 
 						// normals
 
-						r3dPoint3D v11 = NormalMapData[ z1 * (uint32_t)Width + x1 ]; 
-						r3dPoint3D v21 = NormalMapData[ z1 * (uint32_t)Width + x2 ]; 
-						r3dPoint3D v12 = NormalMapData[ z2 * (uint32_t)Width + x1 ]; 
-						r3dPoint3D v22 = NormalMapData[ z2 * (uint32_t)Width + x2 ]; 
+						r3dPoint3D v11 = NormalMapData[ z1 * (uint32_t)Width + x1 ];
+						r3dPoint3D v21 = NormalMapData[ z1 * (uint32_t)Width + x2 ];
+						r3dPoint3D v12 = NormalMapData[ z2 * (uint32_t)Width + x1 ];
+						r3dPoint3D v22 = NormalMapData[ z2 * (uint32_t)Width + x2 ];
 
 						r3dPoint3D vCurrent;
 
@@ -1026,13 +1026,13 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 							float fd = ( fDLength - sqrtf( fz * fz * 2.f ) )  / fDLength;
 
 							r3dPoint3D v1 = LerpFast( v11, v12, fz ); // vert
-							r3dPoint3D v2 = LerpFast( v12, v21, fd ); // 
+							r3dPoint3D v2 = LerpFast( v12, v21, fd ); //
 
 							v1.Normalize();
 							v2.Normalize();
 
 							float f = ( xx - x1 ) / ( (*sts.dLods)[ i ].nStep - ( zz - z1 ) );
-							vCurrent = LerpFast( v1, v2, f ); 
+							vCurrent = LerpFast( v1, v2, f );
 							vCurrent.Normalize();
 						}
 						else
@@ -1050,7 +1050,7 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 
 							float f = ( x2 - xx ) / ( (*sts.dLods)[ i ].nStep - ( z2 - zz ) );
 
-							vCurrent = LerpFast( v1, v2, f ); 
+							vCurrent = LerpFast( v1, v2, f );
 							vCurrent.Normalize();
 						}
 
@@ -1058,7 +1058,7 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 
 						break;
 					}
-				}		
+				}
 			}
 		}
 
@@ -1072,7 +1072,7 @@ bool r3dTerrain::DoUpdateVertexData( const UpdateVertexDataSettings& sts )
 bool
 r3dTerrain::UpdateVertexData( const UpdateVertexDataSettings& sts )
 {
-	if( r_terrain_quality->GetInt() == 1 )	
+	if( r_terrain_quality->GetInt() == 1 )
 	{
 		return DoUpdateVertexData<HeightNormalVertLQ>( sts );
 	}
@@ -1162,7 +1162,7 @@ int r3dTerrain::Load(const char* DirName)
 		fgets(TempStr1, sizeof(TempStr1), f);
 		sscanf(TempStr1,"%d", &NumMats);
 
-		// 
+		//
 		// Initialize different shit
 		//
 		sprintf(TempStr,  "%s\\%s", DirName, TLN);
@@ -1304,9 +1304,9 @@ r3dTerrain::HighlightTile( const r3dPoint3D& pos )
 r3dTerrain::Layers*
 r3dTerrain::GetSelectedLayers()
 {
-	if( SelectedTileX < 0				|| 
-		SelectedTileZ < 0				|| 
-		SelectedTileX >= m_nTileCountX	|| 
+	if( SelectedTileX < 0				||
+		SelectedTileZ < 0				||
+		SelectedTileX >= m_nTileCountX	||
 		SelectedTileZ >= m_nTileCountZ
 		)
 	{
@@ -1323,9 +1323,9 @@ r3dTerrain::GetSelectedLayers()
 void
 r3dTerrain::ClearLayerAtSelectedTile( int layer )
 {
-	if( SelectedTileX < 0				|| 
-		SelectedTileZ < 0				|| 
-		SelectedTileX >= m_nTileCountX	|| 
+	if( SelectedTileX < 0				||
+		SelectedTileZ < 0				||
+		SelectedTileX >= m_nTileCountX	||
 		SelectedTileZ >= m_nTileCountZ	||
 		layer < 1 || layer >= 33
 		)
@@ -1388,15 +1388,15 @@ r3dTerrain::ClearLayerAtSelectedTile( int layer )
 struct TerraAppendShadowOpt
 {
 	r3dTerrain::VisibleTiles* visibleTiles ;
-	float *oMinX ; 
-	float *oMaxX ; 
-	float *oMinY ; 
+	float *oMinX ;
+	float *oMaxX ;
+	float *oMinY ;
 	float *oMaxY ;
 
 	volatile LONG InMinMaxAccess ;
 };
 
-#define MULTITHREADED_TERRAIN_SHADOW_OPT 1
+#define MULTITHREADED_TERRAIN_SHADOW_OPT 0
 
 void TerraAppendShadowOptFunc( void* Data, size_t ItemStart, size_t ItemCount )
 {
@@ -1474,7 +1474,7 @@ void r3dTerrain::AppendShadowMapOptimizations( float* oMinX, float* oMaxX, float
 #else
 	TerraAppendShadowOptFunc( &opts, 0, m_dVisibleTiles.Count() );
 #endif
-	
+
 }
 //--------------------------------------------------------------------------------------------------------
 bool r3dTerrain::LoadFromScript( const char * fileName )
@@ -1526,7 +1526,7 @@ bool r3dTerrain::LoadFromScript( const char * fileName )
 		{
 			script.GetToken( buffer );
 			m_eTilingMode = StringToTilingMode( buffer );
-		}	
+		}
 		else if ( ! strcmp( buffer, "base_layer" ) )
 		{
 			LoadLayerFromScript( script, m_tBaseLayer );
@@ -1611,7 +1611,7 @@ bool r3dTerrain::LoadLayerFromScript( Script_c &script, Layer_t &layer )
 			hasTextures = true;
 
 			script.GetString( szName, sizeof( szName ) );
-			layer.pMapDiffuse = r3dRenderer->LoadTexture( szName, D3DFMT_UNKNOWN, false, DownScale );				
+			layer.pMapDiffuse = r3dRenderer->LoadTexture( szName, D3DFMT_UNKNOWN, false, DownScale );
 		}
 		else if( !strcmp(buffer, "split_enable:" ))
 		{
@@ -1679,7 +1679,7 @@ void r3dTerrain::LoadMaterialsFromScript( Script_c &script )
 			char ralativePath[ MAX_PATH ] = {0};
 			script.GetString( ralativePath, sizeof( ralativePath ) );
 			char levelDir[MAX_PATH];
-			sprintf(levelDir, "%s", r3dGameLevel::GetHomeDir());	
+			sprintf(levelDir, "%s", r3dGameLevel::GetHomeDir());
 			_strlwr(levelDir);
 			_strlwr(ralativePath);
 
@@ -1692,11 +1692,11 @@ void r3dTerrain::LoadMaterialsFromScript( Script_c &script )
 			char* fr = strstr(ralativePath, levelDir);
 			if(!fr)
 			{
-				sprintf(szName, "%s/%s", levelDir, ralativePath);	
+				sprintf(szName, "%s/%s", levelDir, ralativePath);
 			}
 			else
 			{
-				sprintf(szName, "%s", ralativePath);	
+				sprintf(szName, "%s", ralativePath);
 			}
 
 
@@ -1984,7 +1984,7 @@ int GetVIndex( int nInd, ConnectorType_t eType, int iOffset )
 void
 r3dTerrain::PreparePhysXHeightFieldDesc	( PxHeightFieldDesc& hfDesc )
 {
-	int w = Width, 
+	int w = Width,
 		h = Height;
 
 	hfDesc.format				= PxHeightFieldFormat::eS16_TM;
@@ -2030,16 +2030,16 @@ r3dTerrain::UpdateHFShape()
 
 	r3d_assert( physicsTerrain );
 	r3d_assert( physicsTerrain->getNbShapes () == 1 );
-	
+
 	r3d_assert(_CrtCheckMemory());
 	PxShape* shapes[1] = {0};
 	physicsTerrain->getShapes(&shapes[0], 1);
-	
+
 	r3d_assert(_CrtCheckMemory());
 
 	r3d_assert( shapes[0]->getGeometryType() == PxGeometryType::eHEIGHTFIELD );
 	//shapes[0]->setGeometry(hfGeom); // memory corruption. not sure why.
-	
+
 	r3d_assert(_CrtCheckMemory());
 }
 
@@ -2103,7 +2103,7 @@ r3dTerrain::UpdatePhysHeightField ()
 
 	physicsHeightField = g_pPhysicsWorld->PhysXSDK->createHeightField(physicsHeightFieldDesc);
 
-	FinishPhysXHeightFieldDesc( physicsHeightFieldDesc ); 
+	FinishPhysXHeightFieldDesc( physicsHeightFieldDesc );
 
 	PxHeightFieldGeometry shapeGeom(physicsHeightField, PxMeshGeometryFlags(), m_InvHFScale, WorldSize / PxReal(h), WorldSize / PxReal(w));
 	PxTransform pose(PxVec3(0,0,0), PxQuat(0,0,0,1));
@@ -2127,7 +2127,7 @@ r3dTerrain::UpdatePhysHeightField ()
 
 	r3d_assert(_CrtCheckMemory());
 
-/*	
+/*
 	r3d_assert( physicsHeightField );
 	const Floats& source = HeightFieldData;
 
@@ -2196,7 +2196,7 @@ r3dTerrain::ExtractHeightFieldData()
 	r3dOutToLog("TERRAIN: ExtractHeightFieldData\n");
 	r3d_assert( physicsHeightField );
 
-	PxU32	w	= (PxU32) Width, 
+	PxU32	w	= (PxU32) Width,
 			h	= (PxU32) Height;
 
 	HeightFieldData.Resize( w * h );
@@ -2212,7 +2212,7 @@ r3dTerrain::ExtractHeightFieldData()
 
 	float scale = m_InvHFScale;
 
-	for( int x = 0; x < w; x++  )	
+	for( int x = 0; x < w; x++  )
 	{
 		for( int z = 0; z < h; z++ )
 		{
@@ -2230,12 +2230,12 @@ r3dTerrain::PrepareForSettingsUpdateInGame()
 {
 	r3d_assert( !g_bEditMode ) ; // should happen in game only
 
-	uint32_t	w	= (uint32_t) Width, 
+	uint32_t	w	= (uint32_t) Width,
 				h	= (uint32_t) Height;
 
 	if( !HeightFieldData.Count() )
 	{
-		HeightFieldData.Resize( w * h ) ;		
+		HeightFieldData.Resize( w * h ) ;
 	}
 
 	if( !NormalMapData )
@@ -2339,7 +2339,7 @@ void LoadPhysXHeightFieldDesc(PxHeightFieldDesc& desc, r3dFile* file)
 	desc.samples.data = malloc(desc.samples.stride * desc.nbColumns * desc.nbRows);
 	if(desc.samples.data==NULL)
 		r3dError("Out of memory!");
-	fread((void*)desc.samples.data, desc.samples.stride * desc.nbColumns * desc.nbRows, 1, file);	
+	fread((void*)desc.samples.data, desc.samples.stride * desc.nbColumns * desc.nbRows, 1, file);
 }
 
 void r3dTerrain::CreateDefaultHeightField()
@@ -2383,16 +2383,18 @@ void r3dTerrain::CreateDefaultPhysicsData()
 	PxHeightFieldGeometry shapeGeom(physicsHeightField, PxMeshGeometryFlags(), 1.0f, 1.0f, 1.0f);
 	PxTransform pose(PxVec3(0,0,0), PxQuat(0,0,0,1));
 	physicsTerrain = g_pPhysicsWorld->PhysXSDK->createRigidStatic(pose);
-	
+
 	r3d_assert(_CrtCheckMemory());
 	PxShape* aHeightFieldShape = physicsTerrain->createShape(shapeGeom, *g_pPhysicsWorld->defaultMaterial);
 	r3d_assert(_CrtCheckMemory());
 	PxFilterData filterData(PHYSCOLL_STATIC_GEOMETRY, 0, 0, 0);
 	aHeightFieldShape->setSimulationFilterData(filterData);
 	PxFilterData qfilterData(1<<PHYSCOLL_STATIC_GEOMETRY, 0, 0, 0);
+#ifndef WO_SERVER
 #if VEHICLES_ENABLED
 	VehicleSetupDrivableShapeQueryFilterData(qfilterData);
 #endif
+#endif //WO_SERVER
 	aHeightFieldShape->setQueryFilterData(qfilterData);
 	r3d_assert(_CrtCheckMemory());
 }
@@ -2431,7 +2433,7 @@ void r3dTerrain::CreatePhysicsData ( const Shorts& source )
 
 	physicsHeightField = g_pPhysicsWorld->PhysXSDK->createHeightField(physicsHeightFieldDesc);
 
-	FinishPhysXHeightFieldDesc( physicsHeightFieldDesc ); 
+	FinishPhysXHeightFieldDesc( physicsHeightFieldDesc );
 
 	PxHeightFieldGeometry shapeGeom(physicsHeightField, PxMeshGeometryFlags(), m_InvHFScale, WorldSize / PxReal(h), WorldSize / PxReal(w));
 	PxTransform pose(PxVec3(0,0,0), PxQuat(0,0,0,1));
@@ -2530,8 +2532,8 @@ r3dTerrain::FillTileSplitIndexes( uint16_t* Indices, int Step, int TileX, int Ti
 	uint32_t countPerTile		= CellGridSize * CellGridSize * 2 / 4 / Step / Step;;
 	uint32_t idxCountPerTile	= GetIndexCountPerTile( CellGridSize, Step );
 
-	for( uint32_t	i = 0, e = sizeof gTempIndicesBuffers / sizeof gTempIndicesBuffers[ 0 ]; 
-		i < e; 
+	for( uint32_t	i = 0, e = sizeof gTempIndicesBuffers / sizeof gTempIndicesBuffers[ 0 ];
+		i < e;
 		i ++ )
 	{
 		gTempIndicesBuffers[ i ].Resize( idxCountPerTile );
@@ -2548,7 +2550,7 @@ r3dTerrain::FillTileSplitIndexes( uint16_t* Indices, int Step, int TileX, int Ti
 	uint32_t vertIdx = 0;
 	uint32_t lineVertIdx = 0;
 
-	uint16_t *targets [ 4 ] = {	&gTempIndicesBuffers[ 0 ][ 0 ], 
+	uint16_t *targets [ 4 ] = {	&gTempIndicesBuffers[ 0 ][ 0 ],
 								&gTempIndicesBuffers[ 1 ][ 0 ],
 								&gTempIndicesBuffers[ 2 ][ 0 ],
 								&gTempIndicesBuffers[ 3 ][ 0 ] };
@@ -2596,7 +2598,7 @@ r3dTerrain::FillTileSplitIndexes( uint16_t* Indices, int Step, int TileX, int Ti
 				mcount <= gTempIndicesBuffers[ 3 ].Count () );
 
 	r3d_assert( stats.XOrient		== xcount / 3 &&
-				stats.YOrient		== ycount / 3 && 
+				stats.YOrient		== ycount / 3 &&
 				stats.ZOrient		== zcount / 3 &&
 				stats.MultiOrient	== mcount / 3 );
 
@@ -2624,7 +2626,7 @@ r3dTerrain::FillTileSplitIndexes( uint16_t* Indices, int Step, int TileX, int Ti
 	targetOrient.MCount		= mcount / 3;
 
 	if( !!xcount + !!ycount + !!zcount + !!mcount > 1 )
-	{		
+	{
 		targetOrient.Orient = MULT_ORIENT;
 	}
 	else
@@ -2831,7 +2833,7 @@ static int ConstructConnectionIndices( uint16_t* target, int step, int prevStep,
 
 		*target ++ = vidx - step;
 		*target ++ = vidx + TO_NEXT_LINE - step;
-		*target ++ = vidx ;		
+		*target ++ = vidx ;
 	}
 
 
@@ -2867,7 +2869,7 @@ static int ConstructConnectionIndices( uint16_t* target, int step, int prevStep,
 
 		// exterior 1
 
-		if( !SouthAndEast ) 
+		if( !SouthAndEast )
 		{
 			for( int i = 0, e = step; i < e; i += prevStep )
 			{
@@ -3053,7 +3055,7 @@ static int ConstructConnectionIndices( uint16_t* target, int step, int prevStep,
 
 bool CreateWorkPath(char* dest);
 
-void r3dTerrain::CreateTempFolders( char* dest ) 
+void r3dTerrain::CreateTempFolders( char* dest )
 {
 	for( char* p = m_szName ; *p ; p ++ )
 	{
@@ -3075,7 +3077,7 @@ void r3dTerrain::CreateTempFolders( char* dest )
 	mkdir( dest );
 }
 
-const char* 
+const char*
 r3dTerrain::IndexDataCacheName()
 {
 	char dest[1024];
@@ -3090,7 +3092,7 @@ r3dTerrain::UpdateTileSplitIndexes( int TileX, int TileZ )
 {
 	r3d_assert( g_bEditMode ) ;
 
-	int idxCountPerTile = GetIndexCountPerTile( CellGridSize , m_dLods[ 0 ].nStep );	
+	int idxCountPerTile = GetIndexCountPerTile( CellGridSize , m_dLods[ 0 ].nStep );
 
 
 	int offsetFromTileSplitStart = idxCountPerTile * ( TileX + TileZ * m_nTileCountX ) ;
@@ -3116,10 +3118,10 @@ r3dTerrain::RecreateVertexBuffer()
 
 	int nTotalVert = GetTotalVertexCount( m_nTileCountX, m_nTileCountZ, CellGridSize );
 
-	m_HeightNormalVB = new r3dVertexBuffer( nTotalVert, 
-		
+	m_HeightNormalVB = new r3dVertexBuffer( nTotalVert,
+
 		r_terrain_quality->GetInt() == 1 ? sizeof( HeightNormalVertLQ ) : sizeof( HeightNormalVert )
-		
+
 		, 0, false, g_bEditMode ? true : false, TerrainBufferMem );
 
 	r3d_assert( m_HeightNormalVB );
@@ -3129,7 +3131,7 @@ void
 r3dTerrain::RecreateIndexData()
 {
 	r3dOutToLog("TERRAIN: RecreateIndexData\n");
-	RecalcLodData();	
+	RecalcLodData();
 
 	int nOverTilesSize = N_OVERTILES * N_OVERTILES;
 
@@ -3158,7 +3160,7 @@ r3dTerrain::RecreateIndexData()
 
 				int nValX = x % m_dLods[ i ].nStep;
 				int nValZ = z % m_dLods[ i ].nStep;
-				if (	( nValX || nValZ ) && 
+				if (	( nValX || nValZ ) &&
 					x && x < CellGridSize &&
 					z && z < CellGridSize )
 					pVMorph->fWeight = 1.f;
@@ -3276,7 +3278,7 @@ r3dTerrain::RecreateIndexData()
 
 	int splitIndicesCount = idxCountPerTile * m_nTileCountX * m_nTileCountZ ;
 
-	r3d_assert( startOffset + 
+	r3d_assert( startOffset +
 					splitIndicesCount * !bLQTerrain
 						==  m_IB->GetItemCount() );
 
@@ -3290,7 +3292,7 @@ r3dTerrain::RecreateIndexData()
 	{
 		void operator() ( int count, uint32_t cookie )
 		{
-			target->Resize( count + 2 ) ;		
+			target->Resize( count + 2 ) ;
 			*(uint32_t*)&( *target )[ count ] = cookie ;
 
 			allocated = 1 ;
@@ -3305,8 +3307,8 @@ r3dTerrain::RecreateIndexData()
 		allocateTempIndices( splitIndicesCount, ParanoidCookie ) ;
 	}
 
-	uint16_t* firstAttemptTarget ; 
-	
+	uint16_t* firstAttemptTarget ;
+
 	if( g_bEditMode )
 	{
 		firstAttemptTarget = &EditSplitIndices[ 0 ] ;
@@ -3318,7 +3320,7 @@ r3dTerrain::RecreateIndexData()
 
 	if( !ReadIndexDataCache( firstAttemptTarget, splitIndicesCount ) )
 	{
-		if( !g_bEditMode )	
+		if( !g_bEditMode )
 		{
 			allocateTempIndices( splitIndicesCount, ParanoidCookie ) ;
 		}
@@ -3367,7 +3369,7 @@ r3dTerrain::RecreateIndexData()
 	}
 
 	m_IB->Unlock();
-}   
+}
 
 const int cacheVersion = -54;
 
@@ -3378,8 +3380,8 @@ r3dTerrain::WriteIndexDataCache(uint16_t* startData, uint32_t elementsCount)
 
 	void* ptr = startData;
 	uint32_t dataLen = m_IB->GetDataLength();
-	FILE* tof = fopen(IndexDataCacheName(), "wb");	
-	if(!tof) 
+	FILE* tof = fopen(IndexDataCacheName(), "wb");
+	if(!tof)
 	{
 		//m_pIB->Unlock();
 		return false;
@@ -3387,10 +3389,10 @@ r3dTerrain::WriteIndexDataCache(uint16_t* startData, uint32_t elementsCount)
 
 	fwrite(&cacheVersion, sizeof(cacheVersion), 1, tof);
 	fwrite(&heightFieldDataCRC32, sizeof(heightFieldDataCRC32), 1, tof);
-	
+
 	int terrain_quality = r_terrain_quality->GetInt();
 	fwrite(&terrain_quality, sizeof(terrain_quality), 1, tof);
-	//	fwrite(&m_dOvertileOffset, sizeof(m_dOvertileOffset), 1, tof);	
+	//	fwrite(&m_dOvertileOffset, sizeof(m_dOvertileOffset), 1, tof);
 
 	int count = TileOrients.Count();
 	fwrite(&count, sizeof(count), 1, tof);
@@ -3702,7 +3704,7 @@ void r3dTerrain::LoadFormatVersion_3(r3dFile* file)
 {
 	HeightNormalVert* locked = LoadFormatVersion_2_3_Begin(file);
 	LoadFormatVersion_3_Main(file, locked);
-	LoadFormatVersion_2_3_End();	
+	LoadFormatVersion_2_3_End();
 }
 
 void r3dTerrain::LoadFormatVersion_4(r3dFile* file)
@@ -3760,7 +3762,7 @@ void r3dTerrain::UpdateVertexDataFormat_X(int dwVersion)
 	// read heightmap
 	switch( dwVersion )
 	{
-	case 0:	
+	case 0:
 	case 1:
 	case 2:
 	case 4: UpdateVertexDataFormat_0_1_2_4(); break;
@@ -4109,7 +4111,7 @@ void r3dTerrain::SaveData( const char * fileName, bool writeCache )
 	// NOTE : Color data should be always stored at the end of file!
 	fwrite( m_pColorData, sizeof(uint32_t), Width*Height, hFile );
 
-	fclose(hFile);	
+	fclose(hFile);
 
 	hFile = fopen_for_write( Va( FNAME_TERRAIN_INI, fileName ), "wt");
 	assert( hFile );
@@ -4144,7 +4146,7 @@ void r3dTerrain::SaveData( const char * fileName, bool writeCache )
 
 		for( int j = 0; j < TERRAIN_LAYERS_PER_MAT; j ++ )
 		{
-			if( m_dMatLayers[ i ][ j ].pMapDiffuse || 
+			if( m_dMatLayers[ i ][ j ].pMapDiffuse ||
 				m_dMatLayers[ i ][ j ].pMapNormal )
 			{
 				layersHaveTextuers = true;
@@ -4197,8 +4199,8 @@ void r3dTerrain::SaveData( const char * fileName, bool writeCache )
 			pTempTex = NULL;
 		}
 
-		if( !savedSplat 
-				&& 
+		if( !savedSplat
+				&&
 			// are we per chance autosaving? Do not delete in case that's so
 			!strcmp( r3dGameLevel::GetHomeDir(), r3dGameLevel::GetSaveDir() ) )
 		{
@@ -4369,13 +4371,13 @@ float r3dTerrain::GetLodIndex( int TileX, int TileZ )
 
 	float fDist = sqrtf( fDX * fDX + fDZ * fDZ );
 
-	if ( fDist > __TerraLOD3 ) 
+	if ( fDist > __TerraLOD3 )
 		return 3.f;
 
-	if ( fDist > __TerraLOD2 ) 
+	if ( fDist > __TerraLOD2 )
 		return ( fDist - __TerraLOD2 ) / ( __TerraLOD3 - __TerraLOD2 ) + 2.f;
 
-	if ( fDist > __TerraLOD1 ) 
+	if ( fDist > __TerraLOD1 )
 		return ( fDist - __TerraLOD1 ) / ( __TerraLOD2 - __TerraLOD1 ) + 1.f;
 
 	return fDist / __TerraLOD1;
@@ -4474,10 +4476,10 @@ r3dTerrain::DrawTile( const VisibleTile &tile, const r3dCamera& Cam, bool Second
 	else
 	{
 		mul = 0.5 * m_MaxHeight - 0.5 * m_MinHeight;
-		add = 0.5 * m_MaxHeight + 0.5 * m_MinHeight;		
+		add = 0.5 * m_MaxHeight + 0.5 * m_MinHeight;
 	}
 
-	D3DXVECTOR4 vConsts[] = 
+	D3DXVECTOR4 vConsts[] =
 	{
 		// float4x3 mMirror  		: register( c25 );
 		D3DXVECTOR4( m._11, m._21, m._31, m._41 ),
@@ -4488,9 +4490,9 @@ r3dTerrain::DrawTile( const VisibleTile &tile, const r3dCamera& Cam, bool Second
 		// float4   vMorphF_HMinMax	: register( c29 );
 		D3DXVECTOR4( fmodf( tile.fLod, 1.f ), mul, add, 0.f ),
 		// float4   vPixOffset_NormalMapFadeK	: register( c30 );
-		D3DXVECTOR4 (	tile.fMirrorNormalX * 0.5f / Width , 
-		tile.fMirrorNormalZ * -0.5f / Height, 
-		1.0f / ( m_fShaderLODFadeEnd - m_fShaderLODFadeStart ), 
+		D3DXVECTOR4 (	tile.fMirrorNormalX * 0.5f / Width ,
+		tile.fMirrorNormalZ * -0.5f / Height,
+		1.0f / ( m_fShaderLODFadeEnd - m_fShaderLODFadeStart ),
 		- m_fShaderLODFadeStart / ( m_fShaderLODFadeEnd - m_fShaderLODFadeStart ) )
 	};
 
@@ -4535,7 +4537,7 @@ r3dTerrain::DrawTile( const VisibleTile &tile, const r3dCamera& Cam, bool Second
 			while( count < Layers::COUNT && layers[ count ] != WRONG_LAYER_IDX )
 			{
 				count ++;
-			}			
+			}
 
 			float vConsts[ 3 ][ 4 ] = {};
 
@@ -4604,7 +4606,7 @@ r3dTerrain::DrawTile( const VisibleTile &tile, const r3dCamera& Cam, bool Second
 				key.Flags.aux_enabled = 1 ;
 			}
 
-			enum 
+			enum
 			{
 				// float4   vGloss                : register( c1 );
 				C_GLOSS,
@@ -4638,7 +4640,7 @@ r3dTerrain::DrawTile( const VisibleTile &tile, const r3dCamera& Cam, bool Second
 				{
 					if( layers[ n ] != WRONG_LAYER_IDX )
 					{
-						n ++;		
+						n ++;
 					}
 				}
 
@@ -4722,13 +4724,13 @@ r3dTerrain::DrawTile( const VisibleTile &tile, const r3dCamera& Cam, bool Second
 						case 3:
 							key.Flags.split3 = layer->bDoSplit;
 							break;
-						}					
+						}
 
 						count ++;
 					}
 
 					n++;
-				}		
+				}
 
 				if ( count )
 				{
@@ -5141,13 +5143,13 @@ r3dTerrain::InsertLayer( int TileX, int TileZ, int Type )
 	Layers& layers = TileLayers[ offset ];
 
 	int e = 0;
-	for( ;	e < MAX_LAYERS_PER_TILE && layers[ e ] != WRONG_LAYER_IDX ; 
+	for( ;	e < MAX_LAYERS_PER_TILE && layers[ e ] != WRONG_LAYER_IDX ;
 		e ++ );
 
 		if( e < MAX_LAYERS_PER_TILE )
 		{
 			int i = 0;
-			for( ;	i < e && layers[ i ] < Type; 
+			for( ;	i < e && layers[ i ] < Type;
 				i ++ );
 
 				if( layers[ i ] == Type )
@@ -5269,7 +5271,7 @@ void r3dTerrain::Update ( bool bShadowMap )
 	nMinZ = vMin.y / fWidthCell - 1;
 	nMaxZ = vMax.y / fWidthCell + 1;
 
-	if ( m_eTilingMode == eTilingMode_None ) 
+	if ( m_eTilingMode == eTilingMode_None )
 	{
 		nMinX = r3dTL::Max( 0, nMinX );
 		nMinZ = r3dTL::Max( 0, nMinZ );
@@ -5277,7 +5279,7 @@ void r3dTerrain::Update ( bool bShadowMap )
 		nMaxX = r3dTL::Min( (int)Width / CellGridSize, nMaxX );
 		nMaxZ = r3dTL::Min( (int)Height / CellGridSize, nMaxZ );
 	}
-	else if ( m_eTilingMode == eTilingMode_Once ) 
+	else if ( m_eTilingMode == eTilingMode_Once )
 	{
 		nMinX = r3dTL::Max( -(int)Width / CellGridSize, nMinX );
 		nMinZ = r3dTL::Max( -(int)Height / CellGridSize, nMinZ );
@@ -5491,7 +5493,7 @@ void r3dTerrain::Update ( bool bShadowMap )
 
 				using r3dTL::Min;
 
-				D3DXVECTOR4 
+				D3DXVECTOR4
 					point	( org.x,		org.y,			org.z,			1.f ); fDist = Min ( fDist, D3DXVec4Dot( &vZVec, &point ) );
 				point = D3DXVECTOR4	( org.x + sz.x,	org.y,			org.z,			1.f ); fDist = Min ( fDist, D3DXVec4Dot( &vZVec, &point ) );
 				point = D3DXVECTOR4	( org.x,		org.y + sz.y,	org.z,			1.f ); fDist = Min ( fDist, D3DXVec4Dot( &vZVec, &point ) );
@@ -5548,7 +5550,7 @@ void r3dTerrain::Update ( bool bShadowMap )
 				nValidZ = ( nCountZ - 1 )  - nValidZ;
 
 			for ( int iTileX = nMinX; iTileX < nMaxX; iTileX++ )
-			{			
+			{
 
 				int nX = floorf( ( float ) iTileX / nCountX );
 				int nValidX = abs( iTileX < 0 ? iTileX + 1 : iTileX ) % nCountX;
@@ -5753,8 +5755,8 @@ r3dTerrain::DrawOrthographicTerrain( r3dCamera const &Cam, bool UseZ ) /*OVERRID
 	D3D_V( r3dRenderer->pd3ddev->Clear( 0, NULL, D3DCLEAR_TARGET, 0xff000000, r3dRenderer->GetClearZValue(), 0 ) );
 
 	// need white alpha or else our d3dxsave/d3dxload bezzle produces enterily black dxt1...
-	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE, 
-													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | 
+	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE,
+													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN |
 													D3DCOLORWRITEENABLE_BLUE ) );
 
 	for( int tz = 0, e = m_nTileCountZ; tz < e; tz++ )
@@ -5774,7 +5776,7 @@ r3dTerrain::DrawOrthographicTerrain( r3dCamera const &Cam, bool UseZ ) /*OVERRID
 			VisibleTile vtile;
 
 			vtile.nValidX			= tx;
-			vtile.nValidZ			= tz; 
+			vtile.nValidZ			= tz;
 			vtile.tTileBox			= bbox;
 			vtile.nTile				= tileIdxRemapped;
 			vtile.fMirrorNormalX	= 1.0f;
@@ -5792,8 +5794,8 @@ r3dTerrain::DrawOrthographicTerrain( r3dCamera const &Cam, bool UseZ ) /*OVERRID
 
 	DrawEndMP();
 
-	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE, 
-													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | 
+	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE,
+													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN |
 													D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA ) );
 
 	return true;
@@ -5851,13 +5853,13 @@ r3dTerrain::SetupMaterial( int idx )
 	vGloss = D3DXVECTOR4( m_dMatLayers[ idx ][ 0 ].fGloss, m_dMatLayers[ idx ][ 1 ].fGloss, m_dMatLayers[ idx ][ 2 ].fGloss, m_dMatLayers[ idx ][ 3 ].fGloss );
 	r3dRenderer->pd3ddev->SetPixelShaderConstantF( 15, (float *)&vGloss, 1 );
 
-	D3DXVECTOR4 v3( m_dMatLayers[ idx ][ 2 ].fScale * fWorldSizeInv, -m_dMatLayers[idx][ 2 ].fScale * fWorldSizeInv, m_dMatLayers[idx][ 3 ].fScale * fWorldSizeInv, -m_dMatLayers[ idx ][ 3 ].fScale * fWorldSizeInv ); 
+	D3DXVECTOR4 v3( m_dMatLayers[ idx ][ 2 ].fScale * fWorldSizeInv, -m_dMatLayers[idx][ 2 ].fScale * fWorldSizeInv, m_dMatLayers[idx][ 3 ].fScale * fWorldSizeInv, -m_dMatLayers[ idx ][ 3 ].fScale * fWorldSizeInv );
 	r3dRenderer->pd3ddev->SetPixelShaderConstantF( 7, (float *)&v3, 1 );
 
-	D3DXVECTOR4 vSplit; 
-	vSplit = D3DXVECTOR4(		1.0f/m_dMatLayers[ idx ][0].fSplit, 
-		1.0f/m_dMatLayers[ idx ][1].fSplit, 
-		1.0f/m_dMatLayers[ idx ][2].fSplit, 
+	D3DXVECTOR4 vSplit;
+	vSplit = D3DXVECTOR4(		1.0f/m_dMatLayers[ idx ][0].fSplit,
+		1.0f/m_dMatLayers[ idx ][1].fSplit,
+		1.0f/m_dMatLayers[ idx ][2].fSplit,
 		1.0f/m_dMatLayers[ idx ][3].fSplit );
 
 	r3dRenderer->pd3ddev->SetPixelShaderConstantF(  6, (float *)&vSplit, 1 );
@@ -5918,7 +5920,7 @@ r3dTerrain::DrawStartMP( const r3dCamera &Cam )
 {
 	if(!_render_Terrain) return;
 
-	SetupCommonConstantsMP( Cam );	
+	SetupCommonConstantsMP( Cam );
 
 	for ( int i = 0; i < 8; i ++ )
 	{
@@ -5977,7 +5979,7 @@ r3dTerrain::DrawDeferredMultipassInitial()
 
 	R3DPROFILE_FUNCTION( "r3dTerrain::DrawDeferredMultipassInitial" );
 
-	if( ! bLoaded ) 
+	if( ! bLoaded )
 		return;
 
 	const r3dCamera& Cam = gCam ;
@@ -6016,7 +6018,7 @@ r3dTerrain::DrawDeferredMultipass()
 
 	R3DPROFILE_FUNCTION( "r3dTerrain::DrawDeferredMultipass" );
 
-	if( ! bLoaded ) 
+	if( ! bLoaded )
 		return;
 
 	const r3dCamera& Cam = gCam ;
@@ -6072,7 +6074,7 @@ r3dTerrain::DrawMaterialHeavyness()
 
 	R3DPROFILE_FUNCTION( "r3dTerrain::DrawMaterialHeavyness" );
 
-	if( ! bLoaded ) 
+	if( ! bLoaded )
 		return;
 
 	const r3dCamera& Cam = gCam ;
@@ -6169,7 +6171,7 @@ void r3dTerrain::DrawDepth()
 
 	r3dRenderer->SetVertexShader();
 	r3dRenderer->SetPixelShader();
-	d3dc._SetDecl( R3D_MESH_VERTEX::getDecl() );	
+	d3dc._SetDecl( R3D_MESH_VERTEX::getDecl() );
 }
 
 //------------------------------------------------------------------------
@@ -6218,7 +6220,7 @@ void r3dTerrain::DrawBlack(const r3dCamera &Cam, int bSetShader)
 
 	r3dRenderer->SetVertexShader();
 	r3dRenderer->SetPixelShader();
-	d3dc._SetDecl( R3D_MESH_VERTEX::getDecl() );	
+	d3dc._SetDecl( R3D_MESH_VERTEX::getDecl() );
 
 }
 
@@ -6436,7 +6438,7 @@ void r3dTerrain::ApplyBrush(const r3dPoint3D &pnt, const float strength, const f
 
 			// do something with h - it will be modified directly
 			float h = fOld + coef ;
-			if (h <0) 
+			if (h <0)
 				h = 0;
 
 			HeightFieldData[ nIndex ] = h;
@@ -6521,7 +6523,7 @@ void r3dTerrain::ApplyHeight(const r3dPoint3D &pnt, const float H,  const float 
 			// do something with h - it will be modified directly
 			float h1 = H*coef+(1-coef)*fOld;
 
-			if (h1 <0) 
+			if (h1 <0)
 				h1 = 0;
 
 			HeightFieldData[ nIndex ] = h1;
@@ -6592,9 +6594,9 @@ void r3dTerrain::ApplyRamp(const r3dPoint3D& rampStart, const r3dPoint3D& rampEn
 	r3d_assert( m_pUndoItem->GetActionID() == UA_TERRAIN_HEIGHT );
 	CHeightChanged * pUndoItem = ( CHeightChanged * ) m_pUndoItem;
 
-	for(int y = y1; y <= y2; y++) 
+	for(int y = y1; y <= y2; y++)
 	{
-		for(int x = x1; x <= x2; x++) 
+		for(int x = x1; x <= x2; x++)
 		{
 			r3dPoint3D p(x*CellSize, 0, y*CellSize);
 			float k; // dist koef on line [0..1]
@@ -6611,7 +6613,7 @@ void r3dTerrain::ApplyRamp(const r3dPoint3D& rampStart, const r3dPoint3D& rampEn
 			float h;
 			if(d < rampWidthInner) {
 				h = h2;
-			} else { 
+			} else {
 				float lc = ((d - rampWidthInner) / (rampWidthOuter - rampWidthInner));
 				h = h2 + (h1 - h2) * lc;
 			}
@@ -6672,9 +6674,9 @@ void r3dTerrain::ApplySmooth(const r3dPoint3D &pnt, const float radius)
 	CHeightChanged * pUndoItem = ( CHeightChanged * ) m_pUndoItem;
 
 
-	for(int y = y1; y <= y2; y++) 
+	for(int y = y1; y <= y2; y++)
 	{
-		for(int x = x1; x <= x2; x++) 
+		for(int x = x1; x <= x2; x++)
 		{
 			int dy = y-cy;
 			int dx = x-cx;
@@ -6756,7 +6758,7 @@ void r3dTerrain::ApplyMaskBrush(const r3dTerrainPaintBoundControl& boundCtrl, co
 	int x2 = cx+nc; if(x2 > tex->GetWidth()-1)  x2 = tex->GetWidth()-1;
 
 	if( x1 > tex->GetWidth() - 1		||
-		y1 > tex->GetHeight() - 1	|| 
+		y1 > tex->GetHeight() - 1	||
 		x2 < 0	||  y2 < 0 )
 		return;
 
@@ -6784,7 +6786,7 @@ void r3dTerrain::ApplyMaskBrush(const r3dTerrainPaintBoundControl& boundCtrl, co
 	undo.pData = new uint32_t[ nSize * 2 ];
 
 
-	for(int y = 0; y < y2 - y1 + 1; y++) 
+	for(int y = 0; y < y2 - y1 + 1; y++)
 	{
 		uint32_t * pSrc = (uint32_t*)&colors[ y * tex->GetWidth() ];
 		uint32_t * pDst = undo.pData + y * nLine;
@@ -6803,7 +6805,7 @@ void r3dTerrain::ApplyMaskBrush(const r3dTerrainPaintBoundControl& boundCtrl, co
 		int cx1 = x1 * (int)Width / texWidth;
 		int cx2 = x2 * (int)Width / texWidth;
 
-		for(	int		y	= R3D_MAX( ( cy2 - 1 ) / CellGridSize, 0 ), 
+		for(	int		y	= R3D_MAX( ( cy2 - 1 ) / CellGridSize, 0 ),
 			ey	= R3D_MIN( ( cy1 + 1 ) / CellGridSize, m_nTileCountZ - 1 );
 			y <= ey; y++ )
 		{
@@ -6817,16 +6819,16 @@ void r3dTerrain::ApplyMaskBrush(const r3dTerrainPaintBoundControl& boundCtrl, co
 	}
 
 	for(int y = y1; y <= y2; y++) {
-		for(int x = x1; x <= x2; x++) 
+		for(int x = x1; x <= x2; x++)
 		{
 			float coef = 1.0f;
 
-			if(nc > 0) 
+			if(nc > 0)
 			{
 				int dy = y-cy;
 				int dx = x-cx;
 				coef = sqrtf(float(dx*dx+dy*dy)) / float(nc);
-				if(coef > 1.0f) 
+				if(coef > 1.0f)
 				{
 					continue;
 				}
@@ -6842,7 +6844,7 @@ void r3dTerrain::ApplyMaskBrush(const r3dTerrainPaintBoundControl& boundCtrl, co
 			if ( ! terra_IsValidPaintBounds( boundCtrl, PP, fSoft, &fFactor ) )
 				continue;
 
-			if(coef <= hardness) 
+			if(coef <= hardness)
 				coef = 1.0f;
 			else
 				coef = 1.0f - (coef - hardness) / (1.0f-hardness);
@@ -6857,7 +6859,7 @@ void r3dTerrain::ApplyMaskBrush(const r3dTerrainPaintBoundControl& boundCtrl, co
 			BYTE* rgba = (BYTE*)&colors[(y-y1)*Pitch+(x-x1)];
 			float pix = float(rgba[Channel]);
 
-			if (opType) 
+			if (opType)
 				pix = pix + val*coef; //+(1-coef)*pix;
 			else
 				pix = pix - val*coef; //+(1-coef)*pix;
@@ -6868,7 +6870,7 @@ void r3dTerrain::ApplyMaskBrush(const r3dTerrainPaintBoundControl& boundCtrl, co
 	}
 
 
-	for(int y = 0; y < y2 - y1 + 1; y++) 
+	for(int y = 0; y < y2 - y1 + 1; y++)
 	{
 		uint32_t * pSrc = (uint32_t*)&colors[ y * tex->GetWidth() ];
 		uint32_t * pDst = undo.pData + y * nLine + nSize;
@@ -6934,7 +6936,7 @@ void r3dTerrain::ApplyNoise(const r3dPoint3D &pnt, const float strength, int bPo
 			//		  Noise /= 2.0f;
 
 			float h1 = (fOld+Noise)*coef+(1-coef)*fOld;
-			if (h1 <0) 
+			if (h1 <0)
 				h1 = 0;
 
 			HeightFieldData[ nIndex ] = h1;
@@ -7124,14 +7126,16 @@ r3dVector r3dTerrain::GetNormal(const r3dPoint3D &pnt)
 	if(R3D_ABS(Normal.Y) < 0.001) Normal.Y = 0.;
 	if(R3D_ABS(Normal.Z) < 0.001) Normal.Z = 0.;
 
-	return Normal; 
+	return Normal;
 }
 
 const MaterialType*
 r3dTerrain::GetMaterialType( const r3dPoint3D& pnt )
 {
 	if( !LayerData.Count() )
+	{
 		return g_pMaterialTypes->GetDefaultMaterial();
+	}
 
 	int	X     = (int)(pnt.X / CellSize * MaterialDataWidth / Width );
 	int	Z     = (int)(pnt.Z / CellSize * MaterialDataHeight / Height );
@@ -7210,7 +7214,7 @@ void r3dTerrain::ApplyColor(const r3dTerrainPaintBoundControl& boundCtrl, const 
 
 
 			float coef = sqrtf(float(dx*dx+dy*dy)) / float(nc);
-			if(coef > 1.0f) 
+			if(coef > 1.0f)
 				continue;
 
 
@@ -7233,7 +7237,7 @@ void r3dTerrain::ApplyColor(const r3dTerrainPaintBoundControl& boundCtrl, const 
 
 			int nIndex = y*int(Width) + x;
 
-			r3dColor clr_old;			
+			r3dColor clr_old;
 			clr_old.SetPacked( m_pColorData[ nIndex ] );
 
 			//  if (coef >Strength) coef = Strength;
@@ -7254,7 +7258,7 @@ void r3dTerrain::ApplyColor(const r3dTerrainPaintBoundControl& boundCtrl, const 
 
 			//r3dColor clr; = dwColor*coef+clr_old * (1-coef);
 
-			//	if (h1 <0) 
+			//	if (h1 <0)
 			//		h1 = 0;
 
 			m_pColorData[ nIndex ] = clr.GetPacked();
@@ -7352,7 +7356,7 @@ void r3dTerrain::ApplyErosion(const r3dPoint3D &pnt, const float strength, const
 			float c = gErosionPattern->SampleBilinear(u, v);
 
 			float h1 = R3D_MAX(fOld - coef * c * ddH, minValue);
-			if (h1 <0) 
+			if (h1 <0)
 				h1 = 0;
 
 			HeightFieldData[ nIndex ] = h1;
@@ -7416,7 +7420,7 @@ r3dTerrain::UpdateMaterials( uint32_t startTileX, uint32_t startTileZ, uint32_t 
 
 	r3dTL::TFixedArray< uint8_t (*)[ 4 ], TERRAIN_MAT_COUNT > LockedTextures;
 
-	for( int i = 0, e = TERRAIN_MAT_COUNT ; i < e; i ++ )	
+	for( int i = 0, e = TERRAIN_MAT_COUNT ; i < e; i ++ )
 	{
 		if( r3dTexture* tex = EditorMatSplatTex[ i ] )
 		{
@@ -7463,7 +7467,7 @@ r3dTerrain::UpdateMaterials( uint32_t startTileX, uint32_t startTileZ, uint32_t 
 	if( !SPLAT_WIDTH )
 	{
 		// kill everything
-		LayerData.Clear();		
+		LayerData.Clear();
 		return ;
 	}
 
@@ -7518,7 +7522,7 @@ r3dTerrain::UpdateMaterials( uint32_t startTileX, uint32_t startTileZ, uint32_t 
 					r3d_assert( tex->GetD3DFormat() == D3DFMT_A8R8G8B8 );
 
 					uint8_t (*comps)[ 4 ] = LockedTextures[ midx ] + LockRect.top * tex->GetLockPitch() / 4 + LockRect.left ;
-						
+
 					for( int j = 0, e = TEX_CELL_SIZE_Y; j < e; j ++ )
 					{
 						for( int i = 0, e = TEX_CELL_SIZE_X; i < e; i ++, comps ++ )
@@ -7547,7 +7551,7 @@ r3dTerrain::UpdateMaterials( uint32_t startTileX, uint32_t startTileZ, uint32_t 
 		}
 	}
 
-	for( int i = 0, e = TERRAIN_MAT_COUNT ; i < e; i ++ )	
+	for( int i = 0, e = TERRAIN_MAT_COUNT ; i < e; i ++ )
 	{
 		if( r3dTexture* tex = EditorMatSplatTex[ i ] )
 		{
@@ -7612,10 +7616,10 @@ r3dTerrain::LoadShaders()
 		macros[ 0 ].Name		= "VS_LQ" ;
 		macros[ 0 ].Definition	= "0" ;
 
-		g_TerraVS_ID  = r3dRenderer->AddVertexShaderFromFile( "VS_TERRADEFERRED_MP2", "Nature\\TerrainV2_Deffered_mp2_vs.hls", 0, macros );	
+		g_TerraVS_ID  = r3dRenderer->AddVertexShaderFromFile( "VS_TERRADEFERRED_MP2", "Nature\\TerrainV2_Deffered_mp2_vs.hls", 0, macros );
 
 		macros[ 0 ].Definition	= "1" ;
-		g_TerraLQ_VS_ID = r3dRenderer->AddVertexShaderFromFile( "VS_TERRADEFERRED_MP2_LQ", "Nature\\TerrainV2_Deffered_mp2_vs.hls", 0, macros );	
+		g_TerraLQ_VS_ID = r3dRenderer->AddVertexShaderFromFile( "VS_TERRADEFERRED_MP2_LQ", "Nature\\TerrainV2_Deffered_mp2_vs.hls", 0, macros );
 	}
 
 	{
@@ -7752,7 +7756,7 @@ void r3dTerrain::SetNeedShaders( bool NeedShaders )
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//	>	
+//	>
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -7769,11 +7773,11 @@ CHeightChanged::CHeightChanged()
 
 
 //--------------------------------------------------------------------------------------------------------
-void CHeightChanged::Undo()	
+void CHeightChanged::Undo()
 {
 	Terrain1->ExtractHeightFieldData();
 
-	for ( int i = m_pData.Count() - 1; i >= 0; i-- ) 
+	for ( int i = m_pData.Count() - 1; i >= 0; i-- )
 	{
 		const UndoHeight_t &data = m_pData[ i ];
 		r3d_assert( data.nIndex >= 0 && data.nIndex < Terrain1->Width*Terrain1->Height );
@@ -7788,11 +7792,11 @@ void CHeightChanged::Undo()
 
 
 //--------------------------------------------------------------------------------------------------------
-void CHeightChanged::Redo()	
+void CHeightChanged::Redo()
 {
 	Terrain1->ExtractHeightFieldData();
 
-	for ( int i = 0; i < m_pData.Count(); i++ ) 
+	for ( int i = 0; i < m_pData.Count(); i++ )
 	{
 		const UndoHeight_t &data = m_pData[ i ];
 		r3d_assert( data.nIndex >= 0 && data.nIndex < Terrain1->Width*Terrain1->Height );
@@ -7806,7 +7810,7 @@ void CHeightChanged::Redo()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//	>	
+//	>
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -7828,9 +7832,9 @@ CLayerMaskPaint::CLayerMaskPaint()
 
 
 //--------------------------------------------------------------------------------------------------------
-void CLayerMaskPaint::Undo()	
+void CLayerMaskPaint::Undo()
 {
-	for ( int i = m_pData.Count() - 1; i >= 0; i-- ) 
+	for ( int i = m_pData.Count() - 1; i >= 0; i-- )
 	{
 		const PaintData_t &data = m_pData[ i ];
 
@@ -7841,7 +7845,7 @@ void CLayerMaskPaint::Undo()
 
 		int nLine = data.rc.right - data.rc.left;
 
-		for(int y = 0; y < data.rc.bottom - data.rc.top; y++) 
+		for(int y = 0; y < data.rc.bottom - data.rc.top; y++)
 		{
 			uint32_t * pDst = (uint32_t*)&colors[ y * tex->GetWidth() ];
 			uint32_t * pSrc = data.pData + y * nLine;
@@ -7856,7 +7860,7 @@ void CLayerMaskPaint::Undo()
 //--------------------------------------------------------------------------------------------------------
 void CLayerMaskPaint::Redo()
 {
-	for ( int i = 0; i < m_pData.Count(); i++ ) 
+	for ( int i = 0; i < m_pData.Count(); i++ )
 	{
 		const PaintData_t &data = m_pData[ i ];
 
@@ -7868,7 +7872,7 @@ void CLayerMaskPaint::Redo()
 		int nLine = data.rc.right - data.rc.left;
 		int nSize = nLine * ( data.rc.bottom - data.rc.top );
 
-		for(int y = 0; y < data.rc.bottom - data.rc.top; y++) 
+		for(int y = 0; y < data.rc.bottom - data.rc.top; y++)
 		{
 			uint32_t * pDst = (uint32_t*)&colors[ y * tex->GetWidth() ];
 			uint32_t * pSrc = data.pData + y * nLine + nSize;
@@ -7883,7 +7887,7 @@ void CLayerMaskPaint::Redo()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//	>	
+//	>
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -7900,9 +7904,9 @@ CLayerColorPaint::CLayerColorPaint()
 
 
 //--------------------------------------------------------------------------------------------------------
-void CLayerColorPaint::Undo()	
+void CLayerColorPaint::Undo()
 {
-	for ( int i = m_pData.Count() - 1; i >= 0; i-- ) 
+	for ( int i = m_pData.Count() - 1; i >= 0; i-- )
 	{
 		const UndoColor_t &data = m_pData[ i ];
 		r3d_assert( data.nIndex >= 0 && data.nIndex < Terrain1->Width*Terrain1->Height );
@@ -7913,9 +7917,9 @@ void CLayerColorPaint::Undo()
 
 
 //--------------------------------------------------------------------------------------------------------
-void CLayerColorPaint::Redo()	
+void CLayerColorPaint::Redo()
 {
-	for ( int i = 0; i < m_pData.Count(); i++ ) 
+	for ( int i = 0; i < m_pData.Count(); i++ )
 	{
 		const UndoColor_t &data = m_pData[ i ];
 		r3d_assert( data.nIndex >= 0 && data.nIndex < Terrain1->Width*Terrain1->Height );

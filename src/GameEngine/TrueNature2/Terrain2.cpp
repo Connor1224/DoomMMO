@@ -21,7 +21,9 @@
 
 #include "Terrain2.h"
 
-#define FNAME_TERRAIN2_INI			"%s/Terrain2/terrain2.ini"	
+#include "..\gameobjects\VehicleManager.h"
+
+#define FNAME_TERRAIN2_INI			"%s/Terrain2/terrain2.ini"
 #define FNAME_TERRAIN2_BIN			"%s/Terrain2/terrain2.bin"
 
 #define TERRAIN2_SIGNATURE			'2RET'
@@ -229,7 +231,7 @@ GenerateAtlasVertexShaderId::FillMacros( ShaderMacros& defines )
 	defines.Resize( 1 );
 
 	defines[ 0 ].Name		= "UNUSED_DEFINE";
-	defines[ 0 ].Definition	= DigitToCString( unused );	
+	defines[ 0 ].Definition	= DigitToCString( unused );
 }
 
 //------------------------------------------------------------------------
@@ -311,13 +313,13 @@ Terrain2VertexShaderId::FillMacros( ShaderMacros& defines )
 	defines[ 0 ].Definition	= DigitToCString( shadowPath );
 
 	defines[ 1 ].Name		= "DEPTH_PATH";
-	defines[ 1 ].Definition	= DigitToCString( depthPath );	
+	defines[ 1 ].Definition	= DigitToCString( depthPath );
 
 	defines[ 2 ].Name		= "VERTEX_FETCHLESS";
 	defines[ 2 ].Definition	= DigitToCString( vfetchless );
 
 	defines[ 3 ].Name		= "RECTICULAR_WARP";
-	defines[ 3 ].Definition	= DigitToCString( recticular_warp );	
+	defines[ 3 ].Definition	= DigitToCString( recticular_warp );
 
 }
 
@@ -413,7 +415,7 @@ r3dTerrainLayer::r3dTerrainLayer()
 , ShaderScaleV( 0.f )
 
 {
-	
+
 }
 
 //------------------------------------------------------------------------
@@ -486,7 +488,7 @@ int
 r3dTerrain2::QualitySettings::Compare( const QualitySettings& sts )
 {
 	// NOTE : we skip TileDistances because they are derived from other settings
-	
+
 	int res = 0;
 
 	res |= memcmp( &TileCounts[ 0 ], &sts.TileCounts[ 0 ], sizeof TileCounts[ 0 ] * TileCounts.COUNT );
@@ -706,7 +708,7 @@ r3dTerrain2::LoadShaders()
 						vsid.FillMacros( macros );
 
 						if( ( vsid.depthPath && vsid.shadowPath )
-								|| 
+								||
 							( vsid.recticular_warp && !vsid.shadowPath )
 								)
 						{
@@ -843,7 +845,7 @@ r3dTerrain2::Init()
 
 	InitDynamic();
 #endif
-	
+
 }
 
 //------------------------------------------------------------------------
@@ -1149,7 +1151,7 @@ r3dTerrain2::Close()
 //------------------------------------------------------------------------
 
 void
-r3dTerrain2::UpdateAtlas( const r3dCamera& cam ) 
+r3dTerrain2::UpdateAtlas( const r3dCamera& cam )
 {
 #if R3D_TERRAIN_V2_GRAPHICS
 
@@ -1350,9 +1352,9 @@ r3dTerrain2::DrawDebug()
 
 			m_HeightOffset = oldOffset;
 
-			r3dRenderer->DrawIndexed(	D3DPT_LINESTRIP, 0, 0, 
+			r3dRenderer->DrawIndexed(	D3DPT_LINESTRIP, 0, 0,
 										( m_QualitySettings.VertexTileDim + 1 ) * ( m_QualitySettings.VertexTileDim + 1 ),
-										m_DebugVisIndexOffset, 
+										m_DebugVisIndexOffset,
 										m_QualitySettings.VertexTileDim * 4 );
 		}
 
@@ -1498,7 +1500,7 @@ r3dTerrain2::LoadFromScript1( const char * fileName, const char* sourceLevelPath
 		{
 			script.GetToken( buffer );
 			// unused
-		}	
+		}
 		else if ( ! strcmp( buffer, "base_layer" ) )
 		{
 			LoadLayerFromScript1( &script, &m_BaseLayer, &layerCount );
@@ -1555,7 +1557,7 @@ r3dTerrain2::LoadLayerFromScript1( Script_c *script, r3dTerrainLayer* layer, int
 	char szName[ MAX_PATH ];
 
 	bool hasTextures = false;
-
+    // fixed buffer steepsounds
 	int DownScale = GetTerraTexDownScale();
 
 	script->SkipToken( "{" );
@@ -1606,13 +1608,45 @@ r3dTerrain2::LoadLayerFromScript1( Script_c *script, r3dTerrainLayer* layer, int
 
 			script->GetLine( buff, sizeof buff - 1 );
 
+			if(strstr(strupr(buff), "CONCRETE"))
+				strcpy(buff,"Concrete");
+			else if(strstr(strupr(buff), "DIRT"))
+				strcpy(buff,"Dirt");
+			else if(strstr(strupr(buff), "SAND"))
+				strcpy(buff,"Sand");
+			else if(strstr(strupr(buff), "SNOW"))
+				strcpy(buff,"Snow");
+			else if(strstr(strupr(buff), "GRASS"))
+				strcpy(buff,"Grass");
+			else if(strstr(strupr(buff), "FOREST"))
+				strcpy(buff,"Forest");
+			else if(strstr(strupr(buff), "WOOD"))
+				strcpy(buff,"Wood");
+			else if(strstr(strupr(buff), "METAL_RESOURCES"))
+				strcpy(buff,"Metal_Resources");
+			else if(strstr(strupr(buff), "WOOD_RESOURCES"))
+				strcpy(buff,"Wood_Resources");
+			else if(strstr(strupr(buff), "WATER"))
+				strcpy(buff,"Water");		
+			else if(strstr(strupr(buff), "METAL"))
+				strcpy(buff,"Metal");				
+				
+
+			layer->MaterialTypeName = buff;
+
+			/*char buff[ 512 ];
+
+			buff[ sizeof buff - 1 ] = 0;
+
+			script->GetLine( buff, sizeof buff - 1 );
+
 			char name[ 128 ];
 
 			name[ 0 ] = 0;
 
 			sscanf( buff, "%31s", name );
 
-			layer->MaterialTypeName = name;
+			layer->MaterialTypeName = name;*/
 		}
 	}
 
@@ -1662,7 +1696,7 @@ r3dTerrain2::LoadMaterialsFromScript1( Script_c *script, const char* sourceLevel
 			char ralativePath[ MAX_PATH ] = {0};
 			script->GetString( ralativePath, sizeof( ralativePath ) );
 			char levelDir[MAX_PATH];
-			sprintf(levelDir, "%s", sourceLevelPath);	
+			sprintf(levelDir, "%s", sourceLevelPath);
 			_strlwr(levelDir);
 			_strlwr(ralativePath);
 
@@ -1675,11 +1709,11 @@ r3dTerrain2::LoadMaterialsFromScript1( Script_c *script, const char* sourceLevel
 			char* fr = strstr(ralativePath, levelDir);
 			if(!fr)
 			{
-				sprintf(szName, "%s/%s", levelDir, ralativePath);	
+				sprintf(szName, "%s/%s", levelDir, ralativePath);
 			}
 			else
 			{
-				sprintf(szName, "%s", ralativePath);	
+				sprintf(szName, "%s", ralativePath);
 			}
 
 
@@ -1713,7 +1747,7 @@ r3dTerrain2::LoadMaterialsFromScript1( Script_c *script, const char* sourceLevel
 			texTunnel.Set( tex );
 
 			r3dtex->Setup( width, height, 1,  D3DFMT_A8R8G8B8, 1, &texTunnel, false );
-			
+
 			m_Masks.GetLast() = r3dtex;
 
 			if( !(m_Masks.GetLast()->IsLoaded() ) )
@@ -1810,7 +1844,7 @@ r3dTerrain2::LoadBin1( r3dFile* file )
 
 		IDirect3DTexture9* tex_dxt1;
 
-		D3D_V( D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), dim, dim, 1, 0, 
+		D3D_V( D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), dim, dim, 1, 0,
 													TERRA2_COLORMODULATION_FORMAT, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &tex_dxt1 ) );
 
 		r3dD3DTextureTunnel tunnel;
@@ -1852,7 +1886,7 @@ r3dTerrain2::ConvertSplatsFrom1()
 		int lastChannelCount = m_LayerChannels.Count();
 		m_LayerChannels.Resize( lastChannelCount + 4 );
 
-		// sizzle numbers to represent ARGB 
+		// sizzle numbers to represent ARGB
 		LayerChannel& ch3 = m_LayerChannels[ lastChannelCount ++ ];
 		LayerChannel& ch2 = m_LayerChannels[ lastChannelCount ++ ];
 		LayerChannel& ch1 = m_LayerChannels[ lastChannelCount ++ ];
@@ -1862,7 +1896,7 @@ r3dTerrain2::ConvertSplatsFrom1()
 		ch1.Resize( elemCount );
 		ch2.Resize( elemCount );
 		ch3.Resize( elemCount );
-		
+
 #pragma pack( push, 1 )
 		struct Channeled
 		{
@@ -1971,8 +2005,8 @@ r3dTerrain2::ConvertSplatsFrom1()
 
 		r3dD3DTextureTunnel tunnel;
 		tunnel.Set( finalTex );
-		mask->Setup( baseWidth, baseHeight, 1, TERRA2_LAYERMASK_FORMAT, 1, &tunnel, false );		
-		
+		mask->Setup( baseWidth, baseHeight, 1, TERRA2_LAYERMASK_FORMAT, 1, &tunnel, false );
+
 		SAFE_RELEASE( buffer );
 
 		m_Masks.PushBack( mask );
@@ -2004,7 +2038,7 @@ r3dTerrain2::SaveEmpty( const CreationParams& createParams )
 	m_HeightOffset = createParams.Height;
 	m_HeightScale = 1.0f;
 
-	int tcx = m_VertexCountX / saveQS.VertexTileDim; 
+	int tcx = m_VertexCountX / saveQS.VertexTileDim;
 	int tcz = m_VertexCountZ / saveQS.VertexTileDim;
 
 	m_NumActiveQualityLayers = 0;
@@ -2038,7 +2072,7 @@ r3dTerrain2::SaveEmpty( const CreationParams& createParams )
 
 	IDirect3DTexture9* tex_dxt1;
 
-	D3D_V( D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), m_SplatResolutionU, m_SplatResolutionV, 1, 0, 
+	D3D_V( D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), m_SplatResolutionU, m_SplatResolutionV, 1, 0,
 												TERRA2_COLORMODULATION_FORMAT, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &tex_dxt1 ) );
 
 	r3dD3DTextureTunnel tunnel;
@@ -2086,15 +2120,15 @@ r3dTerrain2::SaveEmpty( const CreationParams& createParams )
 		m_NormalTex->Unlock();
 	}
 #pragma pack( pop )
-		
-	DoSave( createParams.LevelDir.c_str(), heightValues, m_VertexCountX, m_VertexCountZ ); 
+
+	DoSave( createParams.LevelDir.c_str(), heightValues, m_VertexCountX, m_VertexCountZ );
 #endif
 }
 
 
 //------------------------------------------------------------------------
 
-int	
+int
 r3dTerrain2::Save( const char* targetDir )
 {
 #if R3D_TERRAIN_V2_GRAPHICS
@@ -2307,7 +2341,7 @@ r3dTerrain2::RefreshAtlasTile( int tileX, int tileZ )
 	{
 		for( int i = 0, e = (int)m_TilesToUpdate.Count(); i < e;  )
 		{
-			if( m_TilesToUpdate[ i ]->X == tx 
+			if( m_TilesToUpdate[ i ]->X == tx
 				&&
 				m_TilesToUpdate[ i ]->Z == tz
 				&&
@@ -2445,7 +2479,7 @@ r3dTerrain2::UpdateRoadInfo()
 		int roadTileCountX = m_VertexCountX / m_QualitySettings.RoadVertexDimStart;
 		int roadTileCountZ = m_VertexCountZ / m_QualitySettings.RoadVertexDimStart;
 
-		for( int i = 0, e = (int)m_RoadInfoMipChain.Count(); i < e; 
+		for( int i = 0, e = (int)m_RoadInfoMipChain.Count(); i < e;
 				i ++,
 				roadTileCountX /= 2,
 				roadTileCountZ /= 2
@@ -2472,7 +2506,7 @@ r3dTerrain2::UpdateRoadInfo()
 
 						const r3dBoundBox& bbox = road->GetBBoxWorld();
 
-						if( bbox.Org.x > fx + dim 
+						if( bbox.Org.x > fx + dim
 								||
 							bbox.Org.z > fz + dim
 								||
@@ -2605,7 +2639,7 @@ r3dTerrain2::SaveHeightField( Shorts* oHeights )
 void
 r3dTerrain2::SaveHeightField( Floats* oHeights )
 {
-	Shorts shorts;	
+	Shorts shorts;
 
 	shorts.Resize( m_VertexCountX * m_VertexCountZ );
 
@@ -2641,7 +2675,7 @@ r3dTerrain2::UpdateHeightRanges( const Floats& floatHeights )
 
 	float heightScale = maxHeight - minHeight;
 
-	bool rangeChange =	m_HeightOffset != minHeight 
+	bool rangeChange =	m_HeightOffset != minHeight
 							||
 						m_HeightScale != heightScale
 							;
@@ -2938,9 +2972,9 @@ r3dTerrain2::UpdateLayerMaskFromReplacementMask( int sidx )
 
 	IDirect3DTexture9* dxt1;
 
-	D3D_V( D3DXCreateTextureFromFileInMemoryEx( 
+	D3D_V( D3DXCreateTextureFromFileInMemoryEx(
 				r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(),
-				source->GetWidth(), source->GetHeight(), 1, 0, TERRA2_LAYERMASK_FORMAT, D3DPOOL_MANAGED, 
+				source->GetWidth(), source->GetHeight(), 1, 0, TERRA2_LAYERMASK_FORMAT, D3DPOOL_MANAGED,
 				D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &dxt1 ) );
 
 	r3dD3DTextureTunnel tunnel;
@@ -2998,7 +3032,7 @@ r3dTerrain2::OptimizeLayerMasks()
 		IDirect3DTexture9* r5g6b5( NULL );
 
 		D3D_V( D3DXCreateTextureFromFileInMemoryEx( r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(),
-													mask->GetWidth(), mask->GetHeight(), 1, 0, D3DFMT_R5G6B5, D3DPOOL_SYSTEMMEM, 
+													mask->GetWidth(), mask->GetHeight(), 1, 0, D3DFMT_R5G6B5, D3DPOOL_SYSTEMMEM,
 													D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &r5g6b5 ) );
 
 		D3DLOCKED_RECT lrect;
@@ -3088,16 +3122,16 @@ r3dTerrain2::UpdateColorTexture()
 
 
 	IDirect3DTexture9* tex_dxt1;
-	
+
 	if( onDisk )
 	{
-		hres = D3DXCreateTextureFromFileEx(	r3dRenderer->pd3ddev, "temp_tex.dds", m_ColorTex->GetWidth(), m_ColorTex->GetHeight(), 1, 0, 
+		hres = D3DXCreateTextureFromFileEx(	r3dRenderer->pd3ddev, "temp_tex.dds", m_ColorTex->GetWidth(), m_ColorTex->GetHeight(), 1, 0,
 											TERRA2_COLORMODULATION_FORMAT, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &tex_dxt1 );
 		remove( "temp_tex.dds" );
 	}
 	else
 	{
-		hres = D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), m_ColorTex->GetWidth(), m_ColorTex->GetHeight(), 1, 0, 
+		hres = D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), m_ColorTex->GetWidth(), m_ColorTex->GetHeight(), 1, 0,
 													TERRA2_COLORMODULATION_FORMAT, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &tex_dxt1 );
 	}
 
@@ -3318,13 +3352,13 @@ r3dTerrain2::Resize( int newVertexCountX, int newVertexCountZ )
 	TCHAR tempFolder [MAX_PATH * 2];
 
 	int res = GetTempPath (MAX_PATH, tempFolder);
-	
+
 	r3d_assert( res );
 
 	strcat( tempFolder, "tempterra" );
 	mkdir( tempFolder );
 
-	DoSave( tempFolder, hfShrinkedSamples, newVertexCountX, newVertexCountZ );	
+	DoSave( tempFolder, hfShrinkedSamples, newVertexCountX, newVertexCountZ );
 
 	Destroy();
 	Construct();
@@ -3367,7 +3401,7 @@ struct EnsureParams
 {
 	int width;
 	int height;
-	r3dD3DTextureTunnel* result;	
+	r3dD3DTextureTunnel* result;
 	const char* path;
 };
 
@@ -3515,7 +3549,7 @@ r3dTerrain2::SwitchVFetchMode()
 			m_HeightArr[ i ] = *locked / 2;
 		}
 
-		m_HeightTex->Unlock();		
+		m_HeightTex->Unlock();
 
 		r3dRenderer->DeleteTexture( m_HeightTex );
 		m_HeightTex = NULL;
@@ -3564,7 +3598,7 @@ r3dTerrain2::GetNormal( const r3dPoint3D& pos )	/*OVERRIDE*/
 	if(R3D_ABS(Normal.Y) < 0.001) Normal.Y = 0.;
 	if(R3D_ABS(Normal.Z) < 0.001) Normal.Z = 0.;
 
-	return Normal; 
+	return Normal;
 }
 
 //------------------------------------------------------------------------
@@ -3618,7 +3652,9 @@ const MaterialType*
 r3dTerrain2::GetMaterialType( const r3dPoint3D& pnt ) /*OVERRIDE*/
 {
 	if( !m_DominantLayerData.Count() )
+	{
 		return g_pMaterialTypes->GetDefaultMaterial();
+	}
 
 	int domLayerDataWidth = m_DominantLayerData.Width();
 	int domLayerDataHeight = m_DominantLayerData.Height();
@@ -3699,7 +3735,7 @@ r3dTerrain2::PrepareOthographicTerrainRender() /*OVERRIDE*/
 			UpdateTileInAtlas( &atile );
 		}
 	}
-	
+
 	StopTileUpdating();
 
 	StartTileRoadUpdating();
@@ -3739,8 +3775,8 @@ r3dTerrain2::DrawOrthographicTerrain( const r3dCamera& Cam, bool UseZ ) /*OVERRI
 	D3D_V( r3dRenderer->pd3ddev->Clear( 0, NULL, D3DCLEAR_TARGET, 0xff000000, r3dRenderer->GetClearZValue(), 0 ) );
 
 	// need white alpha or else our d3dxsave/d3dxload bezzle produces enterily black dxt1...
-	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE, 
-													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | 
+	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE,
+													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN |
 													D3DCOLORWRITEENABLE_BLUE ) );
 
 
@@ -3759,8 +3795,8 @@ r3dTerrain2::DrawOrthographicTerrain( const r3dCamera& Cam, bool UseZ ) /*OVERRI
 
 	EndTileRendering();
 
-	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE, 
-													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | 
+	D3D_V( r3dRenderer->pd3ddev->SetRenderState(	D3DRS_COLORWRITEENABLE,
+													D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN |
 													D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA ) );
 
 	RemoveAllocatedTiles();
@@ -3923,7 +3959,7 @@ r3dTerrain2::CreateDynaVertexBuffer()
 {
 	if( !m_DynamicVertexBuffer )
 	{
-		m_DynamicVertexBuffer = new r3dVertexBuffer( 128 * 1024, sizeof( r3dDynaTerraVertex), 0, true );	
+		m_DynamicVertexBuffer = new r3dVertexBuffer( 128 * 1024, sizeof( r3dDynaTerraVertex), 0, true );
 	}
 }
 
@@ -3948,7 +3984,7 @@ r3dTerrain2::ExtractMaskToChannels( int midx )
 
 	IDirect3DTexture9* r5g6b6;
 
-	D3D_V( D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), source->GetWidth(), source->GetHeight(), 1, 0, 
+	D3D_V( D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(), source->GetWidth(), source->GetHeight(), 1, 0,
 												D3DFMT_R5G6B5, D3DPOOL_SYSTEMMEM, D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &r5g6b6 ) );
 
 
@@ -4040,13 +4076,13 @@ r3dTerrain2::StoreChannelsInMasks()
 		{
 			for( int i = 0, e = maskTexWidth * maskTexHeight; i < e; i ++, locked ++ )
 			{
-				locked->r = R3D_MIN( R3D_MAX( int( m_LayerChannels[ c + 0 ][ i ] * 31.f / 255.f ), 0 ), 31 );		
-				if( have1 ) 
+				locked->r = R3D_MIN( R3D_MAX( int( m_LayerChannels[ c + 0 ][ i ] * 31.f / 255.f ), 0 ), 31 );
+				if( have1 )
 					locked->g = R3D_MIN( R3D_MAX( int( m_LayerChannels[ c + 1 ][ i ] * 63.f / 255.f ), 0 ), 63 );
 				else
 					locked->g = 0;
 
-				if( have2 ) 
+				if( have2 )
 					locked->b = R3D_MIN( R3D_MAX( int( m_LayerChannels[ c + 2 ][ i ] * 31.f / 255.f ), 0 ), 31 );
 				else
 					locked->b = 0;
@@ -4066,7 +4102,7 @@ r3dTerrain2::StoreChannelsInMasks()
 		IDirect3DTexture9* dxt1;
 
 		D3D_V( D3DXCreateTextureFromFileInMemoryEx(		r3dRenderer->pd3ddev, fileInMem->GetBufferPointer(), fileInMem->GetBufferSize(),
-														maskTexWidth, maskTexHeight, 1, 0, TERRA2_LAYERMASK_FORMAT, D3DPOOL_MANAGED, 
+														maskTexWidth, maskTexHeight, 1, 0, TERRA2_LAYERMASK_FORMAT, D3DPOOL_MANAGED,
 														D3DX_FILTER_NONE, D3DX_FILTER_NONE, 0, NULL, NULL, &dxt1 ) );
 
 		r3dTexture* targ = r3dRenderer->AllocateTexture();
@@ -4164,7 +4200,7 @@ r3dTerrain2::DoLoad( const char* dir )
 		else
 		if( ! strcmp( buffer, "tile_unit_size:" ) )
 		{
-			m_TileUnitWorldDim = script.GetFloat();			
+			m_TileUnitWorldDim = script.GetFloat();
 		}
 		else
 		if( ! strcmp( buffer, "height_offset:" ) )
@@ -4226,7 +4262,7 @@ r3dTerrain2::DoLoad( const char* dir )
 		}
 		else
 		if(  ! strcmp( buffer, "base_layer" ) )
-		{			
+		{
 			LoadLayerFromScript( &script, &m_BaseLayer );
 		}
 		else
@@ -4236,7 +4272,7 @@ r3dTerrain2::DoLoad( const char* dir )
 			LoadLayerFromScript( &script, &m_Layers[ m_Layers.Count() - 1 ] );
 		}
 		else
-		if( ! strcmp( buffer, "vertex_density:" ) ) 
+		if( ! strcmp( buffer, "vertex_density:" ) )
 		{
 			int vertDensity = script.GetInt();
 
@@ -4245,22 +4281,22 @@ r3dTerrain2::DoLoad( const char* dir )
 			m_BaseQualitySettings[ QS_LOW ].VertexDensity = vertDensity;
 		}
 		else
-		if( ! strcmp( buffer, "vertex_density2:" ) ) 
+		if( ! strcmp( buffer, "vertex_density2:" ) )
 		{
 			m_BaseQualitySettings[ QS_HIGH ].VertexDensity = script.GetInt();
 		}
 		else
-		if( ! strcmp( buffer, "vertex_density1:" ) ) 
+		if( ! strcmp( buffer, "vertex_density1:" ) )
 		{
 			m_BaseQualitySettings[ QS_MED ].VertexDensity = script.GetInt();
 		}
 		else
-		if( ! strcmp( buffer, "vertex_density0:" ) ) 
+		if( ! strcmp( buffer, "vertex_density0:" ) )
 		{
 			m_BaseQualitySettings[ QS_LOW ].VertexDensity = script.GetInt();
 		}
 		else
-		if( !strcmp( buffer, "normal_density:" ) ) 
+		if( !strcmp( buffer, "normal_density:" ) )
 		{
 			m_NormalDensity = script.GetInt();
 		}
@@ -4511,7 +4547,7 @@ r3dTerrain2::DoSave( const char* targetDir, const Shorts& hfShrinkedSamples, int
 	struct SaveRestoreCurrentQS
 	{
 		SaveRestoreCurrentQS( r3dTerrain2 * a_father )
-		{			
+		{
 			father = a_father;
 
 			savedQS = father->m_QualitySettings;
@@ -4532,7 +4568,7 @@ r3dTerrain2::DoSave( const char* targetDir, const Shorts& hfShrinkedSamples, int
 	const QualitySettings& saveQS = m_BaseQualitySettings[ QS_HIGH ];
 
 	OptimizeLayerMasks();
-	// relies on OptimizeLayerMasks to extract all texture channel data 
+	// relies on OptimizeLayerMasks to extract all texture channel data
 	DoUpdateDominantLayerData( m_SplatResolutionU, m_SplatResolutionV );
 
 	const char * fileName = targetDir;
@@ -4572,12 +4608,12 @@ r3dTerrain2::DoSave( const char* targetDir, const Shorts& hfShrinkedSamples, int
 	{
 		for( int i = 0, e = m_NumActiveQualityLayers; i < e; i ++ )
 		{
-			fprintf( hFile, "lod%d_%d:\t\t%d\n", i, tq, m_BaseQualitySettings[ tq ].TileCounts[ i ] );		
+			fprintf( hFile, "lod%d_%d:\t\t%d\n", i, tq, m_BaseQualitySettings[ tq ].TileCounts[ i ] );
 		}
 
 		for( int i = 0, e = saveQS.TileVertexDensitySteps.COUNT; i < e; i ++ )
 		{
-			fprintf( hFile, "vertex_density_step%d_%d:\t\t%d\n", i, tq, m_BaseQualitySettings[ tq ].TileVertexDensitySteps[ i ] );		
+			fprintf( hFile, "vertex_density_step%d_%d:\t\t%d\n", i, tq, m_BaseQualitySettings[ tq ].TileVertexDensitySteps[ i ] );
 		}
 
 		fprintf( hFile, "vertex_density%d:\t\t%d\n", tq, m_BaseQualitySettings[ tq ].VertexDensity );
@@ -4585,7 +4621,7 @@ r3dTerrain2::DoSave( const char* targetDir, const Shorts& hfShrinkedSamples, int
 		fprintf( hFile, "atlas_tile_dim%d:\t\t%d\n", tq, m_BaseQualitySettings[ tq ].AtlasTileDim );
 		fprintf( hFile, "vertex_tile_dim%d:\t%d\n", tq, m_BaseQualitySettings[ tq ].VertexTileDim );
 	}
-	
+
 	fprintf( hFile, "\nbase_layer\n" );
 	SaveLayerToScript( hFile, m_BaseLayer, "" );
 
@@ -4607,7 +4643,7 @@ r3dTerrain2::DoSave( const char* targetDir, const Shorts& hfShrinkedSamples, int
 
 		splatTex->OverwriteFileLocation( fullPath );
 
-		if( m_SplatResolutionU == rescaleSplatResolutionU 
+		if( m_SplatResolutionU == rescaleSplatResolutionU
 				&&
 			m_SplatResolutionV == rescaleSplatResolutionV )
 		{
@@ -4618,10 +4654,10 @@ r3dTerrain2::DoSave( const char* targetDir, const Shorts& hfShrinkedSamples, int
 			SaveScaledTexture( fullPath, splatTex, rescaleSplatResolutionU, rescaleSplatResolutionV );
 		}
 	}
-	
+
 	PrintFullColorPath( fileName, fullPath );
 
-	if( m_SplatResolutionU == rescaleSplatResolutionU 
+	if( m_SplatResolutionU == rescaleSplatResolutionU
 			&&
 		m_SplatResolutionV == rescaleSplatResolutionV )
 	{
@@ -4638,7 +4674,7 @@ r3dTerrain2::DoSave( const char* targetDir, const Shorts& hfShrinkedSamples, int
 		m_NormalTex->Save( fullPath );
 		m_NormalTex->OverwriteFileLocation( fullPath );
 	}
-	
+
 #endif
 
 	return 1;
@@ -4671,9 +4707,9 @@ static void RescaleThroughTexture( r3dTerrain2::Shorts* dest, const r3dTerrain2:
 
 	SAFE_RELEASE( r32ftex );
 
-	D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, targetBuffer->GetBufferPointer(), targetBuffer->GetBufferSize(), 
-											destVertexCountX, destVertexCountZ, 
-											1, 0, D3DFMT_R32F, D3DPOOL_SYSTEMMEM, 
+	D3DXCreateTextureFromFileInMemoryEx(	r3dRenderer->pd3ddev, targetBuffer->GetBufferPointer(), targetBuffer->GetBufferSize(),
+											destVertexCountX, destVertexCountZ,
+											1, 0, D3DFMT_R32F, D3DPOOL_SYSTEMMEM,
 											D3DX_FILTER_TRIANGLE, D3DX_FILTER_NONE, 0, NULL, NULL, &r32ftex );
 
 	SAFE_RELEASE( targetBuffer );
@@ -4684,7 +4720,7 @@ static void RescaleThroughTexture( r3dTerrain2::Shorts* dest, const r3dTerrain2:
 	{
 		for( int x = 0, e = destVertexCountX; x < e; x ++ )
 		{
-			(*dest)[ x + z * destVertexCountX ] = (short)( R3D_MIN( R3D_MAX( ((float*)((char*)lrect.pBits + z * lrect.Pitch))[ x ], -32768.f ), 32767.f ) ); 
+			(*dest)[ x + z * destVertexCountX ] = (short)( R3D_MIN( R3D_MAX( ((float*)((char*)lrect.pBits + z * lrect.Pitch))[ x ], -32768.f ), 32767.f ) );
 		}
 	}
 
@@ -4818,7 +4854,7 @@ r3dTerrain2::SaveBin( const char* dirName, const Shorts& hfShrinkedSamples, int 
 	}
 
 	int width_height[ 2 ];
-	
+
 	width_height[ 0 ] = m_DominantLayerData.Width();
 	width_height[ 1 ] = m_DominantLayerData.Height();
 
@@ -4929,7 +4965,7 @@ r3dTerrain2::LoadBin( const char* dirName )
 	fread( &dwSignature, sizeof( dwSignature ), 1, hFile );
 	fread( &dwVersion, sizeof( dwVersion ), 1, hFile );
 
-	if( dwSignature != TERRAIN2_SIGNATURE 
+	if( dwSignature != TERRAIN2_SIGNATURE
 			||
 		( dwVersion != TERRAIN2_VERSION
 			&&
@@ -5059,7 +5095,7 @@ r3dTerrain2::LoadBin( const char* dirName )
 	fread( &temp[ 0 ], temp.Count() * sizeof temp[ 0 ], 1, hFile );
 
 	m_DominantLayerData.Swap( temp, width_height[ 0 ], width_height[ 1 ] );
-	
+
 	InitLayerBitMaskChains();
 
 	return 1;
@@ -5175,7 +5211,7 @@ r3dTerrain2::LoadLayerFromScript( Script_c *script, r3dTerrainLayer *layer )
 #if !R3D_TERRAIN_V2_GRAPHICS
 	return 0;
 #endif
-
+    // fixed buffer steepsounds
 	char buffer[ MAX_PATH ];
 	char szName[ MAX_PATH ];
 
@@ -5203,7 +5239,7 @@ r3dTerrain2::LoadLayerFromScript( Script_c *script, r3dTerrainLayer *layer )
 
 			script->GetString( szName, sizeof( szName ) );
 
-			layer->DiffuseTex = r3dRenderer->LoadTexture( szName, D3DFMT_UNKNOWN, false, DownScale );				
+			layer->DiffuseTex = r3dRenderer->LoadTexture( szName, D3DFMT_UNKNOWN, false, DownScale );
 		}
 		else if ( ! strcmp( buffer, "map_normal:" ) )
 		{
@@ -5231,8 +5267,31 @@ r3dTerrain2::LoadLayerFromScript( Script_c *script, r3dTerrainLayer *layer )
 			buff[ sizeof buff - 1 ] = 0;
 
 			script->GetLine( buff, sizeof buff - 1 );
+			if(strstr(strupr(buff), "CONCRETE"))
+				strcpy(buff,"Concrete");
+			else if(strstr(strupr(buff), "DIRT"))
+				strcpy(buff,"Dirt");
+			else if(strstr(strupr(buff), "SAND"))
+				strcpy(buff,"Sand");
+			else if(strstr(strupr(buff), "SNOW"))
+				strcpy(buff,"Snow");
+			else if(strstr(strupr(buff), "GRASS"))
+				strcpy(buff,"Grass");
+			else if(strstr(strupr(buff), "FOREST"))
+				strcpy(buff,"Forest");
+			else if(strstr(strupr(buff), "WOOD"))
+				strcpy(buff,"Wood");
+			else if(strstr(strupr(buff), "METAL_RESOURCES"))
+				strcpy(buff,"Metal_Resources");
+			else if(strstr(strupr(buff), "WOOD_RESOURCES"))
+				strcpy(buff,"Wood_Resources");
+			else if(strstr(strupr(buff), "WATER"))
+				strcpy(buff,"Water");		
+			else if(strstr(strupr(buff), "METAL"))
+				strcpy(buff,"Metal");	
 
 			layer->MaterialTypeName = buff;
+
 		}
 	}
 
@@ -5298,7 +5357,7 @@ r3dTerrain2::GetHFShape() const
 	m_PhysicsTerrain->getShapes(&shapes[0], 1);
 	r3d_assert( shapes[0]->getGeometryType() == PxGeometryType::eHEIGHTFIELD );
 	PxHeightFieldGeometry geom;
-	
+
 	bool res = shapes[0]->getHeightFieldGeometry(geom);
 	r3d_assert(res);
 
@@ -5310,7 +5369,7 @@ r3dTerrain2::GetHFShape() const
 void
 r3dTerrain2::PreparePhysXHeightFieldDesc_NoAlloc( PxHeightFieldDesc* hfDesc )
 {
-	int w = m_VertexCountX, 
+	int w = m_VertexCountX,
 		h = m_VertexCountZ;
 
 	hfDesc->format				= PxHeightFieldFormat::eS16_TM;
@@ -5360,7 +5419,7 @@ r3dTerrain2::UpdatePhysHeightField( const Shorts& source )
 		m_PhysicsTerrain->release();
 		m_PhysicsTerrain = NULL;
 	}
-	
+
 	if( m_PhysicsHeightField )
 	{
 		m_PhysicsHeightField->release();
@@ -5381,7 +5440,7 @@ r3dTerrain2::UpdatePhysHeightField( const Shorts& source )
 		currentSample->materialIndex0 = 1;
 		currentSample->materialIndex1 = 1;
 		currentSample->clearTessFlag();
-		currentByte += m_PhysicsHeightFieldDesc.samples.stride;		
+		currentByte += m_PhysicsHeightFieldDesc.samples.stride;
 	}
 
 	m_PhysicsHeightField = g_pPhysicsWorld->PhysXSDK->createHeightField( m_PhysicsHeightFieldDesc );
@@ -5469,7 +5528,7 @@ r3dTerrain2::UpdatePhysHeightField ( const Floats& heightFieldData )
 
 	m_PhysicsHeightField = g_pPhysicsWorld->PhysXSDK->createHeightField(m_PhysicsHeightFieldDesc);
 
-	FinishPhysXHeightFieldDesc( &m_PhysicsHeightFieldDesc ); 
+	FinishPhysXHeightFieldDesc( &m_PhysicsHeightFieldDesc );
 
 	PxHeightFieldGeometry shapeGeom(m_PhysicsHeightField, PxMeshGeometryFlags(), m_InvHFScale, m_TotalTerrainZLength / PxReal(h), m_TotalTerrainXLength / PxReal(w));
 	PxTransform pose(PxVec3(0,0,0), PxQuat(0,0,0,1));
@@ -5647,7 +5706,7 @@ void r3dTerrain2::InitTileField( const Shorts& heightField )
 
 		mip.Resize( tileCountX, tileCountZ );
 	}
-	
+
 	m_AllocTileLodArray.Resize( m_NumActiveQualityLayers );
 
 	RecalcTileInfo( heightField, NULL );
@@ -5708,12 +5767,12 @@ r3dTerrain2::RecalcTileInfo( const Shorts& heightField, const RECT* rect )
 			int heightMin = +0x10000;
 			int heightMax = -0x10000;
 
-			for( int	sz = az * vertDim, 
-				sze = R3D_MIN( ( az + 1 ) * vertDim + 1, fullZVertDim ); 
+			for( int	sz = az * vertDim,
+				sze = R3D_MIN( ( az + 1 ) * vertDim + 1, fullZVertDim );
 				sz < sze; sz ++ )
 			{
-				for( int	sx = ax * vertDim, 
-					sxe = R3D_MIN( ( ax + 1 ) * vertDim + 1, fullXVertDim ); 
+				for( int	sx = ax * vertDim,
+					sxe = R3D_MIN( ( ax + 1 ) * vertDim + 1, fullXVertDim );
 					sx < sxe; sx ++ )
 				{
 					int height = heightField[ sz + sx * fullZVertDim ];
@@ -5760,7 +5819,7 @@ r3dTerrain2::RecalcTileInfo( const Shorts& heightField, const RECT* rect )
 					R3D_MIN( srcInfo10.HeightMin, srcInfo11.HeightMin )
 					);
 
-				float heightMax = 
+				float heightMax =
 					R3D_MAX(
 					R3D_MAX( srcInfo00.HeightMin + srcInfo00.HeightRange, srcInfo10.HeightMin + srcInfo10.HeightRange ),
 					R3D_MAX( srcInfo01.HeightMin + srcInfo01.HeightRange, srcInfo11.HeightMin + srcInfo11.HeightRange )
@@ -5802,7 +5861,7 @@ r3dTerrain2::InitLayerBaseBitMask( int idx )
 void
 r3dTerrain2::InitLayerBaseBitMasks()
 {
-#if R3D_TERRAIN_V2_GRAPHICS	
+#if R3D_TERRAIN_V2_GRAPHICS
 	m_LayerBaseBitMasks.Resize( m_Layers.Count() );
 
 	for( int i = 0, e = m_Layers.Count(); i < e; i ++ )
@@ -6012,9 +6071,9 @@ r3dTerrain2::RecalcNormalMap( const Floats& heights, Vectors* tempVectors0, Vect
 
 				int xc = x, zc = z;
 
-				int x0	= R3D_MAX( xc - dirx, 0 ), 
+				int x0	= R3D_MAX( xc - dirx, 0 ),
 					x1	= R3D_MIN( xc + dirx, xTotal - 1 ),
-					z0	= R3D_MAX( zc - dirz, 0 ), 
+					z0	= R3D_MAX( zc - dirz, 0 ),
 					z1	= R3D_MIN( zc + dirz, zTotal - 1 );
 
 
@@ -6041,7 +6100,7 @@ r3dTerrain2::RecalcNormalMap( const Floats& heights, Vectors* tempVectors0, Vect
 		UINT16 b : 5;
 		UINT16 g : 6;
 		UINT16 r : 5;
-	} * lockee = static_cast<R5G6B5*> ( m_NormalTex->Lock( 1, &nr ) ), 
+	} * lockee = static_cast<R5G6B5*> ( m_NormalTex->Lock( 1, &nr ) ),
 	  * detail_lockee = NULL;
 
 	if( m_DetailNormalTex )
@@ -6049,7 +6108,7 @@ r3dTerrain2::RecalcNormalMap( const Floats& heights, Vectors* tempVectors0, Vect
 
 	int pitch = m_NormalTex->GetLockPitch() / sizeof *lockee;
 	int detail_pitch = pitch;
-	
+
 	if( m_DetailNormalTex )
 		detail_pitch = m_DetailNormalTex->GetLockPitch() / sizeof *lockee;
 
@@ -6059,7 +6118,7 @@ r3dTerrain2::RecalcNormalMap( const Floats& heights, Vectors* tempVectors0, Vect
 	{
 		for( int x = r.left, xe = r.right; x < xe; x ++ )
 		{
-			const r3dPoint3D& n = NormalMapData[ x + z * xTotal ];			
+			const r3dPoint3D& n = NormalMapData[ x + z * xTotal ];
 
 			for( int nz = z * m_NormalDensity, e = nz + m_NormalDensity; nz < e; nz ++ )
 			{
@@ -6075,7 +6134,7 @@ r3dTerrain2::RecalcNormalMap( const Floats& heights, Vectors* tempVectors0, Vect
 					{
 						R5G6B5& detail = detail_lockee[ idx ];
 
-						r3dPoint3D detailNormal(	detail.r / 31.f * 2.f - 1.f, 
+						r3dPoint3D detailNormal(	detail.r / 31.f * 2.f - 1.f,
 													detail.b / 31.f * 2.f - 1.f,
 													detail.g / 63.f * 2.f - 1.f );
 
@@ -6167,7 +6226,7 @@ r3dTerrain2::UpdateTileBitMaskChain( LayerBitMaskMipChain* oChain, const r3dBitM
 					tx /= 2;
 					tz /= 2;
 				}
-				
+
 				return;
 			}
 		}
@@ -6186,11 +6245,11 @@ R3D_FORCEINLINE static void PushDebugBBox( const r3dBoundBox& bbox )
 
 	PushDebugBox(	bbox.Org,
 					bbox.Org + r3dPoint3D( bbox.Size.x, 0.f, 0.f ),
-					bbox.Org + r3dPoint3D( 0.f, bbox.Size.y, 0.f ), 
-					bbox.Org + r3dPoint3D( bbox.Size.x, bbox.Size.y, 0.f ), 
-					bbox.Org + r3dPoint3D( 0.f, 0.f, bbox.Size.z ), 
+					bbox.Org + r3dPoint3D( 0.f, bbox.Size.y, 0.f ),
+					bbox.Org + r3dPoint3D( bbox.Size.x, bbox.Size.y, 0.f ),
+					bbox.Org + r3dPoint3D( 0.f, 0.f, bbox.Size.z ),
 					bbox.Org + r3dPoint3D( bbox.Size.x, 0.f, bbox.Size.z ),
-					bbox.Org + r3dPoint3D( 0.f, bbox.Size.y, bbox.Size.z ), 
+					bbox.Org + r3dPoint3D( 0.f, bbox.Size.y, bbox.Size.z ),
 					bbox.Org + r3dPoint3D( bbox.Size.x, bbox.Size.y, bbox.Size.z ),
 					r3dColor( 0, 255, 0 )
 				);
@@ -6227,7 +6286,7 @@ r3dTerrain2::UpdateVisibleTiles()
 			bbox.Size = r3dPoint3D( size, info.HeightRange, size );
 
 			if( r3dRenderer->IsBoxInsideFrustum( bbox ) )
-			{		
+			{
 				m_VisibleTiles.PushBack( &tile );
 
 #ifndef FINAL_BUILD
@@ -6368,7 +6427,7 @@ r3dTerrain2::UpdateTiles( const r3dCamera& cam )
 	}
 
 	//------------------------------------------------------------------------
-	// update activity according to camera		
+	// update activity according to camera
 
 	R3DPROFILE_START( "Tile Activity" );
 
@@ -6495,7 +6554,7 @@ r3dTerrain2::UpdateTiles( const r3dCamera& cam )
 				{
 					connFlags |= WEST_CONNECTION;
 				}
-	
+
 				AddToAllocatedTiles( x, z, L, connFlags & connMask );
 			}
 		}
@@ -6647,7 +6706,7 @@ r3dTerrain2::AddAtlasVolume()
 #endif
 
 	volume.Diffuse = r3dScreenBuffer::CreateClass( "TERRAIN_ATLAS_DIFFUSE", ATLAS_TEXTURE_DIM, ATLAS_TEXTURE_DIM, ATLAS_FMT, r3dScreenBuffer::Z_NO_Z, 0, mipCount );
-	volume.Normal = r3dScreenBuffer::CreateClass( "TERRAIN_ATLAS_NORMAL", ATLAS_TEXTURE_DIM, ATLAS_TEXTURE_DIM, ATLAS_FMT, r3dScreenBuffer::Z_NO_Z, 0, mipCount );	
+	volume.Normal = r3dScreenBuffer::CreateClass( "TERRAIN_ATLAS_NORMAL", ATLAS_TEXTURE_DIM, ATLAS_TEXTURE_DIM, ATLAS_FMT, r3dScreenBuffer::Z_NO_Z, 0, mipCount );
 
 	volume.Occupied.Resize( m_AtlasTileCountPerSide * m_AtlasTileCountPerSide, 0 );
 
@@ -6841,7 +6900,7 @@ r3dTerrain2::StartTileUpdating()
 
 		r3dSetFiltering( R3D_BILINEAR, i );
 	}
- 
+
 	//------------------------------------------------------------------------
 	// setup CLAMP for these
 	// sampler sSplat[ MAX_LAYERS ]   : register ( s8 );
@@ -7271,7 +7330,7 @@ r3dTerrain2::UpdateAtlasTileRoads( const AllocatedTile* tile )
 	{
 		int2 atlasXZ = GetTileAtlasXZ( tile );
 
-		r3dRenderer->SetViewport( 	float( atlasXZ.x * m_QualitySettings.AtlasTileDim ), 
+		r3dRenderer->SetViewport( 	float( atlasXZ.x * m_QualitySettings.AtlasTileDim ),
 									float( ATLAS_TEXTURE_DIM - ( atlasXZ.y + 1 ) * m_QualitySettings.AtlasTileDim ),
 									float( m_QualitySettings.AtlasTileDim ),
 									float( m_QualitySettings.AtlasTileDim )	);
@@ -7361,7 +7420,7 @@ r3dTerrain2::RenderTileMipChain( const AllocatedTile* tile )
 	r3dScreenBuffer* atlasNormal = av.Normal;
 
 	float mipMult = 1.0f;
-	
+
 	for( int i = 1, e = atlasDiffuse->ActualNumMipLevels; i < e; i ++, mipMult *= 2.0f )
 	{
 		const r3dScreenBuffer::Dims& dims = atlasDiffuse->MipDims[ i ];
@@ -7472,7 +7531,7 @@ void
 r3dTerrain2::SetupTileRenderingVertexStates()
 {
 #if R3D_TERRAIN_V2_GRAPHICS
-	StartUsingTileGeom( false );	
+	StartUsingTileGeom( false );
 
 	if( m_AllowVFetch )
 	{
@@ -7603,7 +7662,7 @@ r3dTerrain2::SetTileRenderVSConsts( const AllocatedTile* tile )
 				dim + x,	m_HeightOffset + y,	dim + z,	1.f
 			);
 
-		D3DXMatrixMultiplyTranspose( (D3DXMATRIX*)&vsConsts[ 0 ], &mtx, &r3dRenderer->ViewProjMatrix_Localized );		
+		D3DXMatrixMultiplyTranspose( (D3DXMATRIX*)&vsConsts[ 0 ], &mtx, &r3dRenderer->ViewProjMatrix_Localized );
 	}
 
 	//------------------------------------------------------------------------
@@ -7659,7 +7718,7 @@ r3dTerrain2::SetDynaBufferFor( const AllocatedTile* tile, int density, int stati
 	{
 		m_DynamicVertexBufferPtr = 0;
 	}
-	
+
 	int tileSize = ( 1 << tile->L ) * m_QualitySettings.VertexTileDim;
 	int step = tileSize / ( m_QualitySettings.VertexTileDim * ( 1 << density ) );
 
@@ -7709,14 +7768,14 @@ r3dTerrain2::SetDynaBufferFor( const AllocatedTile* tile, int density, int stati
 		{
 			vtx->height = m_HeightArr[ zoffset + x + halfStep ];
 		}
-		
-		int xoffset = tile->X * tileSize; 
+
+		int xoffset = tile->X * tileSize;
 		for( int z = tile->Z * tileSize, ze = ( tile->Z + 1 ) * tileSize; z < ze; z += step, vtx ++, checker ++ )
 		{
 			vtx->height = m_HeightArr[ ( z + halfStep ) * m_VertexCountX + xoffset ];
 		}
 
-		xoffset = ( tile->X + 1 ) * tileSize; 
+		xoffset = ( tile->X + 1 ) * tileSize;
 
 		if( xoffset >= m_VertexCountX )
 			xoffset = m_VertexCountX - 1;
@@ -7820,7 +7879,7 @@ r3dTerrain2::StartShadowRender()
 	// Pixel Shader
 	{
 		r3dRenderer->SetPixelShader( g_Terrain2ShadowPSId );
-	}	
+	}
 
 	r3dRenderer->SetCullMode( D3DCULL_CW );
 #endif
@@ -8034,7 +8093,7 @@ r3dTerrain2::SelectQualitySettings()
 
 void
 r3dTerrain2::PopulateInferiorQualitySettings()
-{	
+{
 	m_BaseQualitySettings[ QS_MED ] = m_BaseQualitySettings[ QS_HIGH ];
 	m_BaseQualitySettings[ QS_LOW ] = m_BaseQualitySettings[ QS_HIGH ];
 
@@ -8108,12 +8167,12 @@ void LoadTexInMainThread( void* vparams )
 
 	// NOTE : for game, we use system mem - because we only need it to lock & merge with terrain normals.
 	// for editor, we use managed - to be able to lock & read + to be able to display it in UI...
-	r3dDeviceTunnel::D3DXCreateTextureFromFileInMemoryEx( 
-							buffer->GetBufferPointer(), 
-								buffer->GetBufferSize(), 
-									params->desiredWidth, 
+	r3dDeviceTunnel::D3DXCreateTextureFromFileInMemoryEx(
+							buffer->GetBufferPointer(),
+								buffer->GetBufferSize(),
+									params->desiredWidth,
 										params->desiredHeight,
-											1, 0, params->desiredFmt, g_bEditMode ? D3DPOOL_MANAGED : D3DPOOL_SYSTEMMEM, D3DX_FILTER_LINEAR, D3DX_FILTER_NONE, 
+											1, 0, params->desiredFmt, g_bEditMode ? D3DPOOL_MANAGED : D3DPOOL_SYSTEMMEM, D3DX_FILTER_LINEAR, D3DX_FILTER_NONE,
 												0, 0, 0, &tunnel, "Terrain2NormalDetail" );
 
 	*params->tex = r3dRenderer->AllocateTexture();
@@ -8191,7 +8250,7 @@ static int CountConnectionIndices( int vertexTileDim, int sideLodConnections )
 	{
 		switch( sideLodConnections )
 		{
-		case 0: 
+		case 0:
 			total = 2;
 			break;
 		case NORTH_CONNECTION:
@@ -8255,7 +8314,7 @@ static int CountConnectionIndices( int vertexTileDim, int sideLodConnections )
 		int looseCount = ( vertexTileDim - 2 ) * 2 + 2;
 
 		if( sideLodConnections & NORTH_CONNECTION )	total += connectCount;
-		else total += looseCount; 
+		else total += looseCount;
 
 		if( sideLodConnections & EAST_CONNECTION )	total += connectCount;
 		else total += looseCount;
@@ -8780,7 +8839,7 @@ static int ConstructConnectionIndices( uint16_t* target, int vertexTileDim, int 
 
 			*target ++ = vidx - 1;
 			*target ++ = vidx + TO_NEXT_LINE - 1;
-			*target ++ = vidx;		
+			*target ++ = vidx;
 		}
 
 
@@ -8820,7 +8879,7 @@ static int ConstructConnectionIndices( uint16_t* target, int vertexTileDim, int 
 
 			// exterior 1
 
-			if( !SouthAndEast ) 
+			if( !SouthAndEast )
 			{
 				*target ++ = southVertStart + CELL_VERT_SIZE - 2;
 				*target ++ = vidx - TO_NEXT_LINE + 1;
@@ -8978,7 +9037,7 @@ static int ConstructConnectionIndices( uint16_t* target, int vertexTileDim, int 
 
 			*target ++ = eastVertStart + CELL_VERT_SIZE - 2;
 			*target ++ = vidx + 1;
-			*target ++ = southVertStart + CELL_VERT_SIZE - 2;;		
+			*target ++ = southVertStart + CELL_VERT_SIZE - 2;;
 		}
 
 		if( NotNorthAndNotWest )
@@ -9035,7 +9094,7 @@ static void FillDecalRect( RECT* oRect, const r3dTerrain2::DecalRecord& drec )
 	oRect->left = R3D_MIN( R3D_MAX( (int)oRect->left, 0 ), tdesc.CellCountX - 1 );
 	oRect->right = R3D_MIN( R3D_MAX( (int)oRect->right, 0 ), tdesc.CellCountX - 1 );
 	oRect->top = R3D_MIN( R3D_MAX( (int)oRect->top, 0 ), tdesc.CellCountZ - 1 );
-	oRect->bottom = R3D_MIN( R3D_MAX( (int)oRect->bottom, 0 ), tdesc.CellCountZ - 1 );	
+	oRect->bottom = R3D_MIN( R3D_MAX( (int)oRect->bottom, 0 ), tdesc.CellCountZ - 1 );
 }
 
 

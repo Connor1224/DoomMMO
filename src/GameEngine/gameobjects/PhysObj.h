@@ -120,19 +120,19 @@ public:
 	virtual r3dPoint3D 		GetVelocity() const =0;
 	virtual r3dPoint3D		GetScale() const = 0;
 
-	// physics object position is in a center of object. 
+	// physics object position is in a center of object.
 	// in engine, center of object is in pivot.
 	// so this diff is to make sure that position in physics and engine is in sync
 	virtual void			SetPositionCorrection(const r3dPoint3D& diff)=0;
 
-	virtual bool			IsSleeping() = 0;	
+	virtual bool			IsSleeping() = 0;
 	virtual void			ForceToSleep() = 0;
 
 	virtual void			addSmoothVelocity(const r3dVector& vel) {};
 	virtual void			addImpulse(const r3dVector& impulse) {};
 	virtual void			AddImpulseAtPos(const r3dPoint3D& impulse, const r3dPoint3D& pos) {};
 	virtual void			AddImpulseAtLocalPos(const r3dPoint3D& impulse, const r3dPoint3D& pos) {};
-	virtual void			AdjustControllerSize(float new_radius, float new_height, float) {}; 
+	virtual void			AdjustControllerSize(float new_radius, float new_height, float) {};
 
 
 	// will create a proper physics object
