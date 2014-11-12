@@ -287,6 +287,7 @@ public:
 		KS_CHAT_CHANNEL1,
 		KS_CHAT_CHANNEL2,
 		KS_CHAT_CHANNEL3,
+		KS_CHAT_CHANNEL4,
 
 		KS_SHOW_ATTACHMENTS,
 
@@ -295,6 +296,8 @@ public:
 		KS_PRONE,
 
 		KS_SHOW_PLAYERS,
+
+		KS_TOGGLE_FLASHLIGHT,
 
 		// don't forget to increment INPUT_MAPPING_FILE_VERSION after making any changes here
 

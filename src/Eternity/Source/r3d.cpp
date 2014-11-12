@@ -284,7 +284,7 @@ static float		_r3d_AverageFrameTime = _r3d_FrameLimiter;
 void r3d_UtilityThread(DWORD in)
 {
   while(1) {
-    Sleep(100);
+    Sleep(1);
 
     int bShift = (GetAsyncKeyState(VK_SHIFT)&0x8000);
     int bCntrl = (GetAsyncKeyState(VK_CONTROL)&0x8000);
@@ -890,97 +890,97 @@ int r3dGetPixelSize( int count, D3DFORMAT fmt )
 {
 	switch( fmt )
 	{
-	case D3DFMT_R8G8B8               : return count * 3 ;
-	case D3DFMT_A8R8G8B8             : return count * 4 ;
-	case D3DFMT_X8R8G8B8             : return count * 4 ;
-	case D3DFMT_R5G6B5               : return count * 2 ;
-	case D3DFMT_X1R5G5B5             : return count * 2 ;
-	case D3DFMT_A1R5G5B5             : return count * 2 ;
-	case D3DFMT_A4R4G4B4             : return count * 2 ;
-	case D3DFMT_R3G3B2               : return count * 1 ;
-	case D3DFMT_A8                   : return count * 1 ;
-	case D3DFMT_A8R3G3B2             : return count * 2 ;
-	case D3DFMT_X4R4G4B4             : return count * 2 ;
-	case D3DFMT_A2B10G10R10          : return count * 4 ;
-	case D3DFMT_A8B8G8R8             : return count * 4 ;
-	case D3DFMT_X8B8G8R8             : return count * 4 ;
-	case D3DFMT_G16R16               : return count * 4 ;
-	case D3DFMT_A2R10G10B10          : return count * 4 ;
-	case D3DFMT_A16B16G16R16         : return count * 8 ;
-	case D3DFMT_A8P8                 : return count * 2 ;
-	case D3DFMT_P8                   : return count * 1 ;
-	case D3DFMT_L8                   : return count * 1 ;
-	case D3DFMT_A8L8                 : return count * 2 ;
-	case D3DFMT_A4L4                 : return count * 1 ;
-	case D3DFMT_V8U8                 : return count * 2 ;
-	case D3DFMT_L6V5U5               : return count * 2 ;
-	case D3DFMT_X8L8V8U8             : return count * 4 ;
-	case D3DFMT_Q8W8V8U8             : return count * 4 ;
-	case D3DFMT_V16U16               : return count * 4 ;
-	case D3DFMT_A2W10V10U10          : return count * 4 ;
-	case D3DFMT_UYVY                 : return count * 4 ;
-	case D3DFMT_R8G8_B8G8            : return count * 2 ;
-	case D3DFMT_YUY2                 : return count * 2 ;
-	case D3DFMT_G8R8_G8B8            : return count * 2 ;
-	case D3DFMT_DXT1                 : return count / 2 ;
-	case D3DFMT_DXT2                 : return count * 1 ;
-	case D3DFMT_DXT3                 : return count * 1 ;
-	case D3DFMT_DXT4                 : return count * 1 ;
-	case D3DFMT_DXT5                 : return count * 1 ;
-	case D3DFMT_D16_LOCKABLE         : return count * 2 ;
-	case D3DFMT_D32                  : return count * 4 ;
-	case D3DFMT_D15S1                : return count * 2 ;
-	case D3DFMT_D24S8                : return count * 4 ;
-	case D3DFMT_D24X8                : return count * 4 ;
-	case D3DFMT_D24X4S4              : return count * 4 ;
-	case D3DFMT_D16                  : return count * 2 ;
-	case D3DFMT_D32F_LOCKABLE        : return count * 4 ;
-	case D3DFMT_D24FS8               : return count * 4 ;
-	case D3DFMT_D32_LOCKABLE         : return count * 4 ;
-	case D3DFMT_S8_LOCKABLE          : return count * 1 ;
-	case D3DFMT_L16                  : return count * 2 ;
-	case D3DFMT_INDEX16              : return count * 2 ;
-	case D3DFMT_INDEX32              : return count * 4 ;
-	case D3DFMT_Q16W16V16U16         : return count * 8 ;
-	case D3DFMT_MULTI2_ARGB8         : return count * 4 ;
-	case D3DFMT_R16F                 : return count * 2 ;
-	case D3DFMT_G16R16F              : return count * 4 ;
-	case D3DFMT_A16B16G16R16F        : return count * 8 ;
-	case D3DFMT_R32F                 : return count * 4 ;
-	case D3DFMT_G32R32F              : return count * 8 ;
-	case D3DFMT_A32B32G32R32F        : return count * 16 ;
-	case D3DFMT_CxV8U8               : return count * 2 ;
-	case D3DFMT_A1                   : return count / 8 ;
-	case D3DFMT_A2B10G10R10_XR_BIAS  : return count * 4 ;
-	case INTZ_FORMAT				 : return count * 4 ;
-	case DF24_FORMAT				 : return count * 4 ;
-	case NULL_RT_FORMAT				 : return 0;
-	case D3DFMT_UNKNOWN				 : return 0;
-	default:
-		r3d_assert( false );
-		return 0;
+		case D3DFMT_R3G3B2:
+		case D3DFMT_A8:
+		case D3DFMT_DXT2:
+		case D3DFMT_S8_LOCKABLE:
+		case D3DFMT_DXT3:
+		case D3DFMT_DXT4:
+		case D3DFMT_DXT5:
+		case D3DFMT_P8:
+		case D3DFMT_A4L4: return count * 1 ;
+		case D3DFMT_L8:
+		case D3DFMT_V8U8:
+		case D3DFMT_L6V5U5:
+		case D3DFMT_R8G8_B8G8:
+		case D3DFMT_YUY2:
+		case D3DFMT_G8R8_G8B8:
+		case D3DFMT_A4R4G4B4:
+		case D3DFMT_A8L8:
+		case D3DFMT_R5G6B5:
+		case D3DFMT_X1R5G5B5:
+		case D3DFMT_A1R5G5B5:
+		case D3DFMT_A8R3G3B2:
+		case D3DFMT_X4R4G4B4:
+		case D3DFMT_A8P8:
+		case D3DFMT_D16_LOCKABLE:
+		case D3DFMT_D15S1:
+		case D3DFMT_D16:
+		case D3DFMT_L16:
+		case D3DFMT_INDEX16:
+		case D3DFMT_R16F:
+		case D3DFMT_CxV8U8: return count * 2 ;
+		case D3DFMT_A2B10G10R10:
+		case D3DFMT_A8B8G8R8:
+		case D3DFMT_X8B8G8R8:
+		case D3DFMT_G16R16:
+		case D3DFMT_A2R10G10B10:
+		case D3DFMT_X8L8V8U8:
+		case D3DFMT_Q8W8V8U8:
+		case D3DFMT_V16U16:
+		case D3DFMT_A2W10V10U10:
+		case D3DFMT_UYVY:
+		case D3DFMT_D32:
+		case D3DFMT_D24S8:
+		case D3DFMT_D24X8:
+		case D3DFMT_D24X4S4:
+		case D3DFMT_D32F_LOCKABLE:
+		case D3DFMT_D24FS8:
+		case D3DFMT_D32_LOCKABLE:
+		case D3DFMT_INDEX32:
+		case D3DFMT_MULTI2_ARGB8:
+		case D3DFMT_G16R16F:
+		case D3DFMT_R32F:
+		case D3DFMT_A2B10G10R10_XR_BIAS:
+		case INTZ_FORMAT:
+		case DF24_FORMAT:
+		case D3DFMT_A8R8G8B8:
+		case D3DFMT_X8R8G8B8: return count * 4 ;
+		case D3DFMT_A16B16G16R16F:
+		case D3DFMT_G32R32F:
+		case D3DFMT_Q16W16V16U16:
+		case D3DFMT_A16B16G16R16: return count * 8 ;
+		case NULL_RT_FORMAT:
+		case D3DFMT_UNKNOWN: return 0;
+		case D3DFMT_DXT1: return count / 2 ;
+		case D3DFMT_R8G8B8: return count * 3 ;
+		case D3DFMT_A1: return count / 8 ;
+		case D3DFMT_A32B32G32R32F: return count * 16 ;
+		default:
+			r3d_assert( false );
+			return 0;
 	}
 }
 
-static int	     _TimerInited = 0;
-static double	     _fTicksPerSec;
-static LARGE_INTEGER _llTimerStart;
+static int				_TimerInited = 0;
+static double			_fTicksPerSec;
+static LARGE_INTEGER	_llTimerStart;
 
 float r3dGetTime()
 {
- if (!_TimerInited)
- {
-   _TimerInited = 1;
+	if (!_TimerInited)
+	{
+		_TimerInited = 1;
 
-   // Use QueryPerformanceFrequency() to get frequency of timer.  
-   LARGE_INTEGER qwTicksPerSec;
-   QueryPerformanceFrequency( &qwTicksPerSec );
-   _fTicksPerSec = (double)qwTicksPerSec.QuadPart;
-   QueryPerformanceCounter(&_llTimerStart);
- }
+		// Use QueryPerformanceFrequency() to get frequency of timer.  
+		LARGE_INTEGER qwTicksPerSec;
+		QueryPerformanceFrequency( &qwTicksPerSec );
+		_fTicksPerSec = (double)qwTicksPerSec.QuadPart;
+		QueryPerformanceCounter(&_llTimerStart);
+	}
 
- LARGE_INTEGER qwTime;
- QueryPerformanceCounter(&qwTime);
+	LARGE_INTEGER qwTime;
+	QueryPerformanceCounter(&qwTime);
 
  return float((double)(qwTime.QuadPart - _llTimerStart.QuadPart) / _fTicksPerSec);
 }
@@ -1159,7 +1159,7 @@ void r3d_actual_assert(const char *expr, const char *filename, unsigned lineno, 
 
 float r3dRandomFloat()
 {
- return float(random(1000) - 500)/500.0f;
+ return float(random(500))/500.0f;
 }
 
 
@@ -1231,7 +1231,7 @@ r3dDevStrength r3dGetDeviceStrength()
 	}
 
 
-	switch( ident.VendorId )
+	/*switch( ident.VendorId )
 	{
 		// ATI/AMD
 	case 0x1002:
@@ -2253,7 +2253,7 @@ r3dDevStrength r3dGetDeviceStrength()
 			return S_STRONG;
 		};
 		break;
-	}
+	}*/
 
 	return S_WEAK;
 }

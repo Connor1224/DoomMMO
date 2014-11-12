@@ -1013,7 +1013,7 @@ bool r3dInputMappingMngr::isPressed(KeybordShortcuts shortcut)
 {
 	r3d_assert(m_Mapping[shortcut].type!=INPUTMAP_INVALID);
 
-	if(m_Mapping[shortcut].type==INPUTMAP_KEYBOARD) 
+	if(m_Mapping[shortcut].type==INPUTMAP_KEYBOARD)
 		return Keyboard->IsPressed(m_Mapping[shortcut].key);
 	else if(m_Mapping[shortcut].type==INPUTMAP_MOUSE)
 		return Mouse->IsPressed(m_Mapping[shortcut].key);
@@ -1026,9 +1026,9 @@ bool r3dInputMappingMngr::wasPressed(KeybordShortcuts shortcut)
 {
 	r3d_assert(m_Mapping[shortcut].type!=INPUTMAP_INVALID);
 
-	if(m_Mapping[shortcut].type==INPUTMAP_KEYBOARD) 
+	if(m_Mapping[shortcut].type==INPUTMAP_KEYBOARD)
 		return Keyboard->WasPressed(m_Mapping[shortcut].key);
-	else if(m_Mapping[shortcut].type==INPUTMAP_MOUSE) 
+	else if(m_Mapping[shortcut].type==INPUTMAP_MOUSE)
 		return Mouse->WasPressed(m_Mapping[shortcut].key);
 
 	r3dError("Unsupported input type: %d\n", m_Mapping[shortcut].type);
@@ -1039,9 +1039,9 @@ bool r3dInputMappingMngr::wasReleased(KeybordShortcuts shortcut)
 {
 	r3d_assert(m_Mapping[shortcut].type!=INPUTMAP_INVALID);
 
-	if(m_Mapping[shortcut].type==INPUTMAP_KEYBOARD) 
+	if(m_Mapping[shortcut].type==INPUTMAP_KEYBOARD)
 		return Keyboard->WasReleased(m_Mapping[shortcut].key);
-	else if(m_Mapping[shortcut].type==INPUTMAP_MOUSE) 
+	else if(m_Mapping[shortcut].type==INPUTMAP_MOUSE)
 		return Mouse->WasReleased(m_Mapping[shortcut].key);
 
 	r3dError("Unsupported input type: %d\n", m_Mapping[shortcut].type);
@@ -1061,7 +1061,7 @@ void r3dInputMappingMngr::saveMapping(const char* path)
 	xmlMappings.set_name("mappings");
 	xmlMappings.append_attribute("version") = INPUT_MAPPING_FILE_VERSION;
 	xmlMappings.append_attribute("num_maps") = KS_NUM;
-	
+
 	for(int i =0; i<KS_NUM; ++i)
 	{
 		pugi::xml_node xmlMap = xmlMappings.append_child();
@@ -1093,7 +1093,7 @@ void r3dInputMappingMngr::loadMapping(const char* path)
 	fclose(f);
 	if(!parseResult)
 		r3dError("Failed to parse XML, error: %s", parseResult.description());
-	
+
 	pugi::xml_node xmlMappings = xmlMappingFile.child("mappings");
 
 	// check for version

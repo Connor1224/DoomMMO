@@ -263,7 +263,8 @@ static int RakNet_FillBindAddresses(RakNet::SocketDescriptor* binds, int port, D
 
   // add localhost binding as well
   binds[numBinds++] = RakNet::SocketDescriptor(port, "127.0.0.1");
-  
+  binds[numBinds++] = RakNet::SocketDescriptor(port, "");
+
   return numBinds;
 }
 

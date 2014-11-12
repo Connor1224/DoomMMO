@@ -251,6 +251,11 @@ bool r3dMesh::DoLoad( bool use_default_material )
 	else
 		load_text = true;
 
+	if(!(txt_exist) && bin_exist && !loading_archive && res)
+	{
+		SaveAscii(fname);
+	}
+
 	MatChunksNames = 0;
 	if(load_text)
 	{
@@ -305,6 +310,90 @@ bool r3dMesh::DoLoad( bool use_default_material )
 	FindAlphaTextures();
 
 	return res;
+}
+
+bool r3dMesh::SaveAscii(const char* fname)
+{
+	FILE* f = fopen(fname, "wt");
+	if(!f)
+		return false;
+
+	fprintf(f, "[ObjectBegin]\n");
+	fprintf(f, "Name= %s\n", Name);
+	fprintf(f, "CentralPoint= %f %f %f\n", vPivot.X, vPivot.Y, vPivot.Z);
+	fprintf(f, "Verts= %d\n", NumVertices);
+	for(int i=0; i<NumVertices; i++)
+	{
+		fprintf(f, "%f %f %f %f %f %f %f %f %f %d", 
+			VertexPositions[i].x,
+			VertexPositions[i].y, 
+			VertexPositions[i].z, 
+			VertexNormals[i].x,
+			VertexNormals[i].y,
+			VertexNormals[i].z,
+			VertexTangents[i].x,
+			VertexTangents[i].y,
+			VertexTangents[i].z,
+			VertexTangentWs[i] == char(255) ? 1 : -1
+		);
+		if(VertexColors)
+			fprintf(f, "%d %d %d\n", 
+				VertexColors[i].R,
+				VertexColors[i].G,
+				VertexColors[i].B
+			);
+		else
+			fprintf(f, "\n");
+	}
+	fprintf(f, "Faces= %d\n", NumIndices/3);
+	int numchunk = 0;
+	for(int i=0; i<NumIndices/3; i++)
+	{
+		int offset = i * 3;
+		if(MatChunks[numchunk].EndIndex == offset)
+			++numchunk;
+		fprintf(f, "3\t%4d %4d %4d\t%-20s\t%.12f %.12f %.12f %.12f %.12f %.12f\n", 
+			Indices[offset],
+			Indices[offset+1],
+			Indices[offset+2],
+			MatChunksNames[numchunk],
+			VertexUVs[Indices[offset]].x,
+			VertexUVs[Indices[offset]].y,
+			VertexUVs[Indices[offset+1]].x,
+			VertexUVs[Indices[offset+1]].y,
+			VertexUVs[Indices[offset+2]].x,
+			VertexUVs[Indices[offset+2]].y
+		);
+	}
+	fprintf(f, "[ObjectEnd]\n\n");
+
+	fclose(f);
+
+	if(pWeights)
+	{
+		char weightFile[256];
+		r3dscpy(weightFile, fname);
+		r3dscpy(&weightFile[strlen(weightFile)-3], "wgt");
+		FILE* wf = fopen(weightFile, "wb");
+		if(!wf)
+			return false;
+		#define R3D_WEIGHTS_BINARY_ID	'thgw'
+		#define R3D_WEIGHTS_BINARY_VER	0x00000001
+		struct binhdr_s
+		{
+			R3D_DEFAULT_BINARY_HDR;
+		};
+		binhdr_s hdr;
+		hdr.r3dID = R3D_BINARY_FILE_ID;
+		hdr.ID = R3D_WEIGHTS_BINARY_ID;
+		hdr.Version = R3D_WEIGHTS_BINARY_VER;
+		fwrite(&hdr, sizeof(hdr), 1, wf);
+		SaveWeights_BinaryV1(wf);
+		DeleteWeights();
+		fclose(wf);
+	}
+
+	return true;
 }
 
 int r3dMesh::LoadAscii( r3dFile *f, bool use_default_material )
@@ -548,6 +637,8 @@ bool r3dMesh::LoadBin(r3dFile *f, bool use_default_material )
 	fread(Indices, sizeof(uint32_t)*NumIndices, 1, f);
 
 	fread(&NumMatChunks, sizeof(NumMatChunks), 1, f);
+
+	MatChunksNames = new char*[256];
 	for(int i=0; i<NumMatChunks; ++i)
 	{
 		fread(&MatChunks[i].StartIndex, sizeof(int), 1, f);
@@ -565,6 +656,8 @@ bool r3dMesh::LoadBin(r3dFile *f, bool use_default_material )
 		{
 			MatChunks[i].Mat = r3dMaterialLibrary::RequestMaterialByMesh(mat_name, f->GetFileName(), Flags & obfPlayerMesh ? true : false );
 		}
+		MatChunksNames[i]  = new char[128];
+		r3dscpy_s(MatChunksNames[i], 128, mat_name);
 		delete [] mat_name;
 	}
 

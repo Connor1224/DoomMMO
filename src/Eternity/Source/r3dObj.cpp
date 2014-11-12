@@ -2298,16 +2298,17 @@ void r3dMesh::LoadWeights_BinaryV1(r3dFile* f, bool from_scb)
 		
 		r3dWeight& w = pWeights[i];
 
-		float ws = 0.0f;
+		//float ws = 0.0f;
 		for(int k=0; k<4; k++) 
 		{
 			r3d_assert(fWeight[k] >= 0.f && fWeight[k] <= 1.f);
 			w.Weight[k] = fWeight[k];
 			w.BoneID[k] = iBoneId[k];
 
-			ws += w.Weight[k];
+			//ws += w.Weight[k];
 		}
 
+		/*
 		if(ws > 0.0f) 
 		{
 			// renormalize weights, because some Maya exporter dude screwed it up.
@@ -2315,7 +2316,8 @@ void r3dMesh::LoadWeights_BinaryV1(r3dFile* f, bool from_scb)
 			w.Weight[1] /= ws; 
 			w.Weight[2] /= ws; 
 			w.Weight[3] /= ws; 
-		}  
+		}
+		*/
 			
 	}
 

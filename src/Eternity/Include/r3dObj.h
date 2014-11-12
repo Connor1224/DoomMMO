@@ -226,6 +226,7 @@ private:
 	static void DoLoadMesh( struct r3dTaskParams* params );
 	bool		DoLoad( bool use_default_material ) ;
 
+	bool 		SaveAscii(const char* fname);
 	int 		LoadAscii(r3dFile *f, bool use_default_material );
 
 	bool 		LoadBin(r3dFile *f, bool use_default_material );

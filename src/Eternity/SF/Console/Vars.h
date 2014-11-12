@@ -269,7 +269,7 @@ REG_VAR( g_toggle_aim			, false		, VF_SAVE );
 REG_VAR( g_toggle_crouch		, false		, VF_SAVE );
 REG_VAR( g_user_language		, ""		, VF_SAVE );
 REG_VAR( g_tps_camera_mode		, 0,		VF_SAVE); // temp var to save TPS camera mod settings
-REG_VAR_C( g_camera_mode		, 1,    0, 2, VF_SAVE|VF_CONSTRAINT ); // 0 - TPS mode, crosshair in center, 1- TPS mode, crosshair off-center, 2 - FPS mode
+REG_VAR_C( g_camera_mode		, 0,    0, 2, VF_SAVE|VF_CONSTRAINT ); // 0 - TPS mode, crosshair in center, 1- TPS mode, crosshair off-center, 2 - FPS mode
 
 REG_VAR_C( g_ui_chat_alpha		, 70,	0, 100, VF_SAVE | VF_CONSTRAINT);
 
