@@ -1,1 +1,0 @@
-This package contains binaries that were built with VC11 and the macro _ITERATOR_DEBUG_LEVEL=0 removed.
