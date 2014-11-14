@@ -451,6 +451,7 @@ public:
 	LPDIRECT3DSTATEBLOCK9   pStateBlock;
 	r3dScaleformMovie*		pCurMovie;		// movie currently being processed
 	r3dScaleformMovie*		pKbdCaptureMovie;	// movie to receive keyboard input
+	float lastGabage;
 
 protected:
 	virtual	void		D3DCreateResource();
@@ -710,6 +711,7 @@ APIScaleformGfx::APIScaleformGfx( const r3dIntegrityGuardian& ig ) :
 r3dIResource( ig ),
 pStateBlock(NULL),
 pCurMovie(NULL),
+lastGabage(NULL),
 pKbdCaptureMovie(NULL)
 {
 }
@@ -820,7 +822,7 @@ bool APIScaleformGfx::Create()
 #ifndef FINAL_BUILD
 #ifdef SF_AMP_SERVER
 	Scaleform::AmpServer::GetInstance().SetListeningPort(7534);
-	Scaleform::AmpServer::GetInstance().SetConnectedApp("WarZ");
+	Scaleform::AmpServer::GetInstance().SetConnectedApp("Doom-MMO");
 	Scaleform::AmpServer::GetInstance().OpenConnection();
 #endif //SF_AMP_SERVER
 #endif // FINAL_BUILD
@@ -946,6 +948,7 @@ bool r3dScaleformMovie::Load(const char* fname, bool set_keyboard_focus)
 #ifndef FINAL_BUILD
 	r3dOutToLog("Loading SWF %s\n", fname);
 #endif
+	r3dOutToLog("Loading SWF %s\n", fname);
 
 #ifndef FINAL_BUILD
 	struct ReVisit : Scaleform::GFx::MovieDef::ResourceVisitor
@@ -1008,6 +1011,7 @@ bool r3dScaleformMovie::Load(const char* fname, bool set_keyboard_focus)
 #ifndef FINAL_BUILD
 	r3dOutToLog("r3dScaleformMovie::Load() '%s' ok\n", fname);
 #endif
+	r3dOutToLog("r3dScaleformMovie::Load() '%s' ok\n", fname);
 
 	timeForNextUpdate = r3dGetTime();
 	timePrevUpdate = r3dGetTime();
@@ -1240,7 +1244,11 @@ void r3dScaleformMovie::UpdateAndDraw(bool skipDraw)
 
 	gAPIScaleformGfx->pCurMovie = NULL;
 
-	pMovie->ForceCollectGarbage();
+	if (gAPIScaleformGfx->lastGabage + 60 < r3dGetTime())
+	{
+		gAPIScaleformGfx->lastGabage = r3dGetTime();
+        pMovie->ForceCollectGarbage();
+	}
 
 #ifndef FINAL_BUILD
 #ifdef SF_AMP_SERVER

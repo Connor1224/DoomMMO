@@ -51,6 +51,7 @@ struct StaticSkySettings
 	float			SunIntensity;
 
 	float			DomeRotationY;
+	float			DomeRotationX;
 };
 
 class r3dSkyDome : public r3dIResource

@@ -27,7 +27,7 @@
 
 #include "sun.h"
 
-#include "..\..\bin\Data\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
+#include "..\..\Game Bin\Data\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
 
 #include "JobChief.h"
 #include "HeightNormalVert.h"

@@ -259,7 +259,6 @@ int CSoundSystem::LoadSoundEffects(const char *basedir, const char *fname)
 		r3dOutToLog("Failed to open %s\n", full_name);
 		return 0;
 	}
-
 	sprintf(full_name, "%s\\", basedir);
 	rv = FMODEventSystem->setMediaPath(full_name); SND_ERR_CHK(rv);
 
@@ -521,17 +520,12 @@ void CSoundSystem::SetParamValue(void *handle, char* param_name, float value)
 {
 	R3DPROFILE_FUNCTION("CSoundSystem::SetParamValue");
 	FMOD::Event *e = reinterpret_cast<FMOD::Event*>(handle);
-	//r3dOutToLog("SetParamValue\n");
 	if(e)
 	{
-		//r3dOutToLog("Found handle\n");
 		FMOD::EventParameter* eventParam = NULL;
 		FMOD_RESULT res = e->getParameter(param_name, &eventParam);
 		if(res == FMOD_OK && eventParam)
-		{
 			eventParam->setValue(value);
-			//r3dOutToLog("SetParamValue success\n");
-		}
 	}
 }
 
@@ -572,10 +566,6 @@ void CSoundSystem::Update(const r3dPoint3D &pos, const r3dPoint3D &dir, const r3
 	eventCat->setVolume(s_sound_volume->GetFloat());
 	result = FMODEventSystem->getCategory("music", &eventCat); SND_ERR_CHK(result);
 	eventCat->setVolume(s_music_volume->GetFloat());
-    
-	//extern FMOD_CHANNEL * channel;
-   // FMOD_Channel_SetVolume(channel,s_music_volume->GetFloat()/2);
-    
 
 	r3dPoint3D left = up.Cross(dir);
 	left.Normalize();
@@ -722,13 +712,11 @@ void CSoundSystem::Set3DAttributes(void *handle, const r3dVector *pos, const r3d
 	FMOD::Event *e = reinterpret_cast<FMOD::Event*>(handle);
 	float maxDist = 0;
 	FMOD_RESULT result;
-	//r3dOutToLog("Set3DAttributes\n");
 	if (e && Is3DSound(handle))
 	{
 		const FMOD_VECTOR *fmPos = reinterpret_cast<const FMOD_VECTOR*>(pos);
 		const FMOD_VECTOR *fmVel = reinterpret_cast<const FMOD_VECTOR*>(velocity);
 		const FMOD_VECTOR *fmOrientataion = reinterpret_cast<const FMOD_VECTOR*>(orientataion);
-		//r3dOutToLog("Set3DAttributes Success\n");
 		result = e->set3DAttributes(fmPos, fmVel, fmOrientataion);
 		SND_ERR_CHK(result);
 	}
@@ -907,6 +895,11 @@ int snd_UpdateSoundListener(const r3dPoint3D &Pos, const r3dPoint3D &dir, const 
 	return 1;
 }
 
+void * snd_PlaySound(int SampleID, const r3dPoint3D& pos)
+{
+	return SoundSys.Play(SampleID, pos);
+}
+
 void snd_SetGroupVolume(int groupId, int Volume)
 {
 	assert(groupId >= SOUND_GROUP_START && groupId < SOUND_GROUP_START + MAX_SOUND_GROUPS);
@@ -914,3 +907,7 @@ void snd_SetGroupVolume(int groupId, int Volume)
 	sndGroupVolumes[groupId - SOUND_GROUP_START] = Volume;
 }
 
+bool snd_SetSoundPos(void *e, const r3dPoint3D& pos)
+{
+	return SoundSys.SetSoundPos(e, pos);
+}

@@ -582,7 +582,8 @@ bool isQueryResultAvailable(const SceneBox& node)
 			return false ;
 
 		default:
-			r3dError( "node.query->GetData call returned error!" );
+			r3dOutToLog( "node.query->GetData call returned error! reseting.\n" );
+			r3dRenderer->Reset();
 			return false ;
 		}
 	}
@@ -625,7 +626,8 @@ int getQueryResult(const SceneBox& node)
 				r3dRenderer->SetDeviceLost();
 				return DEFAULT_RESULT ;
 			default:
-				r3dError( "node.query->GetData call returned error!" );
+				r3dOutToLog( "node.query->GetData call returned error! reseting.\n" );
+				r3dRenderer->Reset();
 				return DEFAULT_RESULT ;
 			}
 		}

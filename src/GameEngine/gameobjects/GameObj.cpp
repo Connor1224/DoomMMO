@@ -206,19 +206,16 @@ void GameObject::SetVelocity(const r3dPoint3D& speed)
 
 const r3dPoint3D& GameObject::GetPosition() const
 {
-	//AHNHS_PROTECT_FUNCTION
 	return vPos;
 }
 
 const r3dVector& GameObject::GetRotationVector() const
 {
-	//AHNHS_PROTECT_FUNCTION
 	return vRot;
 }
 
 D3DXMATRIX GameObject::GetRotationMatrix() const
 {
-	//AHNHS_PROTECT_FUNCTION
 	D3DXMATRIX res;
 	D3DXMatrixRotationYawPitchRoll(&res, R3D_DEG2RAD(vRot.X), R3D_DEG2RAD(vRot.Y), R3D_DEG2RAD(vRot.Z));
 	return res;
@@ -226,13 +223,11 @@ D3DXMATRIX GameObject::GetRotationMatrix() const
 
 const r3dPoint3D& GameObject::GetVelocity() const
 {
-	//AHNHS_PROTECT_FUNCTION
 	return Velocity;
 }
 
 bool GameObject::SetNetworkID(DWORD id)
 {
-	//AHNHS_PROTECT_FUNCTION
 	r3d_assert(NetworkID == 0);
 	
 	NetworkID = id;

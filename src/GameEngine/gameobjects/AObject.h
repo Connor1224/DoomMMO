@@ -74,7 +74,7 @@ class AObject
 {
   public:
     DECLARE_CLASS(AObject, AObject)
-    r3dSec_type<AClass*, 0x34F9ACE9> Class;
+    r3dSec_type<AClass*, 0x33F9FCE8> Class;
 };
 
 extern	int		AObjectTable_RegisterClass(AClass *cl);
