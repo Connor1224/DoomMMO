@@ -74,6 +74,28 @@ BOOL obj_DamageArea::OnCreate()
 extern bool g_bExplicitlyShowBattleZoneWarning;
 BOOL obj_DamageArea::Update()
 {
+	//parent::Update();
+
+	const r3dPoint3D &pos = GetPosition();
+	
+	r3dPoint3D plPos(0,0,0);
+	bool hasPos = false;
+	const ClientGameLogic& CGL = gClientLogic();
+	obj_Player* localPlayer = NULL;
+	if(CGL.localPlayer_)
+	{
+		plPos = CGL.localPlayer_->GetPosition();
+		localPlayer = CGL.localPlayer_;
+		hasPos = true;
+	}
+	
+	if(hasPos)
+	{
+		if((plPos-pos).Length() < 5.0f) //within 5
+		{
+			localPlayer->ApplyDamage(plPos, 300.0f, this, 0, 0);	
+		}
+	}
 	return parent::Update();
 }
 

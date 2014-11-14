@@ -35,7 +35,7 @@
 
 #include "rendering/Deffered/D3DMiscFunctions.h"
 
-#include "..\..\..\bin\Data\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
+#include "..\..\..\Game Bin\Data\Shaders\DX9_P1\system\LibSM\shadow_config.h" // shader config file
 
 r3dScreenBuffer*	AvgSceneLuminanceBuffer ;
 r3dScreenBuffer*	SceneExposure0 ;
@@ -7366,7 +7366,7 @@ void r3dDefferedRenderer::Render()
 	// NOTE : important to go from least detailed map
 	// so that it doesn't overwrite with whiteness...
 
-	if( r_shadows->GetBool() && r3dGameLevel::Environment.SunLightOn )
+	if( r_shadows->GetBool() && r3dGameLevel::Environment.SunLightOn && r_shadows_quality->GetInt() > 1)
 	{
 		SetRestoreZDir setRestoreZDir( r3dRenderLayer::ZDIR_NORMAL ); (void)setRestoreZDir;
 

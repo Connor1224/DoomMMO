@@ -2,7 +2,6 @@
 
 #include "GameCommon.h"
 #include "NPCObject.h"
-//#include "../../ui/FrontendShared.h"
 
 class obj_VaultNPC : public NPCObject
 {

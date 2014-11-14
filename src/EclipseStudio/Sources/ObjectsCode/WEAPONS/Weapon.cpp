@@ -21,7 +21,9 @@
 #include "ObjectsCode\ai\AI_PlayerAnim.H"
 #include "BulletShellManager.h"
 #include "..\..\multiplayer\ClientGameLogic.h"
+#include "..\..\ui\HUDPause.h"
 
+extern HUDPause* hudPause;
 
 r3dMesh* WeaponAttachmentConfig::getMesh( bool allow_async_loading, bool aim_model) const
 {
@@ -191,6 +193,18 @@ void WeaponConfig::updateMuzzleOffset(bool first_person) const
 			detectMuzzleOffset(first_person) ;
 			muzzleOffsetDetected = true ;
 		}
+	}
+}
+
+int WeaponConfig::getGrenadeAnimType() const
+{
+	switch (m_itemID)
+	{
+	default:     return GRENADE_ANIM_Normal;
+	case 101139: return GRENADE_ANIM_Claymore;
+	case 101140: return GRENADE_ANIM_VS50;
+	case 101141: return GRENADE_ANIM_V69;
+	case 101142: return GRENADE_ANIM_V69; // tripwire
 	}
 }
 
@@ -616,8 +630,18 @@ void Weapon::OnEquip()
 
 	if( m_FlashlightParticle )
 	{
-		m_FlashlightParticle->ObjFlags &= ~OBJFLAG_SkipDraw;
-		m_Flashlight.TurnOn();
+		if (m_pConfig->m_itemID != 101306)
+		{
+			m_FlashlightParticle->ObjFlags &= ~OBJFLAG_SkipDraw;
+			m_Flashlight.TurnOn();
+		}
+		/*if(m_Attachments[WPN_ATTM_BOTTOM_RAIL]->m_itemID == 400018 ||
+			m_Attachments[WPN_ATTM_BOTTOM_RAIL]->m_itemID == 400022)
+			{
+			m_FlashlightParticle->ObjFlags &= ~OBJFLAG_SkipDraw;
+			m_Flashlight.TurnOn();
+			} // little hack for attachments..
+			*/
 	}
 
 	m_triggerPressed = 0;
@@ -710,11 +734,6 @@ void Weapon::Update(const D3DXMATRIX& weaponBone)
 		{
 			m_FlashlightParticle->ObjFlags &= ~OBJFLAG_SkipDraw;
 			m_Flashlight.TurnOn();
-/*PKT_S2C_Flashlight_s n2;
-n2.peerId = 999999;
-r3dscpy(n2.plrname,plr->CurLoadout.Gamertag);
-n2.Status = true;
-p2pSendToHost(gClientLogic().localPlayer_, &n2, sizeof(n2));*/
 		}
 	}
 	else if (!m_flashlightToggle && m_Flashlight.IsOn())
@@ -723,11 +742,6 @@ p2pSendToHost(gClientLogic().localPlayer_, &n2, sizeof(n2));*/
 		{
 			m_FlashlightParticle->ObjFlags |= OBJFLAG_SkipDraw;
 			m_Flashlight.TurnOff();
-			/*PKT_S2C_Flashlight_s n2;
-n2.peerId = 999999;
-r3dscpy(n2.plrname,plr->CurLoadout.Gamertag);
-n2.Status = false;
-p2pSendToHost(gClientLogic().localPlayer_, &n2, sizeof(n2));*/
 		}
 	}
 
@@ -836,14 +850,17 @@ p2pSendToHost(gClientLogic().localPlayer_, &n2, sizeof(n2));*/
 
 					// grenades are treated as items
 					wiInventoryItem& wi = getPlayerItem();
-					r3d_assert(wi.quantity > 0);
-					wi.quantity--;
-					if(wi.quantity <= 0)
-						wi.Reset();
+					if (&wi)
+					{
+						r3d_assert(wi.quantity > 0);
+						wi.quantity--;
+						if (wi.quantity <= 0)
+							wi.Reset();
 
-					player->GrenadeCallbackFromWeapon(wi);
-					if(wi.quantity == 0) // this object might be deleted after GrenadeCallbackFromWeapon()
-						return;
+						player->GrenadeCallbackFromWeapon(wi);
+						if (wi.quantity == 0) // this object might be deleted after GrenadeCallbackFromWeapon()
+							return;
+					}
 				}
 			}
 		}
@@ -916,9 +933,9 @@ p2pSendToHost(gClientLogic().localPlayer_, &n2, sizeof(n2));*/
 					r3dScreenTo3D(r3dRenderer->ScreenW2, r3dRenderer->ScreenH*0.32f, &laserCastDir);
 
 				PxRaycastHit hit;
-				PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK|(1<<PHYSCOLL_NETWORKPLAYER),0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC));
-				bool hitResult = g_pPhysicsWorld->raycastSingle(PxVec3(laserCastPos.x, laserCastPos.y, laserCastPos.z), PxVec3(laserCastDir.x, laserCastDir.y, laserCastDir.z), 500.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
-				if( hitResult )
+				PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK | (1 << PHYSCOLL_NETWORKPLAYER), 0, 0, 0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC | PxSceneQueryFilterFlag::eDYNAMIC));
+				bool hitResult = g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(laserCastPos.x, laserCastPos.y, laserCastPos.z), PxVec3(laserCastDir.x, laserCastDir.y, laserCastDir.z), 500.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
+				if (hitResult)
 					m_LaserHitPoint = r3dPoint3D(hit.impact.x, hit.impact.y, hit.impact.z);
 				else
 					m_LaserHitPoint.Assign(0,0,0);
@@ -972,9 +989,9 @@ p2pSendToHost(gClientLogic().localPlayer_, &n2, sizeof(n2));*/
 					r3dScreenTo3D(r3dRenderer->ScreenW2, r3dRenderer->ScreenH*0.32f, &laserCastDir);
 
 				PxRaycastHit hit;
-				PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK|(1<<PHYSCOLL_NETWORKPLAYER),0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC));
-				bool hitResult = g_pPhysicsWorld->raycastSingle(PxVec3(laserCastPos.x, laserCastPos.y, laserCastPos.z), PxVec3(laserCastDir.x, laserCastDir.y, laserCastDir.z), 500.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
-				if( hitResult )
+				PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK | (1 << PHYSCOLL_NETWORKPLAYER), 0, 0, 0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC | PxSceneQueryFilterFlag::eDYNAMIC));
+				bool hitResult = g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(laserCastPos.x, laserCastPos.y, laserCastPos.z), PxVec3(laserCastDir.x, laserCastDir.y, laserCastDir.z), 500.0f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter);
+				if (hitResult)
 					m_LaserHitPoint = r3dPoint3D(hit.impact.x, hit.impact.y, hit.impact.z);
 				else
 					m_LaserHitPoint.Assign(0,0,0);

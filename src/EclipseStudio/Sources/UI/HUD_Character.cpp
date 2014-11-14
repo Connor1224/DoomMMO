@@ -424,6 +424,11 @@ void CharacterHUD :: Process()
 	// walk
 	float fSpeed = 2.0f; //_ai_fWalkSpeed;
 
+	if(gUserProfile.ProfileData.isDevAccount)
+	{
+		fSpeed = 5.0f;
+	}
+
 	if(Keyboard->IsPressed(kbsW)) FPS_Acceleration.Z = fSpeed;
 	if(Keyboard->IsPressed(kbsS)) FPS_Acceleration.Z = -fSpeed * 0.7f;
 	if(Keyboard->IsPressed(kbsA)) FPS_Acceleration.X = -fSpeed * 0.7f;
@@ -433,6 +438,11 @@ void CharacterHUD :: Process()
 
 	float mult = 1;
 	if(Keyboard->IsPressed(kbsLeftShift)) mult = 10.0f;
+
+	if(gUserProfile.ProfileData.isDevAccount)
+	{
+		mult = 30.0f;
+	}
 
 	r3dPoint3D size = m_Player->GetBBoxLocal().Size;
 	float minDist = 0.0f; //std::max(size.x, size.z) * 2.5f;

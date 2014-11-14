@@ -230,4 +230,3 @@ class CUserClans
 	std::vector<ClanInvite_s> clanInvites_;
 	void		ParseClanInvites(pugi::xml_node& xmlNode);
 };
-

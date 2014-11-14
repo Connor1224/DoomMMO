@@ -14,6 +14,9 @@ class Ammo
 {
 	friend class WeaponArmory;
 	friend class Weapon;
+	friend class obj_Rocket;
+	friend class obj_Grenade;
+	friend class obj_Mine;
 public:
 	Ammo(const char* ammoName);
 	~Ammo();

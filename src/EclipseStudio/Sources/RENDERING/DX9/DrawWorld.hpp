@@ -915,9 +915,15 @@ void BlurSSAO(r3dScreenBuffer *SourceTex, r3dScreenBuffer *TempTex)
 
 	r3dSetRestoreFSQuadVDecl setRestoreVDECL; (void)setRestoreVDECL;
 
+	float resK;
+	int HalfScale;
+
+	resK = r_half_scale_ssao->GetInt() ? 0.5f : 1.0f;
+	HalfScale = !!r_half_scale_ssao->GetInt();
+
 	int Normals = !!r_ssao_blur_w_normals->GetInt() ;
 
-	D3DXVECTOR4 vconst = D3DXVECTOR4( 0.5f / r3dRenderer->ScreenW, 0.5f / r3dRenderer->ScreenH, 1.0f, 1.0f );
+	D3DXVECTOR4 vconst = D3DXVECTOR4( 0.5f / r3dRenderer->ScreenW, 0.5f / r3dRenderer->ScreenH, resK, resK );
 	r3dRenderer->pd3ddev->SetVertexShaderConstantF(  0, (float *)&vconst,  1 );
 
 	r3dRenderer->SetVertexShader("VS_SSAO"); 
@@ -927,7 +933,7 @@ void BlurSSAO(r3dScreenBuffer *SourceTex, r3dScreenBuffer *TempTex)
 	int tapCount = sts.BlurTapCount;
 
 	char SSAOBlurPSName[ 32 ];
-	GetSSAOBlurPSName( SSAOBlurPSName, tapCount, 0, Normals );
+	GetSSAOBlurPSName( SSAOBlurPSName, tapCount, HalfScale, Normals );
 
 	D3DXVECTOR4 pconsts[2];
 
@@ -961,8 +967,9 @@ void BlurSSAO(r3dScreenBuffer *SourceTex, r3dScreenBuffer *TempTex)
 		const SSAOSettings& sts = g_SSAOSettings[ r_ssao_method->GetInt() ];
 
 		pconsts[0] = D3DXVECTOR4( -sts.BlurDepthSensitivity, sts.BlurStrength, 1.0f / r3dRenderer->ScreenW, 0.0f );
+		pconsts[1] = D3DXVECTOR4( 1.0f / r3dRenderer->ScreenW / resK, 0.0f, 0.0f, 0.0f );
 
-		r3dRenderer->pd3ddev->SetPixelShaderConstantF(  0, (float *)pconsts,  1 );
+		r3dRenderer->pd3ddev->SetPixelShaderConstantF(  0, (float *)pconsts,  2 );
 
 		r3dSetFiltering( R3D_POINT, 0 );
 		r3dSetFiltering( R3D_POINT, 1 );
@@ -971,7 +978,7 @@ void BlurSSAO(r3dScreenBuffer *SourceTex, r3dScreenBuffer *TempTex)
 
 		r3dRenderer->SetTex( SourceTex->Tex );
 
-		r3dDrawFullScreenQuad( false );
+		r3dDrawFullScreenQuad(!!HalfScale);
 
 		TempTex->Deactivate();
 
@@ -980,8 +987,9 @@ void BlurSSAO(r3dScreenBuffer *SourceTex, r3dScreenBuffer *TempTex)
 		r3dRenderer->SetPixelShader( SSAOBlurPSName );
 
 		pconsts[0] = D3DXVECTOR4( -sts.BlurDepthSensitivity, sts.BlurStrength, 0.0f, 1.0f / r3dRenderer->ScreenH );
+		pconsts[1] = D3DXVECTOR4( 0.f, 1.0f / r3dRenderer->ScreenH / resK, 0.0f, 0.0f );
 
-		r3dRenderer->pd3ddev->SetPixelShaderConstantF( 0, (float *)pconsts, 1 );
+		r3dRenderer->pd3ddev->SetPixelShaderConstantF( 0, (float *)pconsts,  2 );
 
 		r3dSetFiltering( R3D_POINT, 0 );
 		r3dSetFiltering( R3D_POINT, 1 );
@@ -989,7 +997,7 @@ void BlurSSAO(r3dScreenBuffer *SourceTex, r3dScreenBuffer *TempTex)
 
 		r3dRenderer->SetTex( TempTex->Tex );
 
-		r3dDrawFullScreenQuad( false );
+		r3dDrawFullScreenQuad(!!HalfScale);
 
 		SourceTex->Deactivate();
 	}

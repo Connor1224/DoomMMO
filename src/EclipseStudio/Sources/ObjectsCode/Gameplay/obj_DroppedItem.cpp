@@ -49,6 +49,13 @@ BOOL obj_DroppedItem::OnCreate()
 	else
 	{
 		const ModelItemConfig* cfg = (const ModelItemConfig*)g_pWeaponArmory->getConfig(m_Item.itemID);
+		
+		if(!cfg)
+		{
+			r3dOutToLog("%d does not have a ModelItemConfig associated with it!", m_Item.itemID);
+			return FALSE;
+		}
+
 		switch(cfg->category)
 		{
 			case storecat_Account:
@@ -57,6 +64,9 @@ BOOL obj_DroppedItem::OnCreate()
 			case storecat_HeroPackage:
 				r3dError("spawned item is not model");
 				break;
+			/*default:
+				r3dError("Incorrect Category ID on Item %d", m_Item.itemID);
+				break;*/
 		}
 		cpMeshName = cfg->m_ModelPath;
 	}
@@ -110,7 +120,7 @@ void obj_DroppedItem::UpdateObjectPositionAfterCreation()
 	{
 		PxRaycastHit hit;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
-		if(g_pPhysicsWorld->raycastSingle(PxVec3(pxCenter.x, pxCenter.y, pxCenter.z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eIMPACT, hit, filter))
+		if(g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(pxCenter.x, pxCenter.y, pxCenter.z), PxVec3(0, -1, 0), 50.0f, PxSceneQueryFlag::eIMPACT, hit, filter))
 		{
 			SetPosition(r3dPoint3D(hit.impact.x, hit.impact.y+0.1f, hit.impact.z));
 		}

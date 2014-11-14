@@ -278,7 +278,7 @@ r3dPoint3D ClientGameLogic::AdjustSpawnPositionToGround(const r3dPoint3D& pos)
 	//
 	PxRaycastHit hit;
 	PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC));
-	if(!g_pPhysicsWorld->raycastSingle(PxVec3(pos.x, pos.y+1.0f, pos.z), PxVec3(0,-1,0), 1.2f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
+	if(!g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(pos.x, pos.y+1.0f, pos.z), PxVec3(0,-1,0), 1.2f, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
 		return pos + r3dPoint3D(0, 1.0f, 0);
 
 	return r3dPoint3D(hit.impact.x, hit.impact.y + 0.1f, hit.impact.z);
@@ -627,6 +627,12 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateNetObject)
 IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_DestroyNetObject)
 {
 	GameObject* obj = GameWorld().GetNetworkObject(n.spawnID);
+	if (!obj)
+	{
+		r3dOutToLog("Object %d does not exist! This shouldn't happen ever because of r3d_assert!", n.spawnID);
+		return;
+	}
+
 	r3d_assert(obj);
 
 	if(obj->isObjType(OBJTYPE_Human))
@@ -662,6 +668,11 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateDroppedItem)
 	//r3dOutToLog("obj_DroppedItem %d %d\n", n.spawnID, n.Item.itemID);
 	r3d_assert(GameWorld().GetNetworkObject(n.spawnID) == NULL);
 
+	GameObject* obj1 = GameWorld().GetNetworkObject(n.spawnID);
+	if (obj1)
+	{
+		GameWorld().DeleteObject(obj1);
+	}
 	obj_DroppedItem* obj = (obj_DroppedItem*)srv_CreateGameObject("obj_DroppedItem", "obj_DroppedItem", n.pos);
 	obj->SetNetworkID(n.spawnID);
 	obj->m_Item    = n.Item;
@@ -681,6 +692,12 @@ IMPL_PACKET_FUNC(ClientGameLogic, PKT_S2C_CreateNote)
 {
 	r3dOutToLog("obj_Note %d\n", n.spawnID);
 	r3d_assert(GameWorld().GetNetworkObject(n.spawnID) == NULL);
+
+	GameObject* obj1 = GameWorld().GetNetworkObject(n.spawnID);
+	if (obj1)
+	{
+		GameWorld().DeleteObject(obj1);
+	}
 
 	obj_Note* obj = (obj_Note*)srv_CreateGameObject("obj_Note", "obj_Note", n.pos);
 	obj->SetNetworkID(n.spawnID);
@@ -1532,7 +1549,7 @@ void ClientGameLogic::ApplyExplosionDamage( const r3dVector& pos, float radius, 
 					}
 
 					// send damage to server
-					PKT_C2S_Temp_Damage_s n;
+					PKT_C2S_Explosion_Damage_s n;
 					n.targetId = toP2pNetId(obj->GetNetworkID());
 					n.wpnIdx = (BYTE)wpnIdx;
 					n.damagePercentage = damagePercentage; 

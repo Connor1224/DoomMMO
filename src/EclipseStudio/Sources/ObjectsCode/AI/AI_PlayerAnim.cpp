@@ -213,6 +213,9 @@ void CUberData::LoadLowerAnimations()
 	i = aid_.turnins;
 	i[0] = AddAnimation("Walk_Str_TurnIn", "Walk_Str");
 	i[1] = AddAnimation("Crouch_Str_TurnIn", "Crouch_Str");
+
+	i = aid_.hands; // Punching System
+	i[0] = AddAnimation("FPS_Stand_Shooting_Mel_Hands_R_Punch"); // Punching System
 }
 
 void CUberData::LoadWeaponAnim(int (&wid)[AIDX_COUNT], int (&wid_fps)[AIDX_COUNT], const char* names[AIDX_COUNT])
@@ -1466,6 +1469,9 @@ void CUberAnim::SyncAnimation(int PlayerState, int MoveDir, bool force, const We
 		case storecat_SMG:
 			animIdx = 5;
 			break;
+		case storecat_SUPPORT:
+			animIdx = 6;
+			break;
 		default:
 			r3d_assert(false);
 			break;
@@ -1678,16 +1684,16 @@ void CUberAnim::StartGrenadeThrowAnimation()
 {
 	StopGrenadeAnimations();
 
-// 	// check for mine special case
-// 	if(CurrentWeapon && CurrentWeapon->getConfig()->isMine())
-// 	{
-// 		const int* bidx = IsFPSMode() ? data_->aid_.bombs_fps : data_->aid_.bombs_tps;
-// 		int atype = CurrentWeapon->getConfig()->getGrenadeAnimType();
-// 		int grIdx1 = bidx[2 + atype];
-// 
-// 		grenadeThrowTrackID = anim.StartAnimation(grIdx1, 0, 0.0f, 1.0f, 0.1f);
-// 		return;
-// 	}
+ 	// check for mine special case
+ 	if(CurrentWeapon && CurrentWeapon->getConfig()->isMine())
+ 	{
+		const int* bidx = IsFPSMode() ? data_->aid_.grenades_fps : data_->aid_.grenades_tps;
+ 		int atype = CurrentWeapon->getConfig()->getGrenadeAnimType();
+ 		int grIdx1 = bidx[2 + atype];
+ 
+ 		grenadeThrowTrackID = anim.StartAnimation(grIdx1, 0, 0.0f, 1.0f, 0.1f);
+ 		return;
+ 	}
 	
 	// note, no fading in, start with full influence
 	int grIdx = data_->GetGrenadeAnimId(IsFPSMode(), AnimPlayerState, 2);
@@ -1923,6 +1929,12 @@ void CUberAnim::StartJump()
 
 	// resync animation, so jump track will be relocated to top of lower bodys anim
 	SwitchToState(AnimPlayerState, AnimMoveDir);
+}
+
+void CUberAnim::StartHands()
+{
+	int id = anim.StartAnimation(data_->aid_.hands[0], 0, 0.0f, 1.0f, 0.1f); // Punching System
+	//anim.GetTrack(id)->fSpeed = 1.0f; // Punching System
 }
 
 void CUberAnim::UpdateJump(bool bOnGround)

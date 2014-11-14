@@ -156,7 +156,6 @@ struct CGamePlayParams
 	AI_WALK_SPEED   = 1.6f;
 	AI_RUN_SPEED    = 2.8f;
 	AI_SPRINT_SPEED = 4.2f;
-
 	}
 	
 	DWORD GetCrc32() const {

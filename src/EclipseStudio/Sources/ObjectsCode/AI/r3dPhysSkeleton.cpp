@@ -244,11 +244,7 @@ void r3dPhysSkeleton::linkParent(const r3dSkeleton *skel, const D3DXMATRIX &Draw
 		int boneID = skel->GetBoneID(inActor->getName());
 		
 		if(boneID==-1)
-		{
-			r3dOutToLog("Ragdoll: cannot find bone '%s' in skeleton\n", inActor->getName());
-			continue;
-		}
-			//r3dError("Ragdoll: cannot find bone '%s' in skeleton\n", inActor->getName());
+			r3dError("Ragdoll: cannot find bone '%s' in skeleton\n", inActor->getName());
 
 		m_Bones[ i ].boneID = boneID ;
 

@@ -102,6 +102,9 @@ char* name123;
 	bool	isChatInputActive() const { return chatInputActive || (r3dGetTime()-lastChatMessageSent)<0.25f || writeNoteSavedSlotIDFrom; }
 	bool	isChatVisible() const { return chatVisible; }
 	void	setChatTransparency(float alpha); //[0,1]
+	void	setFireMode(WeaponFiremodeEnum firemode); // 1, 3, 5
+	void	showReloading(bool set);
+	void	SetReloadingProgress(float progress); // progress - 0-100
 	void	setChatChannel(int index);
 	void	enableClanChannel();
 		

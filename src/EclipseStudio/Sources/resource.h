@@ -6,9 +6,10 @@
 #define IDB_BACK                        102
 #define IDC_CHECK1                      1003
 #define IDC_MESS                        1004
-#define IDI_WARZ                      1005
+#define IDI_WARZ                        1005
 
 // Next default values for new objects
+#define _AFXDLL
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS

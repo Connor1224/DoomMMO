@@ -113,6 +113,7 @@ void SyncSkydomeStaticSkyParams()
 	sts.SunIntensity		= r3dGameLevel::Environment.SunIntensityCoef.GetFloatValue( dayT );
 
 	sts.DomeRotationY		= atmo.SkyDomeRotationY;
+	sts.DomeRotationX		= atmo.SkyDomeRotationX;
 
 	SkyDome->SetStaticSkyParams( sts );
 }

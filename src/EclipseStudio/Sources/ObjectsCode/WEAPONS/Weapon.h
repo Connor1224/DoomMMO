@@ -58,8 +58,10 @@ public:
 	r3dPoint3D getShellDir(const D3DXMATRIX& weaponBone) const;
 
 	WeaponAnimTypeEnum getAnimType() const { return m_pConfig->m_AnimType; }
+	bool isGrenadeOrMineAnim() const { return m_pConfig->m_AnimType == WPN_ANIM_GRENADE || m_pConfig->m_AnimType == WPN_ANIM_MINE; }
 	
 	bool isUsableItem() const { return m_pConfig->category == storecat_UsableItem; }
+	int	m_usableItemInventoryIdx;
 
 	uint32_t getItemID() const { return m_pConfig->m_itemID; }
 
@@ -164,7 +166,7 @@ private:
 	int m_triggerPressed; // for how many shots trigger is pressed
 
 	// ultraporing - flashlight toggle bool
-bool m_flashlightToggle;
+	bool m_flashlightToggle;
 
 	r3dPoint3D m_needDelayedAction_pos;
 	float m_needDelayedAction_delay;

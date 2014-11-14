@@ -190,6 +190,8 @@ DWORD SetDefaultSettings( r3dDevStrength strength )
 
 	r_overall_quality->SetInt( strength + 1 );
 	r_apex_enabled->SetBool(r_overall_quality->GetInt() == 4);
+	float fltStr = static_cast<float>(strength);
+	r_decals_proximity_multiplier->SetFloat(1 - fltStr / (S_ULTRA + 1));
 
 	return GraphSettingsToVars( settings );
 }
@@ -356,6 +358,12 @@ void getWeaponParamForUI(const WeaponConfig* wc, int* damage, int* spread, int* 
 		d1  = 30;  d2  = 250;  
 		fr1 = 10;  fr2 = 200;
 		re1 = 1.0f;  re2 = 13.0f;
+		break;
+	case storecat_GRENADE:
+	case storecat_SUPPORT:
+		d1 = 100;  d2 = 400;
+		fr1 = 0;  fr2 = 100;
+		sp1 = 0.5f;   sp2 = 4.5f;
 		break;
 	default:
 		break;

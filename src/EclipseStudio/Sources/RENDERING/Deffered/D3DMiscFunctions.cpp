@@ -306,6 +306,7 @@ void UpdateD3DAntiCheat_WallHack()
 		{
 			r3dRenderer->SetDeviceLost();
 			deviceWasLost = true;
+			r3dOutToLog("Device Lost, can't get a Screen!");
 			break;
 		}
 
@@ -319,8 +320,8 @@ void UpdateD3DAntiCheat_WallHack()
 				// force renderer to make copy of current screenshot
 				extern int _r3d_sscopy_width;
 				extern int _r3d_sscopy_height;
-				_r3d_sscopy_width  = 640;
-				_r3d_sscopy_height = 480;
+				_r3d_sscopy_width  = 1024;
+				_r3d_sscopy_height = 768;
 			}
 			break;
 		}
@@ -685,8 +686,8 @@ bool UpdateD3DAntiCheat_ScreenHelpers2( bool lastAttempt )
 			// caught some significant extra stuff on screen
 			D3DCheaters[ ANTICHEAT_SCREEN_HELPERS2 ] = true;				
 
-			int texWidth = 386;
-			int texHeight = 256;
+			int texWidth = 1024;
+			int texHeight = 768;
 
 			if( !g_TempSaveDataS )
 			{

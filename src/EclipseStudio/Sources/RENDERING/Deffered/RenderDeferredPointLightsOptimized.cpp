@@ -1,3 +1,8 @@
+//=========================================================================
+//	Module: RenderDeferredPointLightsOptimized.cpp
+//	Copyright (C) Arktos 2011.
+//=========================================================================
+
 #include "r3dpch.h"
 #include "r3d.h"
 #include "RenderDeferredPointLightsOptimized.h"
@@ -285,6 +290,11 @@ void PointLightsRenderer::RenderLights()
 
 	consts[1] = D3DXVECTOR4(gCam.x, gCam.y, gCam.z, 0);
 
+	if (r_half_scale_ssao->GetInt())
+	{
+		consts[2].x = 0.5f;
+		consts[2].y = 0.5f;
+	}
 	d->SetPixelShaderConstantF(0, &consts[0].x, _countof(consts));
 
 #if 0

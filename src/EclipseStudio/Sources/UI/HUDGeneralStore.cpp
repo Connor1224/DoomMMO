@@ -4,6 +4,9 @@
 #include "HUDGeneralStore.h"
 
 #include "FrontendShared.h"
+#include "multiplayer/ClientGameLogic.h"
+#include "LangMngr.h"
+#include "ObjectsCode/AI/AI_Player.H"
 
 HUDGeneralStore::HUDGeneralStore() :
 isActive_(false),

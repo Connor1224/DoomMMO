@@ -86,7 +86,7 @@ BOOL obj_PlayerSpawnPoint::Update()
 			PxVec3 from(m_SpawnPoints[i].pos.x, m_SpawnPoints[i].pos.y+1.0f, m_SpawnPoints[i].pos.z);
 			PxRaycastHit hit;
 			PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK,0,0,0), PxSceneQueryFilterFlags(PxSceneQueryFilterFlag::eSTATIC));
-			if(g_pPhysicsWorld->raycastSingle(from, PxVec3(0,-1,0), 10000, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
+			if(g_pPhysicsWorld->PhysXScene->raycastSingle(from, PxVec3(0,-1,0), 10000, PxSceneQueryFlags(PxSceneQueryFlag::eIMPACT), hit, filter))
 			{
 				r3dPoint3D hitPos(hit.impact.x, hit.impact.y, hit.impact.z);
 				if(R3D_ABS(m_SpawnPoints[i].pos.y - hitPos.y) > 2.0f)

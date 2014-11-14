@@ -222,6 +222,9 @@ const float gMaximumScopeSens = 0.005f;
 
 r3dPoint3D TPSHudCameraTarget(0.0f, 0.0f, 2.0f); // pt: target should be the same for all states, otherwise your aim will move and make it very difficult to shoot someone
 
+float	TPSCameraPointToAdj[3] = {0.0f, 0.0f, 0.0f };
+float   TPSCameraPointToAdjCrouch[3] = {0.0f, 0.0f, 0.0f};
+
 PlayerStateVars_s TPSHudCameras[3][PLAYER_NUM_STATES] = 
 {
 	//////////////////////////////////////////////////////////////
@@ -714,13 +717,17 @@ void ProcessCameraRigEditor ()
 	}
 
 	SliderY += 10;
-	SliderY += imgui_Static(SliderX+40, SliderY, "CAMERA");
-	SliderY += imgui_Value_Slider( SliderX, SliderY, "Height", &TPSHudCameras[g_camera_mode->GetInt()][RigID].Position.Y, -2.0f, 2.0f, "%.2f", 1 );
-	SliderY += imgui_Value_Slider( SliderX, SliderY, "Distance", &TPSHudCameras[g_camera_mode->GetInt()][RigID].Position.Z, -20.0f, 20.0f, "%.2f", 1 );
-	SliderY += imgui_Value_Slider( SliderX, SliderY, "Offset", &TPSHudCameras[g_camera_mode->GetInt()][RigID].Position.X, -3.0f, 3.0f, "%.2f", 1 );
-	SliderY += imgui_Value_Slider( SliderX, SliderY, "FOV", &TPSHudCameras[g_camera_mode->GetInt()][RigID].FOV, 20.0f, 100.0f, "%.2f", 1 );
-	SliderY += imgui_Value_Slider( SliderX, SliderY, "Sensetivity", &TPSHudCameras[g_camera_mode->GetInt()][RigID].MouseSensetivity, 0.01f, 2.0f, "%.2f", 1 );
-	SliderY +=5;
+	SliderY += imgui_Static(SliderX + 40, SliderY, "CAMERA");
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Height", &TPSHudCameras[g_camera_mode->GetInt()][RigID].Position.Y, -2.0f, 2.0f, "%.2f", 1);
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Distance", &TPSHudCameras[g_camera_mode->GetInt()][RigID].Position.Z, -20.0f, 20.0f, "%.2f", 1);
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Offset", &TPSHudCameras[g_camera_mode->GetInt()][RigID].Position.X, -3.0f, 3.0f, "%.2f", 1);
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "FOV", &TPSHudCameras[g_camera_mode->GetInt()][RigID].FOV, 20.0f, 100.0f, "%.2f", 1);
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Sensetivity", &TPSHudCameras[g_camera_mode->GetInt()][RigID].MouseSensetivity, 0.01f, 2.0f, "%.2f", 1);
+	SliderY += 5;
+
+	SliderY += imgui_Static(SliderX + 40, SliderY, "CAMERA POINT TO");
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Height", &TPSCameraPointToAdj[g_camera_mode->GetInt()], -2.0f, 2.0f, "%.2f", 1);
+	SliderY += imgui_Value_Slider(SliderX, SliderY, "Height Crouch", &TPSCameraPointToAdjCrouch[g_camera_mode->GetInt()], -2.0f, 2.0f, "%.2f", 1);
 }
 
 
@@ -783,7 +790,7 @@ void EditorGameHUD :: SetCameraPure ( r3dCamera &Cam)
 		{
 			CamPos = savedCamPos;
 			playerPosHead = playerPos;
-			playerPosHead.y += CharacterHeight-0.8f;
+			playerPosHead.y += CharacterHeight-2.8f;
 			CheckCameraCollision(CamPos, playerPosHead, true);
 		}
 	}

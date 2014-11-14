@@ -39,7 +39,7 @@ obj_Road::obj_Road()
 	ObjTypeFlags |= OBJTYPE_Road;
 
 	setSkipOcclusionCheck(true);
-	ObjFlags	|=	OBJFLAG_DisableShadows | OBJFLAG_ForceSleep;
+	ObjFlags	|=	OBJFLAG_DisableShadows | OBJFLAG_ForceSleep | OBJFLAG_AlwaysDraw;
 
 	r3dBoundBox bboxLocal ;
 

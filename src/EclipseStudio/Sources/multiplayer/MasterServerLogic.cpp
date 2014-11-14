@@ -255,6 +255,8 @@ void MasterServerLogic::Disconnect()
 
 void MasterServerLogic::RequestGameList()
 {
+  if(!net_ || !net_->IsConnected())
+    r3dError("masterserver isn't connected\n");
   if(badClientVersion_) 
     r3dError("badClientVersion");
     
@@ -323,6 +325,8 @@ void MasterServerLogic::SendPlayerListReq(DWORD gameServerId)
 }
 void MasterServerLogic::SendJoinGame(DWORD gameServerId, const char* pwd)
 {
+  if(!net_ || !net_->IsConnected())
+    r3dError("masterserver isn't connected\n");
   if(badClientVersion_) 
     r3dError("badClientVersion");
 
@@ -371,6 +375,8 @@ void MasterServerLogic::SendBanPlayer(int customerid,const char* gamertag)
 }
 void MasterServerLogic::SendJoinQuickGame(const NetPacketsGameBrowser::GBPKT_C2M_QuickGameReq_s& n)
 {
+  if(!net_ || !net_->IsConnected())
+    r3dError("masterserver isn't connected\n");
   if(badClientVersion_) 
     r3dError("badClientVersion");
 

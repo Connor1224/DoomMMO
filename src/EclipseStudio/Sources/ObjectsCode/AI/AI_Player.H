@@ -9,6 +9,7 @@
 #include "../../../../src/GameEngine/CamouflageDataManager.h"
 #include "APIScaleformGfx.h"
 #include "AI_PlayerSenses.h"
+#include "r3dPhysSkeleton.h"
 
 class Weapon;
 class Gear;
@@ -31,7 +32,7 @@ public:
 		AT_MORHINE,
 		AT_SPAWNPROTECTION,
 		AT_COUNT
-	} m_AuraType ;
+	} m_AuraType;
 
 	char				m_MinimapTagIconName[64]; // temp, to be optimized soon
 
@@ -50,12 +51,12 @@ public:
 		m_EncryptedUserName.get(out);
 	}
 	void  GetUserNameAndClanTag(char* out) const {
-		if(ClanID != 0)
+		if (ClanID != 0)
 		{
 			char tmpUsername[64];
 			m_EncryptedUserName.get(tmpUsername);
 			const char* tagColor = "#000000";
-			switch(ClanTagColor)
+			switch (ClanTagColor)
 			{
 			case 1: tagColor = "#aa0000"; break;
 			case 2: tagColor = "#a6780c"; break;
@@ -76,12 +77,12 @@ public:
 	}
 
 	void  GetUserName123(char* out) const {
-		if(ClanID != 0)
+		if (ClanID != 0)
 		{
 			char tmpUsername[64];
 			m_EncryptedUserName.get(tmpUsername);
 			const char* tagColor = "#000000";
-			switch(ClanTagColor)
+			switch (ClanTagColor)
 			{
 			case 1: tagColor = "#aa0000"; break;
 			case 2: tagColor = "#a6780c"; break;
@@ -94,7 +95,7 @@ public:
 			default:
 				break;
 			}
-			sprintf(out, "%s",tmpUsername);
+			sprintf(out, "%s", tmpUsername);
 			return;
 		}
 		else
@@ -102,9 +103,9 @@ public:
 	}
 
 	int		ClanID;
-		int		GroupID;
+	int		GroupID;
 	int		ClanTagColor;
-	char		ClanTag[5*2];
+	char		ClanTag[5 * 2];
 
 	Scaleform::GFx::Value m_CharIcon;
 
@@ -124,8 +125,8 @@ private:
 
 public:
 	obj_Vehicle* curcar;
-		void CheckVeCam();
-		bool bPhys;
+	void CheckVeCam();
+	bool bPhys;
 	static r3dTexture* s_laserPointerTex;
 	static r3dTexture* s_flashlightFlashTex;
 	static r3dTexture* s_laserFlashTex;
@@ -170,8 +171,9 @@ public:
 	r3dPoint3D	GetHeadPosition();
 
 	Weapon*		m_Weapons[NUM_WEAPONS_ON_PLAYER]; // 0,1 - rifles. 2-item, 3-item, 4-item, 5-item
-	int		m_SelectedWeapon;
-	int		m_PrevSelectedWeapon;
+	int			m_SelectedWeapon;
+	int			m_PrevSelectedWeapon;
+	int			m_QuickThrowGrenade;
 	bool		hasScopeMode() const;
 	bool		hasScopeMode_hidePlayerModel() const;
 	bool		m_isPressedFireTrigger;
@@ -186,7 +188,7 @@ public:
 
 	static void AddBloodOnGround(const r3dPoint3D& posOfShot); // will cast a ray down from posOfShot
 	float		m_BloodTimer;
-	
+
 	// hit marker
 	float		m_HitMarkerFadeout;
 	r3dTexture*	m_HitMarkerTex; // only for local player
@@ -198,7 +200,7 @@ public:
 		int		XP;
 		int		GD;
 
-		stats_s() 
+		stats_s()
 		{
 			XP = 0;
 			GD = 0;
@@ -236,7 +238,7 @@ public:
 	// this is needed, because animation and network moving player code
 	// depends on GetVelocity()
 	// and velocity doesn't do a thing in ControllerPhysObj
-	r3dPoint3D	plr_local_Velocity;	
+	r3dPoint3D	plr_local_Velocity;
 	virtual	void 			SetVelocity(const r3dPoint3D& vel) { plr_local_Velocity = vel; }
 	virtual	const r3dPoint3D&	GetVelocity() const { return plr_local_Velocity; }
 	float	plr_local_moving_speed;
@@ -271,12 +273,12 @@ public:
 	bool		DisableKillerView; // if user clicks on a mouse, show respawn right away
 	bool		bCrouch;
 	bool		bProne;
-bool		bSwim;
-bool		bSwimShift;
-float lastSendStateLog;
-float recoil;
-float spread;
-float recoil2;
+	bool		bSwim;
+	bool		bSwimShift;
+	float lastSendStateLog;
+	float recoil;
+	float spread;
+	float recoil2;
 	// jump stuff
 	void		DetectIfOnGround();
 	bool		bOnGround; // true if player is touching any geometry
@@ -289,9 +291,9 @@ float recoil2;
 	float		StartFallingTime;
 	r3dPoint3D prevPos2;
 
-	r3dSec_type<float,		0x5Fc3cdAa>	RecoilCooldown;
+	r3dSec_type<float, 0x5Fc3cdAa>	RecoilCooldown;
 
-obj_Vehicle* vehicles;
+	obj_Vehicle* vehicles;
 
 	r3dVector RecoilViewMod; // adds recoil to ViewAngle
 	float		m_LastKillTime;
@@ -332,8 +334,8 @@ obj_Vehicle* vehicles;
 
 	/**	Turn on or off physics simulation for character physics (basically remove/add actors from scene). */
 	void TogglePhysicsSimulation(bool on);
-	
-	
+
+
 	float		afterRespawnTimer;
 	float		lastWeapDataRep;	// time when weapon data report was sent
 	float		lastTimeWeaponSwitch;	// to prevent switching weapon and keep firing
@@ -341,7 +343,7 @@ obj_Vehicle* vehicles;
 	r3dPoint3D		viewTargetPos;
 	r3dPoint3D		viewTargetNorm;
 
-//float	CoolDown; // time
+	//float	CoolDown; // time
 
 	void		UpdateTargetting();
 	void		PlayerFired(int hitId, const r3dPoint3D& pos);
@@ -360,17 +362,19 @@ obj_Vehicle* vehicles;
 public:
 
 	virtual	BOOL		Load(const char *name);
-	virtual	BOOL		OnCreate();			
-	virtual	BOOL		OnDestroy();		
+	virtual	BOOL		OnCreate();
+	virtual	BOOL		OnDestroy();
 
-	virtual	BOOL		Update();			
+	virtual	BOOL		Update();
+
+	bool isWeaponGrenadeOutofAmmo(int weaponIndex);
 
 	void				UpdateLocalPlayerMovement();
 
-	virtual void		AppendShadowRenderables( RenderArray & rarr, const r3dCamera& Cam ) OVERRIDE;
-	virtual void		AppendRenderables( RenderArray ( & render_arrays  )[ rsCount ], const r3dCamera& Cam )  OVERRIDE;
+	virtual void		AppendShadowRenderables(RenderArray & rarr, const r3dCamera& Cam) OVERRIDE;
+	virtual void		AppendRenderables(RenderArray(&render_arrays)[rsCount], const r3dCamera& Cam)  OVERRIDE;
 
-	virtual	BOOL		OnNetReceive(DWORD EventID, const void* packetData, int packetSize);
+	virtual	BOOL	 OnNetReceive(DWORD EventID, const void* packetData, int packetSize);
 	void			 OnNetPacket(const PKT_S2C_MoveTeleport_s& n);
 	void			 OnNetPacket(const PKT_C2C_MoveSetCell_s& n);
 	void			 OnNetPacket(const PKT_C2C_MoveRel_s& n);
@@ -378,11 +382,11 @@ public:
 	void			 OnNetPacket(const PKT_C2C_Aura_s& n);
 	void			 OnNetPacket(const PKT_S2C_AddScore_s& n);
 	void			 OnNetPacket(const PKT_S2C_SetPlayerVitals_s& n);
-	void OnNetPacket(const PKT_S2C_SetPlayerGroupID_s& n);
+	void			 OnNetPacket(const PKT_S2C_SetPlayerGroupID_s& n);
 	void			 OnNetPacket(const PKT_S2C_SetPlayerLoadout_s& n);
 	void			 OnNetPacket(const PKT_S2C_SetPlayerAttachments_s& n);
 	void			 OnNetPacket(const PKT_S2C_SetPlayerWorldFlags_s& n);
-		void			 OnNetPacket(const PKT_C2C_CarPass_s& n);
+	void			 OnNetPacket(const PKT_C2C_CarPass_s& n);
 	void			 OnNetPacket(const PKT_C2C_PlayerSwitchWeapon_s& n);
 	void			 OnNetPacket(const PKT_C2C_PlayerReadyGrenade_s& n);
 	void			 OnNetPacket(const PKT_C2C_PlayerThrewGrenade_s& n);
@@ -405,13 +409,14 @@ public:
 
 	bool		bAllowToUseWeapons;
 	void		CheckFireWeapon();
+	bool		IsPlantingMine();
 	float		GetGrenadeLaunchDelay();
 	void		GrenadeCallbackFromWeapon(const wiInventoryItem& wi);
 
 	void		OnGameEnded();
 	BYTE		getBodyNameFromBoneName(const char* boneName);
-void CheckZombiePlayer();
-	void		localPlayer_UseItem(int slotID, uint32_t itemID, const r3dPoint3D& pos, float var1=0.0f, float var2=0.0f, float var3=0.0f, DWORD var4=0);
+	void CheckZombiePlayer();
+	void		localPlayer_UseItem(int slotID, uint32_t itemID, const r3dPoint3D& pos, float var1 = 0.0f, float var2 = 0.0f, float var3 = 0.0f, DWORD var4 = 0);
 
 	bool isntvi;
 #if VEHICLES_ENABLED
@@ -423,14 +428,14 @@ void CheckZombiePlayer();
 	};
 
 	VehicleViews vehicleViewActive_;
-	
+
 
 	obj_Vehicle* canEnterVehicle();
-	void enterVehicle( obj_Vehicle* target_Vehicle );
+	void enterVehicle(obj_Vehicle* target_Vehicle);
 	bool isDriving();
 	void exitVehicle();
 	bool isInVehicle();
-	bool TestExitPosition( r3dVector &exitPosition, bool ignoreGround = false );
+	bool TestExitPosition(r3dVector &exitPosition, bool ignoreGround = false);
 
 #endif 
 
@@ -443,10 +448,10 @@ private:
 	void		*footStepsSnd;
 	r3dPoint3D prevPos;
 	struct footStepEntry_s {
-	  int		id;
-	  void*		snd;
-	  footStepEntry_s() : id(-1), snd(0) {}
-	  footStepEntry_s(int i, void* s):id(i), snd(s) {}
+		int		id;
+		void*		snd;
+		footStepEntry_s() : id(-1), snd(0) {}
+		footStepEntry_s(int i, void* s) :id(i), snd(s) {}
 	};
 	r3dTL::TStaticArray<footStepEntry_s, 128> footStepsArr;
 	int		currentFootStepsSoundID;
@@ -458,7 +463,7 @@ private:
 	void*	m_sndBreathSprint;
 	void*	m_bswim;
 	void*	m_bswimf;
-	
+
 
 	float	m_sndBreathBaseVolume;
 
@@ -475,8 +480,23 @@ public:
 	CamoTimeLine camoTimeLine;
 };
 
-extern void InitializePhysSkeletonCache( int count, float progressStart, float progressEnd ) ;
-extern void DestroyPhysSkeletonCache() ;
+struct TCamoSettings
+{
+	TCamoSettings();
+
+	float texScale;
+	float distortScale;
+	float animSpeed;
+
+	float reflectionAmmount;
+
+	r3dColor color0;
+	r3dColor color1;
+
+} extern gCamoSettings;
+
+extern void InitializePhysSkeletonCache(int count, float progressStart, float progressEnd);
+extern void DestroyPhysSkeletonCache();
 extern r3dPhysSkeleton* AquireCacheSkeleton();
 extern void ReleaseCachedPhysSkeleton(r3dPhysSkeleton* skel);
 
@@ -489,4 +509,4 @@ extern void UpdatePlayerObstacle(int idx, const r3dPoint3D& pos);
 
 
 // for use when processing a bullet hit by obj_bullet or obj_Player::executeWeaponFireLocalPlayer
-bool ProcessBulletHit( int &damageFromPiercable, GameObject* owner, const r3dPoint3D &hitPoint, const r3dPoint3D &hitNormal, GameObject* shootTarget, const r3dMaterial* shootMaterial, const char* hitActorName, const WeaponConfig *weaponInfo, const r3dPoint3D& muzzlerPosAtFireStart);
+bool ProcessBulletHit(int &damageFromPiercable, GameObject* owner, const r3dPoint3D &hitPoint, const r3dPoint3D &hitNormal, GameObject* shootTarget, const r3dMaterial* shootMaterial, const char* hitActorName, const WeaponConfig *weaponInfo, const r3dPoint3D& muzzlerPosAtFireStart);

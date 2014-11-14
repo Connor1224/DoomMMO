@@ -153,6 +153,7 @@ class r3dAtmosphere
 	float				SSSSpecPower;
 
 	float				SkyDomeRotationY;
+	float				SkyDomeRotationX;
 
 	class GameObject*	RainParticleSystem;
 	char				RainParticleSystemName[ 64 ];

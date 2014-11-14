@@ -12,7 +12,7 @@
 #include "../../../ServerNetPackets/NetPacketsGameInfo.h"
 #include "../../../ServerNetPackets/NetPacketsWeaponInfo.h"
 #include "Gameplay_Params.h"
-#include "../../../EclipseStudio/Sources/ObjectsCode/WEAPONS/WeaponArmory.h"//bybeer
+#include "../../../EclipseStudio/Sources/ObjectsCode/WEAPONS/WeaponArmory.h"
 //#include "GameObjects/obj_Vehicle.h"
 class GameObject;
 
@@ -140,7 +140,7 @@ PKT_C2C_CarSpeed,
 
   PKT_C2C_Aura,
   
-  PKT_C2S_Temp_Damage,			// temporary damage packet, client send them. used for rockets/explosions. This packet will always apply damage, even to friendlies!!!
+  PKT_C2S_Explosion_Damage,			// temporary damage packet, client send them. used for rockets/explosions. This packet will always apply damage, even to friendlies!!!
   PKT_C2S_FallingDamage,	// player fell
 
   PKT_S2C_Damage,
@@ -831,7 +831,7 @@ struct PKT_S2C_Zombie_DBG_AIInfo_s : public DefaultPacketMixin<PKT_S2C_Zombie_DB
 };
 
 //This packet will always apply damage, even to friendlies!!!
-struct PKT_C2S_Temp_Damage_s : public DefaultPacketMixin<PKT_C2S_Temp_Damage>
+struct PKT_C2S_Explosion_Damage_s : public DefaultPacketMixin<PKT_C2S_Explosion_Damage>
 {
 	gp2pnetid_t	targetId;
 	BYTE		wpnIdx;

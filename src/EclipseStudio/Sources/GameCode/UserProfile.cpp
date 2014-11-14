@@ -25,8 +25,11 @@
 #include "ObjectsCode/WEAPONS/WeaponConfig.h"
 #include "ObjectsCode/WEAPONS/WeaponArmory.h"
 
+#include "multiplayer/ClientGameLogic.h"
+
 #ifndef WO_SERVER
 #include "SteamHelper.h"
+#include "ObjectsCode/AI/AI_Player.H"
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -720,8 +723,6 @@ int CClientUserProfile::ApiCharRevive()
 	CWOBackendReq req(this, "api_CharSlots.aspx");
 	req.AddParam("func",   "revive");
 	req.AddParam("CharID", w.LoadoutID);
-
-// AomBESkillSystem : Health Revive skill
 	req.AddParam("Health", "100");
 	if(!req.Issue())
 	{
@@ -732,7 +733,7 @@ int CClientUserProfile::ApiCharRevive()
 
 	// reread profile
 	GetProfile();
-r3dOutToLog("Revive Character\n");
+	r3dOutToLog("Revive Character\n");
 	
 	return 0;
 }
@@ -820,6 +821,8 @@ int CClientUserProfile::ApiBackpackFromInventory(__int64 InventoryID, int GridTo
 	int idx_exists = -1;
 
 	bool isStackable = storecat_IsItemStackable(wi1->itemID);
+	if(!isStackable)
+		amount = 1;
 	
 	// search for free or existing slot
 	if(GridTo >= 0)

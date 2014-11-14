@@ -31,6 +31,17 @@ struct NameHashFunc_T
 	}
 };
 static HashTableDynamic<const char*, FixedString256, NameHashFunc_T, 1024> dictionaryHash_;
+int convertFireModeIntoInt(WeaponFiremodeEnum firemode)
+{
+	if(firemode == WPN_FRM_SINGLE)
+		return 1;
+	else if(firemode == WPN_FRM_TRIPLE)
+		return 3;
+	else if(firemode == WPN_FRM_AUTO)
+		return 5;
+
+	return 1;
+}
 
 HUDDisplay :: HUDDisplay()
 {
@@ -329,7 +340,7 @@ int HUDDisplay::Update()
 		PxRaycastHit hit;
 		PhysicsCallbackObject* target = NULL;
 		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_STATIC_MASK|(1<<PHYSCOLL_NETWORKPLAYER), 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC|PxSceneQueryFilterFlag::eDYNAMIC);
-		g_pPhysicsWorld->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dir.x, dir.y, dir.z), 2000.0f, PxSceneQueryFlag::eDISTANCE, hit, filter);
+		g_pPhysicsWorld->PhysXScene->raycastSingle(PxVec3(gCam.x, gCam.y, gCam.z), PxVec3(dir.x, dir.y, dir.z), 2000.0f, PxSceneQueryFlag::eDISTANCE, hit, filter);
 
 		float distance = -1;
 		if(hit.shape)
@@ -1413,4 +1424,28 @@ void HUDDisplay::setCooldown(int slot,int CoolSecond,int value)
 	vars[1].SetInt(CoolSecond);
 	vars[2].SetInt(value);
 	gfxHUD.Invoke("_root.api.setSlotCooldown", vars, 3);
+}
+
+void HUDDisplay::showReloading(bool set)
+{
+	if(!Inited)
+		return;
+	if(set)
+		gfxHUD.Invoke("_global.showReload", "");
+	else
+		gfxHUD.Invoke("_global.hideReload", "");
+}
+
+void HUDDisplay::SetReloadingProgress(float progress)
+{
+	if(!Inited)
+		return;
+	gfxHUD.Invoke("_global.updateReload", progress);
+}
+
+void HUDDisplay::setFireMode(WeaponFiremodeEnum firemode)
+{
+	if(!Inited)
+		return;
+	gfxHUD.Invoke("_global.setFireMode", convertFireModeIntoInt(firemode));
 }

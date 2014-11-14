@@ -312,6 +312,7 @@ class CUberAnim
 	float		jumpStartTimeByState[2];
 	float		jumpStartTime;
 	void		StartJump();
+	void		StartHands();
 	void		UpdateJump(bool bOnGround);
 	
 	void		StartDeathAnim();

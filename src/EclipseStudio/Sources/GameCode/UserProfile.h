@@ -50,6 +50,7 @@ enum STORE_CATEGORIES
 	storecat_SNP		= 21,	// Sniper rifles
 	storecat_SHTG		= 22,	// Shotguns
 	storecat_MG			= 23,	// Machine guns
+	storecat_SUPPORT	= 24,	// grenade launchers, other heavy items
 	storecat_HG			= 25,	// handguns
 	storecat_SMG		= 26,	// submachineguns
 	storecat_GRENADE	= 27,	// grenades and everything that you can throw. Mines shouldn't be in this group!!!
@@ -222,8 +223,8 @@ struct wiCharDataFull
 	float		Hunger; // 0..100; 0-not hungry, 100 - starving
 	float		Thirst; // 0..100; 0-not thirsty, 100 - super thirsty!
 	float		Toxic; // 0..100; 0-no toxic, 100 - high toxicity, slowly dying
- int bleeding;
- int legfall;
+ 	int bleeding;
+ 	int legfall;
 	enum
 	{
 	  GAMEFLAG_NearPostBox = (1 << 0),
@@ -318,7 +319,7 @@ struct wiUserProfile
 	wiCharDataFull	ArmorySlots[MAX_LOADOUT_SLOTS];
 	int		NumSlots;
 
-	enum { MAX_INVENTORY_SIZE = 2048, };
+	enum { MAX_INVENTORY_SIZE = 4096, };
 	uint32_t	NumItems;
 	wiInventoryItem	Inventory[MAX_INVENTORY_SIZE];
 };

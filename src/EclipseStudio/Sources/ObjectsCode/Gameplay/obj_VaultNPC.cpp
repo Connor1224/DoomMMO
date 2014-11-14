@@ -6,7 +6,6 @@
 #include "UI\HUDVault.h"
 
 IMPLEMENT_CLASS(obj_VaultNPC, "obj_VaultNPC", "Object");
-
 AUTOREGISTER_CLASS(obj_VaultNPC);
 
 extern HUDVault* hudVault;

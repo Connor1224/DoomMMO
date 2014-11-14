@@ -360,6 +360,20 @@ public:
 	// because mesh can be delay-loaded
 	void updateMuzzleOffset(bool first_person) const ;
 
+	// we will detect mines by ItemID for right now
+	enum {
+	  GRENADE_ANIM_Normal,
+	  GRENADE_ANIM_Claymore,
+	  GRENADE_ANIM_VS50,
+	  GRENADE_ANIM_V69,
+	  GRENADE_ANIM_LASTTYPE,
+	};
+	int getGrenadeAnimType() const;
+	bool isMine() const 
+	{
+		return category == storecat_GRENADE && getGrenadeAnimType() != GRENADE_ANIM_Normal;
+	}
+
 	r3dSkeleton* getSkeleton() const { return m_Model_FPS_Skeleton; }
 
 	void aquireMesh( bool allow_async_loading ) const ;

@@ -844,7 +844,8 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 	CamPos += pl->m_vVision * CurrentRig.Position.Z;
 
 	r3dPoint3D playerPos = pl->GetPosition();
-	r3dPoint3D playerPosHead = playerPos; playerPosHead.y += CharacterHeight;
+	r3dPoint3D playerPosHead = playerPos; 
+	playerPosHead.y += CharacterHeight;
 	r3dPoint3D PointTo = playerPos;
 	PointTo.Y += (CharacterHeight + TPSHudCameraTarget.Y);
 	PointTo += pl->GetvRight() * TPSHudCameraTarget.X;
@@ -856,7 +857,7 @@ void TPSGameHUD :: SetCameraPure ( r3dCamera &Cam)
 		{
 			CamPos = savedCamPos;
 			playerPosHead = playerPos;
-			playerPosHead.y += CharacterHeight-0.8f;
+			playerPosHead.y += CharacterHeight - 2.8f;
 			CheckCameraCollision(CamPos, playerPosHead, true);
 		}
 	}
