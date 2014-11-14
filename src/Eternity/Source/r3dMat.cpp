@@ -17,15 +17,36 @@ extern 	int 	CurrentTexID[16];
 const static char* DEPOT_TAG  = "data/objectsdepot";
 const static int   DEPOT_TLEN = 17;
 
+int VS_FOREST_ID										= -1 ;
+int VS_FOREST_NONINSTANCED_ID							= -1 ;
+int VS_FOREST_NOANIM_ID									= -1 ;
+int VS_FOREST_NOANIM_NONINSTANCED_ID					= -1 ;
 int VS_SKIN_ID											= -1 ;
 int VS_SKIN_DEPTH_ID									= -1 ;
 int VS_DEPTH_ID											= -1 ;
+int VS_SMSKIN_ORTHO_ID									= -1 ;
+int VS_SMSKIN_PROJ_ID									= -1 ;
 int VS_DEPTH_PREPASS_ID									= -1 ;
 int VS_FILLGBUFFER_ID									= -1 ;
 int VS_FILLGBUFFER_EXTRUDE_ID							= -1 ;
 int VS_FILLGBUFFER_DISP_ID								= -1 ;
 int VS_FILLGBUFFER_APEX_ID								= -1 ;
 int VS_FILLGBUFFER_INSTANCED_ID							= -1 ;
+int VS_SMDEPTHPASS_ORTHO_ID								= -1 ;
+int VS_SMDEPTHPASS_PROJ_ID								= -1 ;
+int VS_SMDEPTHPASS_PARABOLOID_PROJ_ID					= -1 ;
+int VS_SMDEPTHPASS_ORTHO_INSTANCED_ID					= -1 ;
+int VS_SMDEPTHPASS_PROJ_INSTANCED_ID					= -1 ;
+int VS_SMDEPTHPATH_FOREST_ORTHO_ID						= -1 ;
+int VS_SMDEPTHPATH_FOREST_ORTHO_NONINSTANCED_ID			= -1 ;
+int VS_SMDEPTHPATH_FOREST_PROJ_ID						= -1 ;
+int VS_SMDEPTHPATH_FOREST_PROJ_NONINSTANCED_ID			= -1 ;
+int VS_SMDEPTHPATH_FOREST_ORTHO_NOANIM_ID				= -1 ;
+int VS_SMDEPTHPATH_FOREST_ORTHO_NOANIM_NONINSTANCED_ID	= -1 ;
+int VS_SMDEPTHPATH_FOREST_PROJ_NOANIM_ID				= -1 ;
+int VS_SMDEPTHPATH_FOREST_PROJ_NOANIM_NONINSTANCED_ID	= -1 ;
+int VS_SMDEPTHPATH_APEX_ORTHO_ID						= -1 ;
+int VS_SMDEPTHPATH_APEX_PROJ_ID							= -1 ;	
 
 int VS_TRANSPARENT_ID[2][MAX_LIGHTS_FOR_TRANSPARENT] = 
 {
@@ -33,11 +54,14 @@ int VS_TRANSPARENT_ID[2][MAX_LIGHTS_FOR_TRANSPARENT] =
 	{ -1, -1, -1 } 
 };
 
-int PS_DEPTH_ID							= -1;
-int PS_TRANSPARENT_ID					= -1;
-int PS_TRANSPARENT_AURA_ID				= -1;
-int PS_TRANSPARENT_CAMOUFLAGE_ID		= -1;
-int PS_TRANSPARENT_CAMOUFLAGE_FP_ID		= -1;
+int PS_DEPTH_ID							= -1 ;
+int PS_SMDEPTHPATH_ID					= -1 ;
+int PS_SMDEPTHPATH_HW_ID				= -1 ;
+int PS_SMDEPTHPATH_NORMAL_OFFSET_ID		= -1 ;
+int PS_TRANSPARENT_ID					= -1 ;
+int PS_TRANSPARENT_AURA_ID				= -1 ;
+int PS_TRANSPARENT_CAMOUFLAGE_ID		= -1 ;
+int PS_TRANSPARENT_CAMOUFLAGE_FP_ID		= -1 ;
 
 static r3dMaterial* gPrevMaterial = NULL ;
 static r3dMaterial* gPrevShadowMaterial = NULL ;
@@ -1380,7 +1404,7 @@ void r3dMaterialLibrary::Reset()
 #endif
 	ResetMatFrameScores();
 
-	r3d_assert(NumManagedMaterialsInLibrary == 0);
+	//r3d_assert(NumManagedMaterialsInLibrary == 0);
 	NumManagedMaterialsInLibrary = 0;
 
 	memset (&ManagedMatlibPointers[0], 0, sizeof(ManagedMatlibPointers) );

@@ -974,7 +974,7 @@ r3dInputMappingMngr::r3dInputMappingMngr()
 	m_Mapping[KS_ITEM2] =					KeyboardMapping(INPUTMAP_KEYBOARD, kbs4, "$HUD_Cntrl_Item2");
 	m_Mapping[KS_ITEM3] =					KeyboardMapping(INPUTMAP_KEYBOARD, kbs5, "$HUD_Cntrl_Item3");
 	m_Mapping[KS_ITEM4] =					KeyboardMapping(INPUTMAP_KEYBOARD, kbs6, "$HUD_Cntrl_Item4");
-	m_Mapping[KS_NEXTITEM] =			KeyboardMapping(INPUTMAP_KEYBOARD, kbsGrave, "$HUD_Cntrl_NextItem");
+	m_Mapping[KS_NEXTITEM] =			    KeyboardMapping(INPUTMAP_KEYBOARD, kbsGrave, "$HUD_Cntrl_NextItem");
 
 	m_Mapping[KS_HOLD_BREATH] =				KeyboardMapping(INPUTMAP_KEYBOARD, kbsLeftShift, "$HUD_Cntrl_SteadyAim");
 

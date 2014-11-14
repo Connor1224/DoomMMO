@@ -982,10 +982,14 @@ float GetD3DTexFormatSize(D3DFORMAT Fmt)
 	case D3DFMT_R3G3B2:
 	case D3DFMT_A8:
 	case D3DFMT_L8:
+	case D3DFMT_P8:
+	case D3DFMT_A8L8:
 	case D3DFMT_A8R3G3B2: 
 		return 1.0f;
 	case D3DFMT_A32B32G32R32F:
 		return 16.0f;
+	case D3DFMT_A16B16G16R16F:
+		return 64.0f;
 	}
 }
 
@@ -1257,7 +1261,6 @@ r3dTexture* r3dRenderLayer::LoadTexture( const char* TexFile, D3DFORMAT TexForma
 		return NULL;
 	}
 
-	// aLca: to get rid of the redlog spam
 	//r3dOutToLog("TEXTURE: LoadTexture %s complete\n", szFileName);
 
 	// insert to LList.

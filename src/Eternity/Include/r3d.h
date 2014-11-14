@@ -388,7 +388,6 @@ enum r3dFilter
 	R3D_ANISOTROPIC
 };
 
-//extern HMODULE hMod;
 extern	void		r3dSetFiltering( r3dFilter filter, int Stage = -1 );
 
 // this is for special cases, for usual texturing call r3dSetFiltering( R3D_ANISOTROPIC, ..

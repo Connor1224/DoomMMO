@@ -1518,8 +1518,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	*pEnd = _T('\0');
 
 	_stprintf(g_szIniPath, _T("%s"), szFullFileName);				
-	_stprintf(g_szHShieldPath, _T("%s\\HShield"), szFullFileName);
-	_tcscat(szFullFileName, _T("HShield\\EhSvc.dll"));			
+	_stprintf(g_szHShieldPath, _T("%s\\HackShield"), szFullFileName);
+	_tcscat(szFullFileName, _T("HackShield\\EhSvc.dll"));			
 	_tcscat(g_szIniPath, _T("MiniAEnv.INI"));		
 
 	AHNHS_EXT_ERRORINFO HsExtError;

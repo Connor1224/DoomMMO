@@ -119,13 +119,15 @@ r3dFile* r3dFile_IntOpen(const char* fname, const char* mode)
   r3dCSHolder csHolder(g_FileSysCritSection);
   bool allowDirectAccess = true;
 
-// UnCommented (to use data files in MiniA.exe client instead of *.bins)
- //#ifdef FINAL_BUILD
-    //disable all data/ files in final build
-	//if(strnicmp(fname, "data", 4) == 0 || strnicmp(fname, "levels", 6) == 0)
-	//allowDirectAccess = true;
- //#endif
+#ifdef FINAL_BUILD
+  // disable all data/ files in final build
+  if(strnicmp(fname, "data", 4) == 0 || strnicmp(fname, "levels", 6) == 0)
+    allowDirectAccess = false;
+#endif
 
+#ifdef FINAL_STUDIO
+  allowDirectAccess = true;
+#endif
 
   // check for direct file
   FILE* stream;
@@ -530,9 +532,9 @@ bool CreateConfigPath(char* dest)
 {
 	if( SUCCEEDED(SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE, NULL, 0, dest)) ) 
 	{
-		strcat( dest, "\\RaGEZONE Community Edition\\" );
+		strcat( dest, "\\Doom-MMo\\" );
 		mkdir( dest );
-		strcat( dest, "WarZ\\" );
+		strcat( dest, "Doom-MMo\\" );
 		mkdir( dest );
 
 		return true;
@@ -545,9 +547,9 @@ bool CreateWorkPath(char* dest)
 {
 	if( SUCCEEDED(SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE, NULL, 0, dest)) ) 
 	{
-		strcat( dest, "\\RaGEZONE Community Edition\\" );
+		strcat( dest, "\\Doom-MMo\\" );
 		mkdir( dest );
-		strcat( dest, "WarZ\\" );
+		strcat( dest, "Doom-MMo\\" );
 		mkdir( dest );
 
 		return true;

@@ -21,7 +21,7 @@
 /// Most of ingame strings are PASCAL style. The concept is
 /// that we sacrifice some memory in order to avoid dynamic
 /// memory allocations.
-template <int iLength=128> class String_T
+template <int iLength=256> class String_T
 {
 protected:
 	char	sData [iLength];				///< this is actual string characters.

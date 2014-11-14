@@ -261,7 +261,7 @@ void r3dThreadEntryHelper(threadEntry_fn fn, DWORD in)
 		memset(&info, 0, sizeof(CR_INSTALL_INFOW));  
 		info.cb = sizeof(CR_INSTALL_INFOW);
 #ifdef FINAL_BUILD
-		info.pszAppName = L"WarZ";
+		info.pszAppName = L"Doom-MMo";
 #else
 		info.pszAppName = L"Studio";
 #endif

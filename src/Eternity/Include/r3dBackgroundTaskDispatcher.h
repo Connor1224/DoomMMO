@@ -46,7 +46,13 @@ r3dTaskPtrParams::r3dTaskPtrParams()
 
 }
 
-//------------------------------------------------------------------------
+#pragma once
+
+//#define _DISABLE_SAFE_INPUT
+
+#if defined( _DISABLE_SAFE_INPUT ) && !defined( _DEBUG )
+#undef _DISABLE_SAFE_INPUT
+#endif
 
 template < typename T >
 class r3dTaskParramsArray

@@ -62,6 +62,26 @@ template<class TYPE, DWORD CRYPT_KEY> class r3dSec_type
 
 	__forceinline TYPE get() const {
 		datamix_u t = data;
+		t.crypt.b1 ^= ((CRYPT_KEY >> 8) & 0xCA);
+		t.crypt.b3 ^= ((CRYPT_KEY >> 16) & 0xCA);
+		t.crypt.b2 ^= ((CRYPT_KEY >> 16) & 0xCA);
+		t.crypt.b4 ^= ((CRYPT_KEY >> 24) & 0xCA);
+		return t.val;
+	}
+	__forceinline r3dSec_type& set(const TYPE rhs) {
+		data.val = rhs;
+		data.crypt.b1 ^= ((CRYPT_KEY >> 8) & 0xCA);
+		data.crypt.b3 ^= ((CRYPT_KEY >> 16) & 0xCA);
+		data.crypt.b2 ^= ((CRYPT_KEY >> 16) & 0xCA);
+		data.crypt.b4 ^= ((CRYPT_KEY >> 24) & 0xCA);
+#ifdef _DEBUG		
+		uncrypted = rhs;
+#endif		
+		return *this;
+	}
+
+	/*__forceinline TYPE get() const {
+		datamix_u t = data;
 		t.crypt.b1 ^= ((CRYPT_KEY >> 16) & 0xFF);
 		t.crypt.b3 ^= ((CRYPT_KEY >>  0) & 0xFF);
 		t.crypt.b2 ^= ((CRYPT_KEY >>  8) & 0xFF);
@@ -78,7 +98,7 @@ template<class TYPE, DWORD CRYPT_KEY> class r3dSec_type
 		uncrypted = rhs;
 #endif		
 		return *this;
-	}
+	}*/
 	
 	// accessors and setters
 	__forceinline operator TYPE() const {
@@ -120,7 +140,7 @@ template<int STRING_LEN, BYTE CRYPT_KEY> class r3dSec_string
 	void get(char *out) const {
 		memcpy(out, crypted, length+1);
 		for(int i=0; i<length; ++i) {
-			out[i] = out[i] ^ ((CRYPT_KEY + i) & 0xFF);
+			out[i] = out[i] ^ ((CRYPT_KEY + i) & 0xCA);
 		}
 		return;
 	}
@@ -130,7 +150,7 @@ template<int STRING_LEN, BYTE CRYPT_KEY> class r3dSec_string
 			r3dError("failed to set string %s\n", in); 
 		memcpy(crypted, in, length + 1);
 		for(int i=0; i<length; ++i) {
-			crypted[i] = crypted[i] ^ ((CRYPT_KEY + i) & 0xFF);
+			crypted[i] = crypted[i] ^ ((CRYPT_KEY + i) & 0xCA);
 		}
 #ifdef _DEBUG		
 		r3dscpy(uncrypted, in);

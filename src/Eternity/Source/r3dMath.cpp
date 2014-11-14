@@ -20,6 +20,22 @@ void	r3dBuildRotationMatrix(r3dMatrix& Matrix, const r3dPoint3D& p)
   r3dBuildRotationMatrix(Matrix, p.X, p.Y, p.Z);
 }
 
+//-----------------------------------------------------------------------
+void	r3dCalcOrientation(r3dPoint3D& p, r3dMatrix& Matrix)
+//-----------------------------------------------------------------------
+{
+  r3dCalcOrientation(p, Matrix[0], Matrix[1], Matrix[2]);
+}
+
+//-----------------------------------------------------------------------
+r3dPoint3D r3dCalcOrientation(const r3dVector& vRight, const r3dVector& vUp, const r3dVector& vForw)
+//-----------------------------------------------------------------------
+{
+  r3dPoint3D p;
+  r3dCalcOrientation(p, vRight, vUp, vForw);
+  return p;
+}
+
 //----------------------------------------------------------------
 void	r3dBuildRotationMatrix(r3dMatrix& Matrix, float xAngle, float yAngle, float zAngle)
 //----------------------------------------------------------------
@@ -77,6 +93,30 @@ void r3dRotateVector(r3dVector& v, float xAngle, float yAngle, float zAngle)
   r3dMatrix Matrix;
   r3dBuildRotationMatrix(Matrix, xAngle, yAngle, zAngle);
   v *= Matrix;
+}
+
+//----------------------------------------------------------------
+void r3dCalcOrientation(r3dPoint3D& Orientation, const r3dVector& vRight, const r3dVector& vUp, const r3dVector& vForw)
+//----------------------------------------------------------------
+{
+  float xAngle, yAngle, zAngle;
+
+  if(R3D_ABS(vForw[1]) < 0.9999)
+  {
+    xAngle = R3D_RAD2DEG(asinf(vForw[1]));
+    if(xAngle < 0) xAngle += 360;
+    yAngle = R3D_RAD2DEG(atan2f(vForw[0], vForw[2]));
+    if(yAngle < 0) yAngle += 360;
+    zAngle = 0;
+  }
+  else
+  {
+    xAngle = yAngle = zAngle = 0;
+  }
+
+  Orientation.X = xAngle;
+  Orientation.Y = yAngle;
+  Orientation.Z = zAngle;
 }
 
 // truncate bits

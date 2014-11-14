@@ -6,7 +6,11 @@
 
 #include "MeshGlobalBuffer.h"
 
+#ifdef RSBUILD
+#define R3D_ALLOW_ASYNC_MESH_LOADING 0
+#else
 #define R3D_ALLOW_ASYNC_MESH_LOADING 1
+#endif
 
 class r3dVertexBuffer;
 
@@ -227,6 +231,7 @@ private:
 	bool		DoLoad( bool use_default_material ) ;
 
 	int 		LoadAscii(r3dFile *f, bool use_default_material );
+	int 		SaveAscii(const char* fname);
 
 	bool 		LoadBin(r3dFile *f, bool use_default_material );
 	bool 		SaveBin(const char* fname);
