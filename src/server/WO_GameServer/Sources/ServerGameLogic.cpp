@@ -1880,7 +1880,7 @@ IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_TradeRequest)
 		p2pSendToPeer(NULL, NULL, &n1, sizeof(n1));
 	}
 }
-IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_Temp_Damage)
+IMPL_PACKET_FUNC(ServerGameLogic, PKT_C2S_Explosion_Damage)
 {
 	obj_ServerPlayer* fromPlr = IsServerPlayer(fromObj);
 	if(!fromPlr)
@@ -3060,7 +3060,7 @@ int ServerGameLogic::ProcessWorldEvent(GameObject* fromObj, DWORD eventId, DWORD
 	// validation and relay client code
 	switch(eventId) 
 	{
-		DEFINE_PACKET_HANDLER(PKT_C2S_Temp_Damage);
+		DEFINE_PACKET_HANDLER(PKT_C2S_Explosion_Damage);
 		DEFINE_PACKET_HANDLER(PKT_C2S_PlayerAcceptMission);
 		DEFINE_PACKET_HANDLER(PKT_C2S_TradeRequest);
 		DEFINE_PACKET_HANDLER(PKT_C2C_ChatMessage);

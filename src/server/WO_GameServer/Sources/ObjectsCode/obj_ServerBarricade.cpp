@@ -6,7 +6,11 @@
 #include "multiplayer/P2PMessages.h"
 
 #include "obj_ServerBarricade.h"
+
+#include "ObjectsCode/obj_ServerPlayer.h"
 #include "ServerGameLogic.h"
+
+#include "../EclipseStudio/Sources/ObjectsCode/weapons/WeaponConfig.h"
 #include "../EclipseStudio/Sources/ObjectsCode/weapons/WeaponArmory.h"
 #include "../../GameEngine/ai/AutodeskNav/AutodeskNavMesh.h"
 

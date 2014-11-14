@@ -102,7 +102,7 @@ BOOL obj_ServerPlayer::OnCreate()
 	m_Stamina = GPP_Data.c_fSprintMaxEnergy;
 
 	if(loadout_->Stats.skillid1 == 1){
-		m_Stamina +=  25.5f;
+		m_Stamina +=  15.5f;
 		if(loadout_->Stats.skillid4 == 1)
 			m_Stamina += 30.5f;
 	}
@@ -262,6 +262,7 @@ void obj_ServerPlayer::DoDeath()
 	savedLoadout_ = *loadout_;
 
 	gServerLogic.ApiPlayerUpdateChar(this);
+	OnLoadoutChanged();
 
 	//SetLatePacketsBarrier("death");
 
@@ -336,6 +337,8 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 		GameObject* targetObj = GameWorld().GetNetworkObject(targetId);
 		if(targetObj == NULL) 
 		{
+			FireHitCount++;
+			gServerLogic.LogInfo(peerId_, "debug: invalid id", "%s %d", pktName, wid);
 			// target already disconnected (100% cases right now) or invalid.
 			return false;
 		}
@@ -343,18 +346,22 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 
 	if(wid < 0 || wid >= NUM_WEAPONS_ON_PLAYER)
 	{
+		FireHitCount++;
 		gServerLogic.LogInfo(peerId_, "wid invalid", "%s %d", pktName, wid);
 		return false;
 	}
 
 	if(wid != m_SelectedWeapon) 
 	{
+		FireHitCount++;
 		// just log for now... we'll see how much mismatches we'll get
 		gServerLogic.LogInfo(peerId_, "wid mismatch", "%s %d vs %d", pktName, wid, m_SelectedWeapon);
+		return false;
 	}
 
 	if(m_ForcedEmptyHands)
 	{
+				FireHitCount++;
 		gServerLogic.LogInfo(peerId_, "empty hands", "%s %d vs %d", pktName, wid, m_SelectedWeapon);
 		return false;
 	}
@@ -363,12 +370,14 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 	if(wpn == NULL) 
 	{
 		gServerLogic.LogInfo(peerId_, "no wid", "%s %d", pktName, wid);
+		FireHitCount++;
 		return false;
 	}
 
 	// can't fire in safe zones 
 	if(loadout_->GameFlags & wiCharDataFull::GAMEFLAG_NearPostBox)
 	{
+		FireHitCount++;
 		return false;
 	}
 	// melee - infinite ammo
@@ -391,6 +400,7 @@ bool obj_ServerPlayer::FireWeapon(int wid, bool wasAiming, int executeFire, DWOR
 		if(wi.quantity <= 0) {
 			wi.Reset();
 		}
+		FireHitCount++;
 
 		return true;
 	}
@@ -619,69 +629,69 @@ BOOL obj_ServerPlayer::Update()
 	// check if warguard not running (bypass tprogame)
 	/*if (profile_.ProfileData.WarGuardSession != profile_.SessionID)
 	{
-		PKT_S2C_CheatMsg_s n2;
-		char msg [512];
-		sprintf(msg,"WarGuard Kicked '%s' [FOR 0 minute] : WarGuard Service NOT Running.",userName);
-		r3dscpy(n2.cheatreason,msg); // WTF? 0 minute?
-		gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
+	PKT_S2C_CheatMsg_s n2;
+	char msg [512];
+	sprintf(msg,"WarGuard Kicked '%s' [FOR 0 minute] : WarGuard Service NOT Running.",userName);
+	r3dscpy(n2.cheatreason,msg); // WTF? 0 minute?
+	gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
 
-		gServerLogic.DisconnectPeer(peerId_, true, "WarGuardSession mismatch %d , %d",profile_.ProfileData.WarGuardSession,profile_.SessionID);
-		return 0;
+	gServerLogic.DisconnectPeer(peerId_, true, "WarGuardSession mismatch %d , %d",profile_.ProfileData.WarGuardSession,profile_.SessionID);
+	return 0;
 	}
 	if (r3dGetTime() >  LastHackShieldLog + 20.0f && (((r3dGetTime() - startPlayTime_) >= 60.0f)))
 	{
-		PKT_S2C_CheatMsg_s n2;
-		r3dscpy(n2.cheatreason,"HackShield Kicked from server. : HackShield Service not responding.");
-		gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
+	PKT_S2C_CheatMsg_s n2;
+	r3dscpy(n2.cheatreason,"HackShield Kicked from server. : HackShield Service not responding.");
+	gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
 
-		gServerLogic.DisconnectPeer(peerId_, false, "HackShield Late.");
+	gServerLogic.DisconnectPeer(peerId_, false, "HackShield Late.");
 	}
 
 	for(int i=0; i<loadout_->BackpackSize; i++) // scan all items.
 	{
-		const wiInventoryItem& wi = loadout_->Items[i];
-		const WeaponConfig* wc = g_pWeaponArmory->getWeaponConfig(wi.itemID);
-		if (wc) // it's weapons.
-		{
-			if (wi.Var2 != -1)
-			{
-				const WeaponAttachmentConfig* cfg = g_pWeaponArmory->getAttachmentConfig(wi.Var2);
-				if (cfg)
-				{
-					if (wi.Var1 > cfg->m_Clipsize) // he cheat!
-					{
-						// he will get force banned and disconnect , he never see a message. not send message to him.
-						g_AsyncApiMgr->AddJob(new CJobBanID(profile_.CustomerID,"Bullet Cheat."));
-						// sent banned notice to all servers.
-						// NOTE : NOT NEED SEND A CHAT MESSAGE AT NOW. MASTER WILL SEND A MESSAGE PACKET AGAIN AND WE WILL BROSTCAST IT TO OTHER PLAYER.
-						gMasterServerLogic.SendNoticeMsg("System banned '%s' : bullet cheat.",userName);
+	const wiInventoryItem& wi = loadout_->Items[i];
+	const WeaponConfig* wc = g_pWeaponArmory->getWeaponConfig(wi.itemID);
+	if (wc) // it's weapons.
+	{
+	if (wi.Var2 != -1)
+	{
+	const WeaponAttachmentConfig* cfg = g_pWeaponArmory->getAttachmentConfig(wi.Var2);
+	if (cfg)
+	{
+	if (wi.Var1 > cfg->m_Clipsize) // he cheat!
+	{
+	// he will get force banned and disconnect , he never see a message. not send message to him.
+	g_AsyncApiMgr->AddJob(new CJobBanID(profile_.CustomerID,"Bullet Cheat."));
+	// sent banned notice to all servers.
+	// NOTE : NOT NEED SEND A CHAT MESSAGE AT NOW. MASTER WILL SEND A MESSAGE PACKET AGAIN AND WE WILL BROSTCAST IT TO OTHER PLAYER.
+	gMasterServerLogic.SendNoticeMsg("System banned '%s' : bullet cheat.",userName);
 
-						gServerLogic.DisconnectPeer(peerId_,true,"Weapons bullet cheat. itemid %d , bullet %d , attmid %d , Clipsize %d\n",wi.itemID,wi.Var1,wi.Var2,cfg->m_Clipsize);
-					}
-				}
-			}
-		}
+	gServerLogic.DisconnectPeer(peerId_,true,"Weapons bullet cheat. itemid %d , bullet %d , attmid %d , Clipsize %d\n",wi.itemID,wi.Var1,wi.Var2,cfg->m_Clipsize);
+	}
+	}
+	}
+	}
 	}*/
 
 
-	if(curTime > lastVisUpdateTime_ + 0.3f)
+	if (curTime > lastVisUpdateTime_ + 0.3f)
 	{
 		lastVisUpdateTime_ = r3dGetTime();
 		gServerLogic.UpdateNetObjVisData(this);
 	}
 
-	if(loadout_->Alive == 0) 
+	if (loadout_->Alive == 0)
 	{
-		return TRUE; 
+		return TRUE;
 	}
 
-	if(wasDisconnected_)
+	if (wasDisconnected_)
 		return TRUE;
 
 	// disconnect player after few ticks if he had bad items in inventory		
-	if(haveBadBackpack_)
+	if (haveBadBackpack_)
 	{
-		if(++haveBadBackpack_ > 5)
+		if (++haveBadBackpack_ > 5)
 		{
 			haveBadBackpack_ = 0;
 			gServerLogic.DisconnectPeer(peerId_, false, "haveBadBackpack");
@@ -690,12 +700,12 @@ BOOL obj_ServerPlayer::Update()
 	}
 
 	// give x4 time for weapon packet to arrive (make sure it's bigger that r3dNetwork peers disconnect)
-	if(!isTargetDummy_ && curTime > (lastWeapDataRep + PKT_C2S_PlayerWeapDataRep_s::REPORT_PERIOD * 4))
+	if (!isTargetDummy_ && curTime > (lastWeapDataRep + PKT_C2S_PlayerWeapDataRep_s::REPORT_PERIOD * 4))
 	{
 
-		char chatmessage[128] = {0};
+		char chatmessage[128] = { 0 };
 		PKT_C2C_ChatMessage_s n;
-		sprintf(chatmessage, "Kicked '%s' from server : no weapdatarep (respond timeout)",loadout_->Gamertag);
+		sprintf(chatmessage, "Kicked '%s' from server : no weapdatarep (respond timeout)", loadout_->Gamertag);
 		r3dscpy(n.gamertag, "System");
 		r3dscpy(n.msg, chatmessage);
 		n.msgChannel = 1;
@@ -708,277 +718,283 @@ BOOL obj_ServerPlayer::Update()
 
 	// STAT LOGIC
 	{
-		if(loadout_->Toxic < 100)
+		if (loadout_->Toxic < 100)
 		{
-			if(loadout_->Toxic > GPP_Data.c_fBloodToxicIncLevel2)
-				loadout_->Toxic+= timePassed*GPP_Data.c_fBloodToxicIncLevel2Value;
-			else if(loadout_->Toxic > GPP_Data.c_fBloodToxicIncLevel1)
-				loadout_->Toxic+= timePassed*GPP_Data.c_fBloodToxicIncLevel1Value;
+			if (loadout_->Toxic > GPP_Data.c_fBloodToxicIncLevel2)
+				loadout_->Toxic += timePassed*GPP_Data.c_fBloodToxicIncLevel2Value;
+			else if (loadout_->Toxic > GPP_Data.c_fBloodToxicIncLevel1)
+				loadout_->Toxic += timePassed*GPP_Data.c_fBloodToxicIncLevel1Value;
 		}
 
-		if(loadout_->Thirst < 100)
+		if (loadout_->Thirst < 100)
 		{
-			if(m_PlayerState == PLAYER_MOVE_SPRINT)
+			if (m_PlayerState == PLAYER_MOVE_SPRINT)
 				loadout_->Thirst += timePassed*GPP_Data.c_fThirstSprintInc;
 			else
 				loadout_->Thirst += timePassed*GPP_Data.c_fThirstInc;
-			if(loadout_->Toxic > GPP_Data.c_fThirstHighToxicLevel)
+			if (loadout_->Toxic > GPP_Data.c_fThirstHighToxicLevel)
 				loadout_->Thirst += timePassed*GPP_Data.c_fThirstHighToxicLevelInc;
 		}
-		if(loadout_->Hunger < 100)
+		if (loadout_->Hunger < 100)
 		{
 			float HungerSprint = timePassed*GPP_Data.c_fHungerSprintInc; //2,5
 
-			float HungerRun		= timePassed*GPP_Data.c_fHungerRunInc;  // 1.5
-			float HungerNorm	= timePassed*GPP_Data.c_fHungerInc;    // 1.5
-			float HungerToxici  = timePassed*GPP_Data.c_fHungerHighToxicLevelInc; // 3.0
+			float HungerRun = timePassed*GPP_Data.c_fHungerRunInc;  // 1.5
+			float HungerNorm = timePassed*GPP_Data.c_fHungerInc;    // 1.5
+			float HungerToxici = timePassed*GPP_Data.c_fHungerHighToxicLevelInc; // 3.0
 
-			if(loadout_->Stats.skillid19 == 1){
+			if (loadout_->Stats.skillid19 == 1){
 				HungerSprint = HungerSprint - 0.000161f;
 				HungerRun = HungerRun - 0.000161f;
 				HungerNorm = HungerNorm - 0.000161f;
 				HungerToxici = HungerToxici - 0.000161f;
-				if(loadout_->Stats.skillid26 == 1){
+				if (loadout_->Stats.skillid26 == 1){
 					HungerSprint = HungerSprint - 0.000161f;
 					HungerRun = HungerRun + 0.000161f;
 					HungerNorm = HungerNorm + 0.000161f;
 					HungerToxici = HungerToxici + 0.000161f;
 				}
 				// Skillsystem 19
-			}	
-			if(m_PlayerState == PLAYER_MOVE_SPRINT)
+			}
+			if (m_PlayerState == PLAYER_MOVE_SPRINT)
 				loadout_->Hunger += HungerSprint;
-			else if(m_PlayerState == PLAYER_MOVE_RUN)
+			else if (m_PlayerState == PLAYER_MOVE_RUN)
 				loadout_->Hunger += HungerRun;
 			else
 				loadout_->Hunger += HungerNorm;
-			if(loadout_->Toxic > GPP_Data.c_fHungerHighToxicLevel)
+			if (loadout_->Toxic > GPP_Data.c_fHungerHighToxicLevel)
 				loadout_->Hunger += HungerToxici;
 		}
 
-		if(loadout_->Toxic > GPP_Data.c_fBloodToxicLevel3)
+		if (loadout_->Toxic > GPP_Data.c_fBloodToxicLevel3)
 			loadout_->Health -= timePassed*GPP_Data.c_fBloodToxicLevel3_HPDamage;
-		else if(loadout_->Toxic > GPP_Data.c_fBloodToxicLevel2)
+		else if (loadout_->Toxic > GPP_Data.c_fBloodToxicLevel2)
 			loadout_->Health -= timePassed*GPP_Data.c_fBloodToxicLevel2_HPDamage;
-		else if(loadout_->Toxic > GPP_Data.c_fBloodToxicLevel1)
+		else if (loadout_->Toxic > GPP_Data.c_fBloodToxicLevel1)
 			loadout_->Health -= timePassed*GPP_Data.c_fBloodToxicLevel1_HPDamage;
 
 		float HealthHungerDmg = timePassed*GPP_Data.c_fHungerLevel_HPDamage;
 		float HealthThirstDmg = timePassed*GPP_Data.c_fThirstLevel_HPDamage;
 
 		// Skillsystem 22 & 26
-		/*if(loadout_->Stats.skillid22 == 1){
-		HealthHungerDmg -= 0.005f;
-		HealthThirstDmg -= 0.005f;
-		if(loadout_->Stats.skillid26 == 1){
-		HealthHungerDmg -= 0.015f;
-		HealthThirstDmg -= 0.015f;
+		if (loadout_->Stats.skillid22 == 1)
+		{
+			HealthHungerDmg -= 0.005f;
+			HealthThirstDmg -= 0.005f;
+			if (loadout_->Stats.skillid26 == 1)
+			{
+				HealthHungerDmg -= 0.015f;
+				HealthThirstDmg -= 0.015f;
+			}
 		}
-		}*/
+		//}
 
-		if(loadout_->Hunger > GPP_Data.c_fHungerLevel1)
+		if (loadout_->Hunger > GPP_Data.c_fHungerLevel1)
 			loadout_->Health -= HealthHungerDmg;
-		if(loadout_->Thirst > GPP_Data.c_fThirstLevel1)
+		if (loadout_->Thirst > GPP_Data.c_fThirstLevel1)
 			loadout_->Health -= HealthThirstDmg;
 
-		if(loadout_->Health <= 0.0f || loadout_->Health != loadout_->Health)
+		if (loadout_->Health <= 0.0f || loadout_->Health != loadout_->Health)
 		{
 			gServerLogic.DoKillPlayer(this, this, storecat_INVALID, true);
 			return TRUE;
 		}
-	}
+		//}
+		//}
 
-	// STAMINA LOGIC SHOULD BE SYNCED WITH CLIENT CODE!
-	// (stamina penalty and bOnGround is not synced with server, as it will not cause desync for non cheating client)
-	/*{
-	const float TimePassed = R3D_MIN(r3dGetFrameTime(), 0.1f);
-	if(m_PlayerState == PLAYER_MOVE_SPRINT)
-	{
-	m_Stamina -= TimePassed;
-	if(m_Stamina < -60.0f) // allow one minute of stamina cheating
-	{
-	gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Stamina, true, "stamina");
-	}
-	}
-	else 
-	{
-	float regen_rate = loadout_->Health<50?GPP_Data.c_fSprintRegenRateLowHealth:GPP_Data.c_fSprintRegenRateNormal;
-	if(loadout_->Stats.skillid3 == 1){
-	regen_rate *= 2.0f;
-	if(loadout_->Stats.skillid5 == 1){
-	regen_rate *= 3.0f;
-	}
-	}
-	m_Stamina += TimePassed*regen_rate; // regeneration rate
-	}
-	m_Stamina = R3D_CLAMP((float)m_Stamina, 0.0f, GPP_Data.c_fSprintMaxEnergy);
-	}*/
-
-	/*if (loadout_->bleeding) // - health
-	{
-	loadout_->Health -= 0.00050f;
-	}*/
-
-	// send vitals if they're changed
-	PKT_S2C_SetPlayerVitals_s vitals;
-	vitals.FromChar(loadout_);
-	vitals.GroupID = loadout_->GroupID;
-	vitals.isVisible = loadout_->isVisible;
-	vitals.bleeding = loadout_->bleeding;
-	vitals.legfall = loadout_->legfall;
-	vitals.IsCallForHelp = loadout_->IsCallForHelp;
-	if(vitals != lastVitals_ || vitals.GroupID != lastVitals_.GroupID || vitals.bleeding != lastVitals_.bleeding || vitals.legfall != lastVitals_.legfall || vitals.IsCallForHelp != lastVitals_.IsCallForHelp || vitals.isVisible != lastVitals_.isVisible)
-	{
-		gServerLogic.p2pBroadcastToActive(this, &vitals, sizeof(vitals));
-		lastVitals_.FromChar(loadout_);
-	}
-
-	float CHAR_UPDATE_INTERVAL = 60 + u_GetRandom(5,30);
-	if(curTime > lastCharUpdateTime_ + CHAR_UPDATE_INTERVAL)
-	{
-		lastCharUpdateTime_ = curTime;
-		gServerLogic.ApiPlayerUpdateChar(this);
-	}
-
-	const float WORLD_UPDATE_INTERVAL = 0.5f;
-	if(curTime > lastWorldUpdateTime_ + WORLD_UPDATE_INTERVAL)
-	{
-		lastWorldUpdateTime_ = curTime;
-		UpdateGameWorldFlags();
-	}
-
-	if(CheckForFastMove())
-		return TRUE;
-
-	// anti cheat: player is under the ground, or player is flying above the ground
-	{
-		//PxRaycastHit hit;
-		PxSweepHit hit;
-		PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
-		r3dVector pos = GetPosition();
-		PxBoxGeometry boxg(0.5f, 0.1f, 0.5f);
-		PxTransform pose(PxVec3(pos.x, pos.y+0.5f, pos.z));
-		if(!g_pPhysicsWorld->PhysXScene->sweepSingle(boxg, pose, PxVec3(0,-1,0), 2000.0f, PxSceneQueryFlag::eDISTANCE|PxSceneQueryFlag::eINITIAL_OVERLAP|PxSceneQueryFlag::eINITIAL_OVERLAP_KEEP, hit, filter))
+		// STAMINA LOGIC SHOULD BE SYNCED WITH CLIENT CODE!
+		// (stamina penalty and bOnGround is not synced with server, as it will not cause desync for non cheating client)
+		/*{
+		const float TimePassed = R3D_MIN(r3dGetFrameTime(), 0.1f);
+		if(m_PlayerState == PLAYER_MOVE_SPRINT)
 		{
-			m_PlayerUndergroundAntiCheatTimer += r3dGetFrameTime();
-			/*if(m_PlayerUndergroundAntiCheatTimer > 2.0f)
-			{
-			char message[128] = {0};
-			r3dOutToLog("Detect Player Underground");
-			//gServerLogic.DoKillPlayer(this, this, storecat_INVALID, true);
-			gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, false, "player underground - killing", "%.2f, %.2f, %.2f", pos.x, pos.y, pos.z);
-			PKT_S2C_CheatMsg_s n2;
-			sprintf(message, "Kicked from server : player underground");
-			r3dscpy(n2.cheatreason,message);
-			//gServerLogic.p2pSendToPeer(peerId_, NULL, &n2, sizeof(n2));
-			gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
-			gServerLogic.DisconnectPeer(peerId_, true, "UnderGround");
-			}*/
+		m_Stamina -= TimePassed;
+		if(m_Stamina < -60.0f) // allow one minute of stamina cheating
+		{
+		gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Stamina, true, "stamina");
+		}
 		}
 		else
 		{
+		float regen_rate = loadout_->Health<50?GPP_Data.c_fSprintRegenRateLowHealth:GPP_Data.c_fSprintRegenRateNormal;
+		if(loadout_->Stats.skillid3 == 1){
+		regen_rate *= 2.0f;
+		if(loadout_->Stats.skillid5 == 1){
+		regen_rate *= 3.0f;
+		}
+		}
+		m_Stamina += TimePassed*regen_rate; // regeneration rate
+		}
+		m_Stamina = R3D_CLAMP((float)m_Stamina, 0.0f, GPP_Data.c_fSprintMaxEnergy);
+		}*/
 
-			if(m_PlayerUndergroundAntiCheatTimer > 0)
-				m_PlayerUndergroundAntiCheatTimer -= r3dGetFrameTime();
+		/*if (loadout_->bleeding) // - health
+		{
+		loadout_->Health -= 0.00050f;
+		}*/
 
-			float dist = hit.distance;
-			//r3dOutToLog("@@@@ dist=%.2f\n", dist);
-			/*	if(dist > 2.1f) // higher than 1.6 meter above ground
+		// send vitals if they're changed
+		PKT_S2C_SetPlayerVitals_s vitals;
+		vitals.FromChar(loadout_);
+		vitals.GroupID = loadout_->GroupID;
+		vitals.isVisible = loadout_->isVisible;
+		vitals.bleeding = loadout_->bleeding;
+		vitals.legfall = loadout_->legfall;
+		vitals.IsCallForHelp = loadout_->IsCallForHelp;
+		if (vitals != lastVitals_ || vitals.GroupID != lastVitals_.GroupID || vitals.bleeding != lastVitals_.bleeding || vitals.legfall != lastVitals_.legfall || vitals.IsCallForHelp != lastVitals_.IsCallForHelp || vitals.isVisible != lastVitals_.isVisible)
+		{
+			gServerLogic.p2pBroadcastToActive(this, &vitals, sizeof(vitals));
+			lastVitals_.FromChar(loadout_);
+		}
+
+		float CHAR_UPDATE_INTERVAL = 60 + u_GetRandom(5, 30);
+		if (curTime > lastCharUpdateTime_ + CHAR_UPDATE_INTERVAL)
+		{
+			lastCharUpdateTime_ = curTime;
+			gServerLogic.ApiPlayerUpdateChar(this);
+			OnLoadoutChanged();
+		}
+
+		const float WORLD_UPDATE_INTERVAL = 0.5f;
+		if (curTime > lastWorldUpdateTime_ + WORLD_UPDATE_INTERVAL)
+		{
+			lastWorldUpdateTime_ = curTime;
+			UpdateGameWorldFlags();
+		}
+
+		if (CheckForFastMove())
+			return TRUE;
+
+		// anti cheat: player is under the ground, or player is flying above the ground
+		{
+			//PxRaycastHit hit;
+			PxSweepHit hit;
+			PxSceneQueryFilterData filter(PxFilterData(COLLIDABLE_PLAYER_COLLIDABLE_MASK, 0, 0, 0), PxSceneQueryFilterFlag::eSTATIC);
+			r3dVector pos = GetPosition();
+			PxBoxGeometry boxg(0.5f, 0.1f, 0.5f);
+			PxTransform pose(PxVec3(pos.x, pos.y + 0.5f, pos.z));
+			if (!g_pPhysicsWorld->PhysXScene->sweepSingle(boxg, pose, PxVec3(0, -1, 0), 2000.0f, PxSceneQueryFlag::eDISTANCE | PxSceneQueryFlag::eINITIAL_OVERLAP | PxSceneQueryFlag::eINITIAL_OVERLAP_KEEP, hit, filter))
 			{
-			// check if he is not falling, with some safe margin in case if he is walking down the hill
-			if(!profile_.ProfileData.isDevAccount)
-			{
-			if(!profile_.ProfileData.isPunisher)
-			{
-			if( (oldstate.Position.y - GetPosition().y) < 0.1f )
-			{
-			m_PlayerFlyingAntiCheatTimer += r3dGetFrameTime();
-			if(m_PlayerFlyingAntiCheatTimer > 5.0f)
-			{
-			char chatmessage[128] = {0};
-			PKT_C2C_ChatMessage_s n;
-			sprintf(chatmessage, "Kicked '%s' from server : Player - player flying",loadout_->Gamertag);
-			r3dscpy(n.gamertag, "System");
-			r3dscpy(n.msg, chatmessage);
-			n.msgChannel = 1;
-			n.userFlag = 2;
-			gServerLogic.p2pBroadcastToAll(NULL, &n, sizeof(n), true);
-			gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, true, "player flying", "dist=%.2f, pos=%.2f, %.2f, %.2f", dist, pos.x, pos.y, pos.z);
+				m_PlayerUndergroundAntiCheatTimer += r3dGetFrameTime();
+				/*if(m_PlayerUndergroundAntiCheatTimer > 2.0f)
+				{
+				char message[128] = {0};
+				r3dOutToLog("Detect Player Underground");
+				//gServerLogic.DoKillPlayer(this, this, storecat_INVALID, true);
+				gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, false, "player underground - killing", "%.2f, %.2f, %.2f", pos.x, pos.y, pos.z);
+				PKT_S2C_CheatMsg_s n2;
+				sprintf(message, "Kicked from server : player underground");
+				r3dscpy(n2.cheatreason,message);
+				//gServerLogic.p2pSendToPeer(peerId_, NULL, &n2, sizeof(n2));
+				gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
+				gServerLogic.DisconnectPeer(peerId_, true, "UnderGround");
+				}*/
 			}
 			else
 			{
-			if( (oldstate.Position.y - GetPosition().y) < 0.02f )
-			{
-			m_PlayerFlyingAntiCheatTimer += r3dGetFrameTime();
-			if(m_PlayerFlyingAntiCheatTimer > 5.0f)
-			{
-			char chatmessage[128] = {0};
+
+				if (m_PlayerUndergroundAntiCheatTimer > 0)
+					m_PlayerUndergroundAntiCheatTimer -= r3dGetFrameTime();
+
+				float dist = hit.distance;
+				//r3dOutToLog("@@@@ dist=%.2f\n", dist);
+				/*	if(dist > 2.1f) // higher than 1.6 meter above ground
+				{
+				// check if he is not falling, with some safe margin in case if he is walking down the hill
+				if(!profile_.ProfileData.isDevAccount)
+				{
+				if(!profile_.ProfileData.isPunisher)
+				{
+				if( (oldstate.Position.y - GetPosition().y) < 0.1f )
+				{
+				m_PlayerFlyingAntiCheatTimer += r3dGetFrameTime();
+				if(m_PlayerFlyingAntiCheatTimer > 5.0f)
+				{
+				char chatmessage[128] = {0};
+				PKT_C2C_ChatMessage_s n;
+				sprintf(chatmessage, "Kicked '%s' from server : Player - player flying",loadout_->Gamertag);
+				r3dscpy(n.gamertag, "System");
+				r3dscpy(n.msg, chatmessage);
+				n.msgChannel = 1;
+				n.userFlag = 2;
+				gServerLogic.p2pBroadcastToAll(NULL, &n, sizeof(n), true);
+				gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, true, "player flying", "dist=%.2f, pos=%.2f, %.2f, %.2f", dist, pos.x, pos.y, pos.z);
+				}
+				else
+				{
+				if( (oldstate.Position.y - GetPosition().y) < 0.02f )
+				{
+				m_PlayerFlyingAntiCheatTimer += r3dGetFrameTime();
+				if(m_PlayerFlyingAntiCheatTimer > 5.0f)
+				{
+				char chatmessage[128] = {0};
+				PKT_C2C_ChatMessage_s n;
+				sprintf(chatmessage, "Kicked '%s' from server : Player - player flying",loadout_->Gamertag);
+				r3dscpy(n.gamertag, "System");
+				r3dscpy(n.msg, chatmessage);
+				n.msgChannel = 1;
+				n.userFlag = 2;
+				gServerLogic.p2pBroadcastToAll(NULL, &n, sizeof(n), true);
+				gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, true, "player flying", "dist=%.2f, pos=%.2f, %.2f, %.2f", dist, pos.x, pos.y, pos.z);
+				}
+				}
+				}
+				}
+				}
+				}
+				else if(m_PlayerFlyingAntiCheatTimer > 0.0f)
+				m_PlayerFlyingAntiCheatTimer-=r3dGetFrameTime(); // slowly decrease timer
+				}
+				}*/
+			}
+		}
+
+		// AllrightTH : Raccoon City if pos y > 127 will kill and kick by server
+
+		if (loadout_->GameMapId == GBGameInfo::MAPID_WZ_RaccoonCity && GetPosition().Y > 127.0f || loadout_->GameMapId == GBGameInfo::MAPID_wo_eastern_bunker_tdm && GetPosition().Y > 16.8f)
+		{
+			gServerLogic.DoKillPlayer(this, this, storecat_INVALID, true);
+
+			char chatmessage[128] = { 0 };
 			PKT_C2C_ChatMessage_s n;
-			sprintf(chatmessage, "Kicked '%s' from server : Player - player flying",loadout_->Gamertag);
+			sprintf(chatmessage, "Killed '%s' from server : Player - player over Y Position", loadout_->Gamertag);
 			r3dscpy(n.gamertag, "System");
 			r3dscpy(n.msg, chatmessage);
 			n.msgChannel = 1;
 			n.userFlag = 2;
 			gServerLogic.p2pBroadcastToAll(NULL, &n, sizeof(n), true);
-			gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, true, "player flying", "dist=%.2f, pos=%.2f, %.2f, %.2f", dist, pos.x, pos.y, pos.z);
-			}
-			}
-			}
-			}
-			}
-			}
-			else if(m_PlayerFlyingAntiCheatTimer > 0.0f)
-			m_PlayerFlyingAntiCheatTimer-=r3dGetFrameTime(); // slowly decrease timer
-			}
-			}*/
+
+			char message[128] = { 0 };
+
+			PKT_S2C_CheatMsg_s n2;
+			sprintf(message, "Killed : Player - player over Y Position");
+			r3dscpy(n2.cheatreason, message);
+			//gServerLogic.p2pSendToPeer(peerId_, NULL, &n2, sizeof(n2));
+			gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
+
+			gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, false, "player over Y Position", " pos=%.2f", GetPosition().Y);
+			//gServerLogic.DisconnectPeer(peerId_, true, "player over Y Position");
 		}
+
+		// 	// afk kick
+		// 	const float AFK_KICK_TIME_IN_SEC = 90.0f;
+		// 	if(!isTargetDummy_ && curTime > lastPlayerAction_ + AFK_KICK_TIME_IN_SEC)
+		// 	{
+		// 		if(profile_.ProfileData.isDevAccount)
+		// 		{
+		// 			// do nothing for admin accs
+		// 		}
+		// 		else
+		// 		{
+		// 			PKT_S2C_CheatWarning_s n;
+		// 			n.cheatId = PKT_S2C_CheatWarning_s::CHEAT_AFK;
+		// 			gServerLogic.p2pSendToPeer(peerId_, this, &n, sizeof(n), true);
+		// 
+		// 			gServerLogic.DisconnectPeer(peerId_, false, "afk_kick");
+		// 			return TRUE;
+		// 		}
+		// 	}
 	}
-
-	// AllrightTH : Raccoon City if pos y > 127 will kill and kick by server
-
-	if (loadout_->GameMapId == GBGameInfo::MAPID_WZ_RaccoonCity && GetPosition().Y > 127.0f || loadout_->GameMapId == GBGameInfo::MAPID_wo_eastern_bunker_tdm && GetPosition().Y > 16.8f)
-	{
-		gServerLogic.DoKillPlayer(this, this, storecat_INVALID, true);
-
-		char chatmessage[128] = {0};
-		PKT_C2C_ChatMessage_s n;
-		sprintf(chatmessage, "Killed '%s' from server : Player - player over Y Position",loadout_->Gamertag);
-		r3dscpy(n.gamertag, "System");
-		r3dscpy(n.msg, chatmessage);
-		n.msgChannel = 1;
-		n.userFlag = 2;
-		gServerLogic.p2pBroadcastToAll(NULL, &n, sizeof(n), true);
-
-		char message[128] = {0};
-
-		PKT_S2C_CheatMsg_s n2;
-		sprintf(message, "Killed : Player - player over Y Position");
-		r3dscpy(n2.cheatreason,message);
-		//gServerLogic.p2pSendToPeer(peerId_, NULL, &n2, sizeof(n2));
-		gServerLogic.p2pSendToPeer(peerId_, this, &n2, sizeof(n2));
-
-		gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Flying, false, "player over Y Position", " pos=%.2f",GetPosition().Y);
-		//gServerLogic.DisconnectPeer(peerId_, true, "player over Y Position");
-	}
-
-	// 	// afk kick
-	// 	const float AFK_KICK_TIME_IN_SEC = 90.0f;
-	// 	if(!isTargetDummy_ && curTime > lastPlayerAction_ + AFK_KICK_TIME_IN_SEC)
-	// 	{
-	// 		if(profile_.ProfileData.isDevAccount)
-	// 		{
-	// 			// do nothing for admin accs
-	// 		}
-	// 		else
-	// 		{
-	// 			PKT_S2C_CheatWarning_s n;
-	// 			n.cheatId = PKT_S2C_CheatWarning_s::CHEAT_AFK;
-	// 			gServerLogic.p2pSendToPeer(peerId_, this, &n, sizeof(n), true);
-	// 
-	// 			gServerLogic.DisconnectPeer(peerId_, false, "afk_kick");
-	// 			return TRUE;
-	// 		}
-	// 	}
 
 
 	return TRUE;
@@ -1169,6 +1185,31 @@ bool obj_ServerPlayer::BackpackAddItem(const wiInventoryItem& wi1)
 			slot_free = i;
 		}
 	}
+	const WeaponAttachmentConfig* wac = g_pWeaponArmory->getAttachmentConfig(wi1.itemID);
+	if (wac)
+	{
+		if (wac->category == storecat_FPSAttachment && wac->m_type == WPN_ATTM_CLIP)
+		{
+			slot_exist = -1;
+			slot_free = -1;
+			for (int i = 8; i < loadout_->BackpackSize; i++)
+			{
+				const wiInventoryItem& wi2 = loadout_->Items[i];
+
+				// can stack only non-modified items
+				if (isStackable && wi2.itemID == wi1.itemID && wi1.Var1 < 0 && wi2.Var1 < 0) {
+					slot_exist = i;
+					break;
+				}
+
+				// check if we can place that item to loadout slot
+				bool canPlace = storecat_CanPlaceItemToSlot(itemCfg, i);
+				if (canPlace && wi2.itemID == 0 && slot_free == -1) {
+					slot_free = i;
+				}
+			}
+		}
+	}
 
 	if(slot_exist == -1 && slot_free == -1)
 	{
@@ -1178,15 +1219,19 @@ bool obj_ServerPlayer::BackpackAddItem(const wiInventoryItem& wi1)
 		gServerLogic.p2pSendToPeer(peerId_, this, &n, sizeof(n));
 		return false;
 	}
-
 	// check weight
 	float totalWeight = loadout_->getTotalWeight();
-	if(loadout_->Stats.skillid2 == 1){
+	
+	if(loadout_->Stats.skillid2 == 1)
+	{
 		totalWeight *= 0.9f;
 		if(loadout_->Stats.skillid6 == 1)
 			totalWeight *= 0.7f;
 	}
+	
+
 	totalWeight += itemCfg->m_Weight*wi1.quantity;
+
 
 	const BackpackConfig* bc = g_pWeaponArmory->getBackpackConfig(loadout_->BackpackID);
 	r3d_assert(bc);
@@ -1269,46 +1314,60 @@ void obj_ServerPlayer::BackpackDropItem(int idx)
 	n.Quantity   = 0;
 	n.dbg_ItemID = wi.itemID;
 	gServerLogic.p2pSendToPeer(peerId_, this, &n, sizeof(n));
-
 	// remove from local inventory
 	wi.Reset();
-
-	//gServerLogic.ApiPlayerUpdateChar(this);
 }
 
 void obj_ServerPlayer::OnBackpackChanged(int idx)
 {
+	if(loadout_->Items[idx].itemID == 0)
+	{
+		gServerLogic.ApiPlayerUpdateChar(this);
+
+		if(wiCharDataFull::CHAR_LOADOUT_ARMOR == idx)
+			SetGearSlot(SLOT_Armor, loadout_->Items[idx].itemID);
+		if(wiCharDataFull::CHAR_LOADOUT_HEADGEAR == idx)
+			SetGearSlot(SLOT_Headgear, loadout_->Items[idx].itemID);
+
+		OnLoadoutChanged();
+		return;
+	}
+
+
 	// if slot changed is related to loadout - relay to other players
 	switch(idx)
 	{
-	case wiCharDataFull::CHAR_LOADOUT_WEAPON1:
-	case wiCharDataFull::CHAR_LOADOUT_WEAPON2:
-		// attachments are reset on item change (SERVER CODE SYNC POINT)
-		loadout_->Attachment[idx].Reset();
-		if(loadout_->Items[idx].Var2 > 0)
-			loadout_->Attachment[idx].attachments[WPN_ATTM_CLIP] = loadout_->Items[idx].Var2;
+		case wiCharDataFull::CHAR_LOADOUT_WEAPON1:
+		case wiCharDataFull::CHAR_LOADOUT_WEAPON2:
+			// attachments are reset on item change (SERVER CODE SYNC POINT)
+			loadout_->Attachment[idx].Reset();
+			if(loadout_->Items[idx].Var2 > 0)
+				loadout_->Attachment[idx].attachments[WPN_ATTM_CLIP] = loadout_->Items[idx].Var2;
 
-		SetWeaponSlot(idx, loadout_->Items[idx].itemID, loadout_->Attachment[idx]);
-		OnLoadoutChanged();
-		break;
+			SetWeaponSlot(idx, loadout_->Items[idx].itemID, loadout_->Attachment[idx]);
+			OnLoadoutChanged();
+			break;
 
-	case wiCharDataFull::CHAR_LOADOUT_ARMOR:
-		SetGearSlot(SLOT_Armor, loadout_->Items[idx].itemID);
-		OnLoadoutChanged();
-		break;
-	case wiCharDataFull::CHAR_LOADOUT_HEADGEAR:
-		SetGearSlot(SLOT_Headgear, loadout_->Items[idx].itemID);
-		OnLoadoutChanged();
-		break;
+		case wiCharDataFull::CHAR_LOADOUT_ARMOR:
+			SetGearSlot(SLOT_Armor, loadout_->Items[idx].itemID);
+			OnLoadoutChanged();
+			break;
+		case wiCharDataFull::CHAR_LOADOUT_HEADGEAR:
+			SetGearSlot(SLOT_Headgear, loadout_->Items[idx].itemID);
+			OnLoadoutChanged();
+			break;
 
-	case wiCharDataFull::CHAR_LOADOUT_ITEM1:
-	case wiCharDataFull::CHAR_LOADOUT_ITEM2:
-	case wiCharDataFull::CHAR_LOADOUT_ITEM3:
-	case wiCharDataFull::CHAR_LOADOUT_ITEM4:
-		OnLoadoutChanged();
-		break;
+		case wiCharDataFull::CHAR_LOADOUT_ITEM1:
+		case wiCharDataFull::CHAR_LOADOUT_ITEM2:
+		case wiCharDataFull::CHAR_LOADOUT_ITEM3:
+		case wiCharDataFull::CHAR_LOADOUT_ITEM4:
+			OnLoadoutChanged();
+			break;
+		case wiCharDataFull::CHAR_REAL_BACKPACK_IDX_START:
+			OnLoadoutChanged();
+			break;
+			
 	}
-	//gServerLogic.ApiPlayerUpdateChar(this);
 }
 
 void obj_ServerPlayer::OnLoadoutChanged()
@@ -1402,7 +1461,7 @@ void obj_ServerPlayer::OnAttachmentChanged(int wid, int atype)
 	PKT_S2C_SetPlayerAttachments_s n;
 	n.wid  = (BYTE)wid;
 	n.Attm = GetWeaponNetAttachment(wid);
-
+	
 	//TODO: for network traffic optimization (do not send to us) - change to RelayPacket (and add preparePacket there)
 	gServerLogic.p2pBroadcastToActive(this, &n, sizeof(n), true);
 }
@@ -1419,6 +1478,8 @@ void obj_ServerPlayer::OnChangeBackpackSuccess(const std::vector<wiInventoryItem
 		// vars
 		obj->m_Item       = droppedItems[i];
 	}
+	gServerLogic.ApiPlayerUpdateChar(this);
+	OnLoadoutChanged();
 }
 
 void obj_ServerPlayer::UseItem_CreateNote(const PKT_C2S_CreateNote_s& n)
@@ -2196,6 +2257,13 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerReload_s& n)
 		return;
 	}
 
+	const WeaponAttachmentConfig* attachCfg = g_pWeaponArmory->getAttachmentConfig(wi.itemID);
+	if(!attachCfg) {
+		gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_Protocol, true, "attachment",
+			"bad itemid: %d", wi.itemID);
+		return;
+	}
+
 	// validate if we reloaded correct amount
 	int ammoReloaded = wi.Var1 < 0 ? wpn->getClipConfig()->m_Clipsize : wi.Var1;
 	if(n.dbg_Amount != ammoReloaded) {
@@ -2285,9 +2353,9 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerHitDynamic_s& n)
 {
 	//r3dOutToLog("FireHitCount--: PKT_C2C_PlayerHitDynamic_s\n");
 	FireHitCount--;
-	if(FireHitCount < -10) // -10 - to allow some buffer
+	if(FireHitCount < -2) // -2 - to allow some buffer
 	{
-		gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_NumShots, true, "bullethack2");
+		gServerLogic.LogCheat(peerId_, PKT_S2C_CheatWarning_s::CHEAT_NumShots, false, "PlayerHitDynamic bullethack");
 		return;
 	}
 
@@ -2398,16 +2466,28 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2C_PlayerHitDynamic_s& n)
 		float dmod = float(n.damageFromPiercing)/100.0f;
 		damage *= dmod;
 	}
-	if(loadout_->Stats.skillid8 == 1){
+	
+	if(loadout_->Stats.skillid8 == 1)
+	{
 		if(m_WeaponArray[m_SelectedWeapon]->getCategory()==storecat_MELEE){
 			damage *= 1.25f;
 		}
-		if(loadout_->Stats.skillid10 == 1){
+	}
+
+	if(loadout_->Stats.skillid10 == 1)
+	{
 			if(m_WeaponArray[m_SelectedWeapon]->getCategory()==storecat_MELEE){
-				damage *= 1.25f;
+				damage *= 1.30f;
 			}
+	}
+	if (loadout_->Stats.skillid13 == 1)
+	{
+		if (m_WeaponArray[m_SelectedWeapon]->getCategory() == storecat_MELEE){
+			damage *= 1.35f;
 		}
 	}
+	
+
 	// track ShotsHits
 
 	bool isSpecial = false;
@@ -2897,7 +2977,16 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_UnloadClipReq_s& n)
 
 				if(BackpackAddItem(wi))
 					loadout_->Items[n.slotID] = item;
-
+				else
+				{
+					// create network object
+					obj_DroppedItem* obj = (obj_DroppedItem*)srv_CreateGameObject("obj_DroppedItem", "obj_DroppedItem", GetRandomPosForItemDrop());
+					obj->SetNetworkID(gServerLogic.GetFreeNetId());
+					obj->NetworkLocal = true;
+					// vars
+					obj->m_Item       = wi;
+				}
+				
 				OnBackpackChanged(n.slotID);
 
 			}else{
@@ -2926,6 +3015,8 @@ void obj_ServerPlayer::OnNetPacket(const PKT_C2S_DisconnectReq_s& n)
 	{
 		gServerLogic.ApiPlayerUpdateChar(this, true);
 		wasDisconnected_ = true;
+	}else{
+		wasDisconnected_ = false;
 	}
 }
 

@@ -258,7 +258,14 @@ void obj_ServerItemSpawnPoint::SpawnItem(int spawnIndex)
 	obj->m_SpawnObj   = GetSafeID();
 	obj->m_SpawnIdx   = spawnIndex;
 	obj->m_Item       = wi;
-	
+
+	const WeaponConfig* temp = g_pWeaponArmory->getWeaponConfig(wi.itemID);
+	if(temp)
+	{
+		const WeaponAttachmentConfig* clipAttach = g_pWeaponArmory->getAttachmentConfig(temp->FPSDefaultID[4]);
+		if(clipAttach)
+			obj->m_Item.Var1 = u_random(clipAttach->m_Clipsize);
+	}
 	return;
 }
 
