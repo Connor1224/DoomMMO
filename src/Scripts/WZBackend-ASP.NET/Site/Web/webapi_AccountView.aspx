@@ -1,1 +1,0 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="webapi_AccountView.aspx.cs" Inherits="Web_webapi_AccountView" %>
